@@ -1,0 +1,22 @@
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background: #ffffff;
+}
+
+.dev-theme {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: #ffffff;
+  color: #000000;
+}
+
+.dev-theme time {
+  display: block;
+  color: #000000;
+  font-size: 2rem;
+  line-height: 1;
+}

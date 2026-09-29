@@ -75,7 +75,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
         <template data-theme-template>
           <article class="theme-card" data-theme-card>
             <a class="theme-card-link" href="#" aria-label="Open theme">
-              <span class="theme-preview generated-preview"></span>
+              <span class="theme-preview"></span>
               <span class="theme-card-footer"><span class="theme-name"></span><span class="card-arrow" aria-hidden="true">&#8599;</span></span>
             </a>
             <div class="theme-menu" data-theme-menu>
@@ -158,7 +158,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
     card.dataset.themeId = id;
 
     const link = card.querySelector<HTMLAnchorElement>('.theme-card-link');
-    link?.setAttribute('href', `/themes/white-background/?name=${encodeURIComponent(name)}`);
+    link?.setAttribute('href', `/themes/blank/?name=${encodeURIComponent(name)}`);
     link?.setAttribute('aria-label', `Open ${name} theme`);
     const title = card.querySelector<HTMLElement>('.theme-name');
     if (title) title.textContent = name;
@@ -258,7 +258,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
   .theme-menu { position: absolute; top: 10px; right: 10px; z-index: 2; }
   .theme-menu-button { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255, 255, 255, .14); border-radius: 8px; background: rgba(18, 21, 26, .78); color: #d9dce1; cursor: pointer; backdrop-filter: blur(7px); transition: border-color .2s, background .2s; } .theme-menu-button img { width: 15px; height: 15px; filter: invert(1); } .theme-menu-button:hover, .theme-menu-button[aria-expanded="true"] { border-color: #70b8f5; background: rgba(28, 61, 91, .9); }
   .theme-menu-popover { position: absolute; top: 36px; right: 0; width: 112px; padding: 5px; border: 1px solid #343a44; border-radius: 9px; background: #20242b; box-shadow: 0 12px 24px rgba(0, 0, 0, .3); } .theme-menu-popover button { width: 100%; padding: 8px 9px; border: 0; border-radius: 6px; background: transparent; color: #d9dce1; text-align: left; font: inherit; font-size: 12px; cursor: pointer; } .theme-menu-popover button:hover { background: #2d3540; color: #fff; }
-  .theme-preview { display: block; height: 192px; background: #20242b; } .theme-preview.has-image img { display: block; width: 100%; height: 100%; object-fit: cover; } .theme-preview.generated-preview { background: #fff; }
+  .theme-preview { display: block; height: 192px; background: #20242b; } .theme-preview.has-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .theme-card-footer { justify-content: space-between; height: 55px; padding: 0 17px; border-top: 1px solid #2d3139; } .theme-name { color: #e9e8e5; font-size: 14px; font-weight: 600; }
   .card-arrow { color: #777b84; font-size: 18px; transition: color .2s, transform .2s; } .theme-card:hover .card-arrow { color: #55a8ff; transform: translate(2px, -2px); }
   .empty-state { grid-column: 1 / -1; padding: 52px 0; color: #777b84; font-size: 14px; text-align: center; }

@@ -13,10 +13,14 @@ const nouns = nounsText.split(/\r?\n/).map((word) => word.trim()).filter(Boolean
 type Theme = {
   id: string;
   name: string;
+  entryUrl: string;
+  source: 'bundled' | 'user';
   image?: string;
+  previewAfterLoadtime?: number;
+  allowNewPreview?: boolean;
 };
 
-const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
+const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', source: 'bundled', image: devPreview, previewAfterLoadtime: 500, allowNewPreview: true }];
 ---
 
 <Layout>
@@ -56,8 +60,8 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
       </div>
       <div class="theme-grid" data-theme-grid>
         {themes.map((theme) => (
-          <article class="theme-card" data-theme-card data-theme-name={theme.name}>
-            <a class="theme-card-link" href={`/themes/${theme.id}/`} aria-label={`Open ${theme.name} theme`}>
+          <article class="theme-card" data-theme-card data-theme-id={theme.id} data-theme-source={theme.source} data-theme-name={theme.name} data-preview-after-loadtime={theme.previewAfterLoadtime ?? 0} data-allow-new-preview={theme.allowNewPreview ?? true}>
+            <a class="theme-card-link" href={theme.entryUrl} aria-label={`Open ${theme.name} theme`}>
               <span class:list={["theme-preview", { "has-image": Boolean(theme.image) }]}>{theme.image && <img src={theme.image} alt="" />}</span>
               <span class="theme-card-footer"><span class="theme-name">{theme.name}</span><span class="card-arrow" aria-hidden="true">&#8599;</span></span>
             </a>
@@ -66,8 +70,8 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
                 <img src={dotsIcon} alt="" aria-hidden="true" />
               </button>
               <div class="theme-menu-popover" role="menu" hidden>
-                <button type="button" role="menuitem" data-theme-action="edit">Edit</button>
-                <button type="button" role="menuitem" data-theme-action="rename">Rename</button>
+                <button type="button" role="menuitem" data-theme-action="duplicate-edit">Duplicate &amp; edit</button>
+                <button type="button" role="menuitem" data-theme-action="reload-preview">Reload preview</button>
               </div>
             </div>
           </article>
@@ -85,6 +89,8 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
               <div class="theme-menu-popover" role="menu" hidden>
                 <button type="button" role="menuitem" data-theme-action="edit">Edit</button>
                 <button type="button" role="menuitem" data-theme-action="rename">Rename</button>
+                <button type="button" role="menuitem" data-theme-action="delete">Delete</button>
+                <button type="button" role="menuitem" data-theme-action="reload-preview">Reload preview</button>
               </div>
             </div>
           </article>
@@ -92,6 +98,24 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
         <p class="empty-state" data-empty-state hidden>No themes found.</p>
       </div>
     </section>
+    <div class="rename-dialog-backdrop" data-rename-dialog hidden>
+      <form class="rename-dialog" data-rename-form>
+        <div class="rename-dialog-heading">
+          <div>
+            <p class="eyebrow">Theme settings</p>
+            <h2>Rename theme</h2>
+          </div>
+          <button class="rename-dialog-close" type="button" data-rename-cancel aria-label="Close rename dialog">&times;</button>
+        </div>
+        <label class="rename-dialog-label" for="rename-theme-input">Theme name</label>
+        <input id="rename-theme-input" class="rename-dialog-input" type="text" autocomplete="off" data-rename-input />
+        <p class="rename-dialog-error" data-rename-error hidden></p>
+        <div class="rename-dialog-actions">
+          <button class="rename-dialog-cancel" type="button" data-rename-cancel>Cancel</button>
+          <button class="rename-dialog-submit" type="submit">Rename</button>
+        </div>
+      </form>
+    </div>
   </main>
 </Layout>
 
@@ -104,6 +128,11 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
   const createThemeButton = document.querySelector<HTMLButtonElement>('[data-create-theme]');
   const themeTemplate = document.querySelector<HTMLTemplateElement>('[data-theme-template]');
   const themeMenus = [...document.querySelectorAll<HTMLElement>('[data-theme-menu]')];
+  const renameDialog = document.querySelector<HTMLElement>('[data-rename-dialog]');
+  const renameForm = document.querySelector<HTMLFormElement>('[data-rename-form]');
+  const renameInput = document.querySelector<HTMLInputElement>('[data-rename-input]');
+  const renameError = document.querySelector<HTMLElement>('[data-rename-error]');
+  let renameCard: HTMLElement | undefined;
 
   const setMode = (mode: 'light' | 'dark') => {
     document.documentElement.dataset.theme = mode;
@@ -120,14 +149,114 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
   });
 
   const closeThemeMenus = () => {
-    themeMenus.forEach((menu) => {
+    document.querySelectorAll<HTMLElement>('[data-theme-menu]').forEach((menu) => {
       menu.querySelector<HTMLButtonElement>('[data-theme-menu-button]')?.setAttribute('aria-expanded', 'false');
       const popover = menu.querySelector<HTMLElement>('.theme-menu-popover');
       if (popover) popover.hidden = true;
     });
   };
 
-  themeMenus.forEach((menu) => {
+  const reloadThemePreview = async (menu: HTMLElement, action: HTMLButtonElement) => {
+    const card = menu.closest<HTMLElement>('[data-theme-card]');
+    const previewContainer = card?.querySelector<HTMLElement>('.theme-preview');
+    const preview = previewContainer?.querySelector<HTMLImageElement>('img');
+    if (!card || !previewContainer || !preview?.src) return;
+
+    action.disabled = true;
+    try {
+      const source = preview.src;
+      preview.src = '';
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      preview.src = `${source.split('?')[0]}?updated=${Date.now()}`;
+      await preview.decode().catch(() => undefined);
+    } catch (error) {
+      console.error('Could not reload theme preview image', error);
+    } finally {
+      action.disabled = false;
+    }
+  };
+
+  const closeRenameDialog = () => {
+    renameDialog?.setAttribute('hidden', '');
+    renameCard = undefined;
+  };
+
+  const openRenameDialog = (menu: HTMLElement) => {
+    const card = menu.closest<HTMLElement>('[data-theme-card]');
+    if (!card || card.dataset.themeSource === 'bundled') return;
+    renameCard = card;
+    if (renameInput) renameInput.value = card.dataset.themeName ?? '';
+    if (renameError) {
+      renameError.hidden = true;
+      renameError.textContent = '';
+    }
+    renameDialog?.removeAttribute('hidden');
+    window.setTimeout(() => {
+      renameInput?.focus();
+      renameInput?.select();
+    }, 0);
+  };
+
+  renameForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const card = renameCard;
+    const themeId = card?.dataset.themeId;
+    const name = renameInput?.value ?? '';
+    if (!card || !themeId || !name.trim()) {
+      if (renameError) {
+        renameError.textContent = 'Enter a theme name.';
+        renameError.hidden = false;
+      }
+      return;
+    }
+
+    const submit = renameForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (submit) submit.disabled = true;
+    try {
+      const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (response.status === 409) {
+        if (renameError) {
+          renameError.textContent = 'That theme name is already in use.';
+          renameError.hidden = false;
+        }
+        return;
+      }
+      if (!response.ok) {
+        if (renameError) {
+          renameError.textContent = 'Could not rename this theme.';
+          renameError.hidden = false;
+        }
+        return;
+      }
+      const renamed = await response.json() as { id?: unknown; name?: unknown; entry_url?: unknown };
+      if (typeof renamed.id !== 'string' || typeof renamed.name !== 'string') throw new Error('Invalid rename response');
+      card.dataset.themeId = renamed.id;
+      card.dataset.themeName = renamed.name;
+      card.querySelector<HTMLElement>('.theme-name')!.textContent = renamed.name;
+      card.querySelector<HTMLAnchorElement>('.theme-card-link')?.setAttribute('aria-label', `Open ${renamed.name} theme`);
+      if (typeof renamed.entry_url === 'string') card.querySelector<HTMLAnchorElement>('.theme-card-link')?.setAttribute('href', renamed.entry_url);
+      closeRenameDialog();
+      filterThemes();
+    } catch (error) {
+      console.error('Could not rename theme', error);
+      if (renameError) {
+        renameError.textContent = 'Could not rename this theme.';
+        renameError.hidden = false;
+      }
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-rename-cancel]').forEach((button) => {
+    button.addEventListener('click', closeRenameDialog);
+  });
+
+  const bindThemeMenu = (menu: HTMLElement) => {
     const menuButton = menu.querySelector<HTMLButtonElement>('[data-theme-menu-button]');
     const popover = menu.querySelector<HTMLElement>('.theme-menu-popover');
     menuButton?.addEventListener('click', (event) => {
@@ -140,28 +269,73 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
       }
     });
     menu.querySelectorAll<HTMLButtonElement>('[data-theme-action]').forEach((action) => {
-      action.addEventListener('click', () => closeThemeMenus());
+      action.addEventListener('click', () => {
+        if (action.dataset.themeAction === 'reload-preview') {
+          void reloadThemePreview(menu, action);
+        }
+        if (action.dataset.themeAction === 'rename') {
+          openRenameDialog(menu);
+        }
+        if (action.dataset.themeAction === 'delete') {
+          void deleteTheme(menu, action);
+        }
+        closeThemeMenus();
+      });
     });
-  });
+  };
+
+  const deleteTheme = async (menu: HTMLElement, action: HTMLButtonElement) => {
+    const card = menu.closest<HTMLElement>('[data-theme-card]');
+    const themeId = card?.dataset.themeId;
+    const themeName = card?.dataset.themeName ?? 'this theme';
+    if (!card || !themeId || !window.confirm(`Delete ${themeName}? This cannot be undone.`)) return;
+
+    action.disabled = true;
+    try {
+      const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Could not delete theme');
+      card.remove();
+      cards = [...document.querySelectorAll<HTMLElement>('[data-theme-card]')];
+      filterThemes();
+    } finally {
+      action.disabled = false;
+    }
+  };
+
+  themeMenus.forEach(bindThemeMenu);
 
   document.addEventListener('click', closeThemeMenus);
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeThemeMenus();
+    if (event.key === 'Escape') closeRenameDialog();
   });
   const titleCase = (word: string) => word.split(/(\s+|-)/).map((part) => /^[\s-]+$/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join('');
   const pick = (words: string[]) => words[Math.floor(Math.random() * words.length)];
 
-  const appendThemeCard = (name: string, id: string) => {
+  const appendThemeCard = (name: string, id: string, entryUrl: string, source: 'bundled' | 'user', image?: string, previewAfterLoadtime = 0, allowNewPreview = true) => {
     const card = themeTemplate?.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
     if (!card) return;
     card.dataset.themeName = name;
     card.dataset.themeId = id;
+    card.dataset.themeSource = source;
+    card.dataset.previewAfterLoadtime = String(previewAfterLoadtime);
+    card.dataset.allowNewPreview = String(allowNewPreview);
 
     const link = card.querySelector<HTMLAnchorElement>('.theme-card-link');
-    link?.setAttribute('href', `/themes/blank/?name=${encodeURIComponent(name)}`);
+    link?.setAttribute('href', entryUrl);
     link?.setAttribute('aria-label', `Open ${name} theme`);
     const title = card.querySelector<HTMLElement>('.theme-name');
     if (title) title.textContent = name;
+    const previewContainer = card.querySelector<HTMLElement>('.theme-preview');
+    if (previewContainer && image) {
+      previewContainer.classList.add('has-image');
+      const preview = document.createElement('img');
+      preview.src = image;
+      preview.alt = '';
+      previewContainer.append(preview);
+    }
+    const menu = card.querySelector<HTMLElement>('[data-theme-menu]');
+    if (menu) bindThemeMenu(menu);
     emptyState?.before(card);
     cards = [...document.querySelectorAll<HTMLElement>('[data-theme-card]')];
   };
@@ -170,9 +344,19 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
     try {
       const response = await fetch('/api/themes');
       if (!response.ok) return;
-      const createdThemes = await response.json() as Array<{ id?: unknown; name?: unknown }>;
+      const createdThemes = await response.json() as Array<{ id?: unknown; name?: unknown; entry_url?: unknown; source?: unknown; preview?: unknown; 'preview-after-loadtime'?: unknown; 'allow-new-preview'?: unknown }>;
       createdThemes.forEach((theme) => {
-        if (typeof theme.id === 'string' && typeof theme.name === 'string' && theme.name.trim()) appendThemeCard(theme.name, theme.id);
+        if (typeof theme.id === 'string' && typeof theme.name === 'string' && typeof theme.entry_url === 'string' && theme.name.trim()) {
+          appendThemeCard(
+            theme.name,
+            theme.id,
+            theme.entry_url,
+            theme.source === 'bundled' ? 'bundled' : 'user',
+            typeof theme.preview === 'string' ? theme.preview : undefined,
+            typeof theme['preview-after-loadtime'] === 'number' ? theme['preview-after-loadtime'] : 0,
+            theme['allow-new-preview'] !== false,
+          );
+        }
       });
       filterThemes();
     } catch {
@@ -194,9 +378,17 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
         body: JSON.stringify({ name }),
       });
       if (!response.ok) return;
-      const createdTheme = await response.json() as { id?: unknown; name?: unknown };
-      if (typeof createdTheme.id === 'string' && typeof createdTheme.name === 'string') {
-        appendThemeCard(createdTheme.name, createdTheme.id);
+      const createdTheme = await response.json() as { id?: unknown; name?: unknown; entry_url?: unknown; source?: unknown; 'preview-after-loadtime'?: unknown; 'allow-new-preview'?: unknown };
+      if (typeof createdTheme.id === 'string' && typeof createdTheme.name === 'string' && typeof createdTheme.entry_url === 'string') {
+        appendThemeCard(
+          createdTheme.name,
+          createdTheme.id,
+          createdTheme.entry_url,
+          createdTheme.source === 'bundled' ? 'bundled' : 'user',
+          undefined,
+          typeof createdTheme['preview-after-loadtime'] === 'number' ? createdTheme['preview-after-loadtime'] : 0,
+          createdTheme['allow-new-preview'] !== false,
+        );
         filterThemes();
       }
     } catch {
@@ -257,8 +449,8 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
   .theme-card-link { display: block; color: inherit; text-decoration: none; cursor: pointer; }
   .theme-menu { position: absolute; top: 10px; right: 10px; z-index: 2; }
   .theme-menu-button { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255, 255, 255, .14); border-radius: 8px; background: rgba(18, 21, 26, .78); color: #d9dce1; cursor: pointer; backdrop-filter: blur(7px); transition: border-color .2s, background .2s; } .theme-menu-button img { width: 15px; height: 15px; filter: invert(1); } .theme-menu-button:hover, .theme-menu-button[aria-expanded="true"] { border-color: #70b8f5; background: rgba(28, 61, 91, .9); }
-  .theme-menu-popover { position: absolute; top: 36px; right: 0; width: 112px; padding: 5px; border: 1px solid #343a44; border-radius: 9px; background: #20242b; box-shadow: 0 12px 24px rgba(0, 0, 0, .3); } .theme-menu-popover button { width: 100%; padding: 8px 9px; border: 0; border-radius: 6px; background: transparent; color: #d9dce1; text-align: left; font: inherit; font-size: 12px; cursor: pointer; } .theme-menu-popover button:hover { background: #2d3540; color: #fff; }
-  .theme-preview { display: block; height: 192px; background: #20242b; } .theme-preview.has-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .theme-menu-popover { position: absolute; top: 36px; right: 0; width: 140px; padding: 5px; border: 1px solid #343a44; border-radius: 9px; background: #20242b; box-shadow: 0 12px 24px rgba(0, 0, 0, .3); } .theme-menu-popover button { width: 100%; padding: 8px 9px; border: 0; border-radius: 6px; background: transparent; color: #d9dce1; text-align: left; font: inherit; font-size: 12px; cursor: pointer; } .theme-menu-popover button:hover { background: #2d3540; color: #fff; }
+  .theme-preview { position: relative; display: block; height: 192px; overflow: hidden; background: #20242b; } .theme-preview.has-image img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; }
   .theme-card-footer { justify-content: space-between; height: 55px; padding: 0 17px; border-top: 1px solid #2d3139; } .theme-name { color: #e9e8e5; font-size: 14px; font-weight: 600; }
   .card-arrow { color: #777b84; font-size: 18px; transition: color .2s, transform .2s; } .theme-card:hover .card-arrow { color: #55a8ff; transform: translate(2px, -2px); }
   .empty-state { grid-column: 1 / -1; padding: 52px 0; color: #777b84; font-size: 14px; text-align: center; }
@@ -279,5 +471,21 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
   :global(html[data-theme='light']) .theme-preview { background: #edf3fa; }
   :global(html[data-theme='light']) .theme-card-footer { border-color: #e4eaf2; }
   :global(html[data-theme='light']) .theme-card:hover { border-color: #75afe0; box-shadow: 0 11px 30px rgba(68, 104, 143, .12); }
+  .rename-dialog-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 24px; background: rgba(7, 9, 12, .68); backdrop-filter: blur(8px); }
+  .rename-dialog-backdrop[hidden] { display: none; }
+  .rename-dialog { width: min(420px, 100%); padding: 24px; border: 1px solid #343a44; border-radius: 16px; background: #1b1e24; box-shadow: 0 24px 70px rgba(0, 0, 0, .42); }
+  .rename-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .rename-dialog-heading h2 { margin: 7px 0 0; color: #f4f3f1; font-size: 22px; letter-spacing: -.03em; }
+  .rename-dialog-close { width: 30px; height: 30px; padding: 0; border: 1px solid #343a44; border-radius: 8px; background: transparent; color: #a4a7ad; font-size: 22px; line-height: 1; cursor: pointer; }
+  .rename-dialog-close:hover { border-color: #55a8ff; color: #fff; }
+  .rename-dialog-label { display: block; margin-top: 24px; color: #c7c9ce; font-size: 12px; font-weight: 650; }
+  .rename-dialog-input { box-sizing: border-box; width: 100%; height: 42px; margin-top: 8px; padding: 0 12px; border: 1px solid #3a404b; border-radius: 9px; outline: 0; background: #14161a; color: #f4f3f1; font: inherit; font-size: 14px; }
+  .rename-dialog-input:focus { border-color: #55a8ff; box-shadow: 0 0 0 3px rgba(85, 168, 255, .12); }
+  .rename-dialog-error { margin: 9px 0 0; color: #ff8e8e; font-size: 12px; }
+  .rename-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; }
+  .rename-dialog-cancel, .rename-dialog-submit { min-height: 36px; padding: 0 14px; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+  .rename-dialog-cancel { border: 1px solid #343a44; background: transparent; color: #b6b9c0; }
+  .rename-dialog-submit { border: 1px solid #2f5275; background: #1b2b3d; color: #8fc9ff; }
+  .rename-dialog-cancel:hover, .rename-dialog-submit:hover { border-color: #55a8ff; }
   @media (max-width: 640px) { .dashboard-shell { width: min(100% - 36px, 500px); padding-top: 20px; } .page-heading { display: block; margin-top: 70px; } .search-field { width: 100%; margin-top: 28px; } .theme-section { margin-top: 52px; } .theme-grid { grid-template-columns: 1fr; } }
 </style>

@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException, status
+from fastapi.responses import FileResponse
 
 from .persistence import SettingsStorageError
 from .settings import SettingNotFoundError, SettingsService
-from .themes import ThemeStorageError, UserThemeStorage, user_theme_storage
+from .themes import ThemeNameConflictError, ThemeStorageError, UserThemeStorage, user_theme_storage
 
 
 def create_settings_router(service: SettingsService | None = None) -> APIRouter:
@@ -83,14 +84,14 @@ def create_themes_router(storage: UserThemeStorage | None = None) -> APIRouter:
     router = APIRouter(prefix="/api/themes")
 
     @router.get("")
-    def list_themes() -> list[dict[str, str]]:
+    def list_themes() -> list[dict[str, Any]]:
         try:
             return themes_storage.list()
         except ThemeStorageError as exc:
             raise HTTPException(status_code=503, detail="Theme storage is unavailable") from exc
 
     @router.post("", status_code=status.HTTP_201_CREATED)
-    def create_theme(payload: dict[str, Any] = Body(...)) -> dict[str, str]:
+    def create_theme(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
         name = payload.get("name")
         if not isinstance(name, str):
             raise HTTPException(status_code=422, detail="Theme name must be a string")
@@ -98,5 +99,55 @@ def create_themes_router(storage: UserThemeStorage | None = None) -> APIRouter:
             return themes_storage.create(name)
         except ThemeStorageError as exc:
             raise HTTPException(status_code=503, detail="Theme storage is unavailable") from exc
+
+    @router.delete("/{theme_id}", status_code=status.HTTP_204_NO_CONTENT)
+    def delete_theme(theme_id: str) -> None:
+        try:
+            themes_storage.delete(theme_id)
+        except ThemeStorageError as exc:
+            raise HTTPException(status_code=404, detail="Theme was not found") from exc
+
+    @router.patch("/{theme_id}")
+    def rename_theme(theme_id: str, payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        name = payload.get("name")
+        if not isinstance(name, str):
+            raise HTTPException(status_code=422, detail="Theme name must be a string")
+        try:
+            return themes_storage.rename(theme_id, name)
+        except ThemeNameConflictError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except ThemeStorageError as exc:
+            raise HTTPException(status_code=404, detail="Theme was not found") from exc
+
+    @router.put("/{theme_id}/preview", status_code=status.HTTP_204_NO_CONTENT)
+    def save_theme_preview(theme_id: str, payload: dict[str, Any] = Body(...)) -> None:
+        preview = payload.get("png")
+        if not isinstance(preview, str):
+            raise HTTPException(status_code=422, detail="Preview must be a PNG data URL")
+        try:
+            themes_storage.save_preview(theme_id, preview)
+        except ThemeStorageError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @router.get("/{theme_id}/preview")
+    def get_theme_preview(theme_id: str) -> FileResponse:
+        try:
+            preview_path = themes_storage.preview_path(theme_id)
+        except ThemeStorageError as exc:
+            raise HTTPException(status_code=404, detail="Theme preview was not found") from exc
+        return FileResponse(preview_path, media_type="image/png")
+
+    @router.get("/{theme_id}/content")
+    @router.get("/{theme_id}/content/")
+    def get_theme_entry(theme_id: str) -> FileResponse:
+        return get_theme_content(theme_id, "")
+
+    @router.get("/{theme_id}/content/{relative_path:path}")
+    def get_theme_content(theme_id: str, relative_path: str) -> FileResponse:
+        try:
+            content_path = themes_storage.content_path(theme_id, relative_path)
+        except ThemeStorageError as exc:
+            raise HTTPException(status_code=404, detail="Theme content was not found") from exc
+        return FileResponse(content_path)
 
     return router

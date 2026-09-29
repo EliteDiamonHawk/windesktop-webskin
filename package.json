@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --filter @project/frontend --filter @project/backend run dev",
+    "dev:frontend": "pnpm --filter @project/frontend dev",
+    "dev:backend": "pnpm --filter @project/backend dev",
+    "build": "pnpm --filter @project/frontend build"
+  }
+}

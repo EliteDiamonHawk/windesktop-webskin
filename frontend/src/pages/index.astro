@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+	<main class="dashboard">
+		<p class="eyebrow">WinDesktop Webskin</p>
+		<h1>Desktop control surface</h1>
+		<p class="intro">Frontend and backend development services are connected.</p>
+		<p class="status" data-api-connection>Connecting to backend...</p>
+	</main>
+</Layout>
+
+<script>
+	const connection = document.querySelector('[data-api-connection]');
+
+	if (connection) {
+		fetch('/api/health')
+			.then((response) => {
+				if (!response.ok) throw new Error(`HTTP ${response.status}`);
+				return response.json();
+			})
+			.then((data) => {
+				connection.textContent = `Backend connected - ${data.status}`;
+				connection.classList.add('connected');
+			})
+			.catch(() => {
+				connection.textContent = 'Backend unavailable';
+				connection.classList.add('disconnected');
+			});
+	}
+</script>

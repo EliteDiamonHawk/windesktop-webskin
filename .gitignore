@@ -149,3 +149,6 @@ logs/
 *.psd
 *.ai
 *.sketch
+
+# Local package manager store
+.pnpm-store/

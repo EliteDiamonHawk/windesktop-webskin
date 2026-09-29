@@ -3,12 +3,16 @@ from os import getenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .routes import create_settings_router
 
 app = FastAPI(title="WinDesktop Webskin API", version="0.1.0")
 
 frontend_origins = [
     origin.strip()
-    for origin in getenv("FRONTEND_ORIGINS", "http://localhost:4321,http://127.0.0.1:4321").split(",")
+    for origin in getenv(
+        "FRONTEND_ORIGINS",
+        "http://localhost:4321,http://127.0.0.1:4321",
+    ).split(",")
     if origin.strip()
 ]
 
@@ -20,6 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(create_settings_router())
+
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
@@ -29,3 +35,4 @@ def health() -> dict[str, str]:
 @app.get("/api/status")
 def status() -> dict[str, str]:
     return {"message": "Frontend and backend are connected."}
+

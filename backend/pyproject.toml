@@ -1,5 +1,5 @@
 [project]
-name = "backend"
+name = "webskin"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-backend = "backend:main"
+webskin = "webskin:main"
 
 [build-system]
 requires = ["uv_build>=0.12.6,<0.13.0"]

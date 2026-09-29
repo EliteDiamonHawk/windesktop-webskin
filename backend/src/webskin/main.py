@@ -3,7 +3,7 @@ from os import getenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import create_settings_router
+from .routes import create_settings_router, create_themes_router
 
 app = FastAPI(title="WinDesktop Webskin API", version="0.1.0")
 
@@ -25,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(create_settings_router())
+app.include_router(create_themes_router())
 
 
 @app.get("/api/health")

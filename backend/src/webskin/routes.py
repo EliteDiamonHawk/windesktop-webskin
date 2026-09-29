@@ -6,6 +6,7 @@ from fastapi import APIRouter, Body, HTTPException, status
 
 from .persistence import SettingsStorageError
 from .settings import SettingNotFoundError, SettingsService
+from .themes import ThemeStorageError, UserThemeStorage, user_theme_storage
 
 
 def create_settings_router(service: SettingsService | None = None) -> APIRouter:
@@ -73,5 +74,29 @@ def create_settings_router(service: SettingsService | None = None) -> APIRouter:
         if namespace not in ("themes", "widgets"):
             raise HTTPException(status_code=404, detail="Settings namespace not found")
         remove(namespace, key, identifier)
+
+    return router
+
+
+def create_themes_router(storage: UserThemeStorage | None = None) -> APIRouter:
+    themes_storage = storage or user_theme_storage
+    router = APIRouter(prefix="/api/themes")
+
+    @router.get("")
+    def list_themes() -> list[dict[str, str]]:
+        try:
+            return themes_storage.list()
+        except ThemeStorageError as exc:
+            raise HTTPException(status_code=503, detail="Theme storage is unavailable") from exc
+
+    @router.post("", status_code=status.HTTP_201_CREATED)
+    def create_theme(payload: dict[str, Any] = Body(...)) -> dict[str, str]:
+        name = payload.get("name")
+        if not isinstance(name, str):
+            raise HTTPException(status_code=422, detail="Theme name must be a string")
+        try:
+            return themes_storage.create(name)
+        except ThemeStorageError as exc:
+            raise HTTPException(status_code=503, detail="Theme storage is unavailable") from exc
 
     return router

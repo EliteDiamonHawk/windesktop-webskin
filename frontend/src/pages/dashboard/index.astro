@@ -1,12 +1,11 @@
 ---
 import Layout from './_components/Layout.astro';
 import devPreview from '../../themes/dev/assets/images/preview.svg?url';
-import whitePagePreview from '../../themes/white-page/assets/images/preview.svg?url';
 import settingsIcon from './assets/images/settings.svg?url';
 import modeIcon from './assets/images/dark-light.svg?url';
 import dotsIcon from './assets/images/three-dots-svgrepo-com.svg?url';
-import adjectivesText from './assets/data/List_of_Adjectives.txt?raw';
-import nounsText from './assets/data/List_of_Nouns.txt?raw';
+import adjectivesText from '../../data/theme-adjectives.txt?raw';
+import nounsText from '../../data/theme-nouns.txt?raw';
 
 const adjectives = adjectivesText.split(/\r?\n/).map((word) => word.trim()).filter(Boolean);
 const nouns = nounsText.split(/\r?\n/).map((word) => word.trim()).filter(Boolean);
@@ -53,7 +52,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
     <section class="theme-section" aria-labelledby="themes-title">
       <div class="section-heading">
         <div class="section-title"><h2 id="themes-title">All themes</h2><span class="theme-count" data-theme-count>{themes.length} theme</span></div>
-        <button class="create-theme-button" type="button" data-create-theme data-adjectives={JSON.stringify(adjectives)} data-nouns={JSON.stringify(nouns)} data-white-preview={whitePagePreview}><span aria-hidden="true">+</span>Create theme</button>
+        <button class="create-theme-button" type="button" data-create-theme data-adjectives={JSON.stringify(adjectives)} data-nouns={JSON.stringify(nouns)}><span aria-hidden="true">+</span>Create theme</button>
       </div>
       <div class="theme-grid" data-theme-grid>
         {themes.map((theme) => (
@@ -73,6 +72,23 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
             </div>
           </article>
         ))}
+        <template data-theme-template>
+          <article class="theme-card" data-theme-card>
+            <a class="theme-card-link" href="#" aria-label="Open theme">
+              <span class="theme-preview generated-preview"></span>
+              <span class="theme-card-footer"><span class="theme-name"></span><span class="card-arrow" aria-hidden="true">&#8599;</span></span>
+            </a>
+            <div class="theme-menu" data-theme-menu>
+              <button class="theme-menu-button" type="button" aria-label="Theme options" aria-expanded="false" aria-haspopup="menu" data-theme-menu-button>
+                <img src={dotsIcon} alt="" aria-hidden="true" />
+              </button>
+              <div class="theme-menu-popover" role="menu" hidden>
+                <button type="button" role="menuitem" data-theme-action="edit">Edit</button>
+                <button type="button" role="menuitem" data-theme-action="rename">Rename</button>
+              </div>
+            </div>
+          </article>
+        </template>
         <p class="empty-state" data-empty-state hidden>No themes found.</p>
       </div>
     </section>
@@ -86,6 +102,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
   const emptyState = document.querySelector<HTMLElement>('[data-empty-state]');
   const modeButton = document.querySelector<HTMLButtonElement>('[data-mode-toggle]');
   const createThemeButton = document.querySelector<HTMLButtonElement>('[data-create-theme]');
+  const themeTemplate = document.querySelector<HTMLTemplateElement>('[data-theme-template]');
   const themeMenus = [...document.querySelectorAll<HTMLElement>('[data-theme-menu]')];
 
   const setMode = (mode: 'light' | 'dark') => {
@@ -131,49 +148,60 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeThemeMenus();
   });
-  const capitalize = (word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  const titleCase = (word: string) => word.split(/(\s+|-)/).map((part) => /^[\s-]+$/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join('');
   const pick = (words: string[]) => words[Math.floor(Math.random() * words.length)];
 
-  createThemeButton?.addEventListener('click', () => {
-    const adjectives = JSON.parse(createThemeButton.dataset.adjectives ?? '[]') as string[];
-    const nouns = JSON.parse(createThemeButton.dataset.nouns ?? '[]') as string[];
-    const previewUrl = createThemeButton.dataset.whitePreview;
-    if (!adjectives.length || !nouns.length) return;
-
-    const name = `${capitalize(pick(adjectives))} ${capitalize(pick(nouns))}`;
-    const card = document.createElement('article');
-    card.className = 'theme-card';
-    card.dataset.themeCard = '';
+  const appendThemeCard = (name: string, id: string) => {
+    const card = themeTemplate?.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
+    if (!card) return;
     card.dataset.themeName = name;
+    card.dataset.themeId = id;
 
-    const link = document.createElement('a');
-    link.className = 'theme-card-link';
-    link.href = `/themes/white-page/?name=${encodeURIComponent(name)}`;
-    link.setAttribute('aria-label', `Open ${name} theme`);
-
-    const preview = document.createElement('span');
-    preview.className = 'theme-preview has-image';
-    if (previewUrl) {
-      const image = document.createElement('img');
-      image.src = previewUrl;
-      image.alt = '';
-      preview.append(image);
-    }
-    const footer = document.createElement('span');
-    footer.className = 'theme-card-footer';
-    const title = document.createElement('span');
-    title.className = 'theme-name';
-    title.textContent = name;
-    const arrow = document.createElement('span');
-    arrow.className = 'card-arrow';
-    arrow.setAttribute('aria-hidden', 'true');
-    arrow.textContent = '↗';
-    footer.append(title, arrow);
-    link.append(preview, footer);
-    card.append(link);
+    const link = card.querySelector<HTMLAnchorElement>('.theme-card-link');
+    link?.setAttribute('href', `/themes/white-background/?name=${encodeURIComponent(name)}`);
+    link?.setAttribute('aria-label', `Open ${name} theme`);
+    const title = card.querySelector<HTMLElement>('.theme-name');
+    if (title) title.textContent = name;
     emptyState?.before(card);
     cards = [...document.querySelectorAll<HTMLElement>('[data-theme-card]')];
-    filterThemes();
+  };
+
+  const loadCreatedThemes = async () => {
+    try {
+      const response = await fetch('/api/themes');
+      if (!response.ok) return;
+      const createdThemes = await response.json() as Array<{ id?: unknown; name?: unknown }>;
+      createdThemes.forEach((theme) => {
+        if (typeof theme.id === 'string' && typeof theme.name === 'string' && theme.name.trim()) appendThemeCard(theme.name, theme.id);
+      });
+      filterThemes();
+    } catch {
+      // Bundled themes remain available while the backend is unavailable.
+    }
+  };
+  void loadCreatedThemes();
+
+  createThemeButton?.addEventListener('click', async () => {
+    const adjectives = JSON.parse(createThemeButton.dataset.adjectives ?? '[]') as string[];
+    const nouns = JSON.parse(createThemeButton.dataset.nouns ?? '[]') as string[];
+    if (!adjectives.length || !nouns.length) return;
+
+    const name = `${titleCase(pick(adjectives))} ${titleCase(pick(nouns))}`;
+    try {
+      const response = await fetch('/api/themes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) return;
+      const createdTheme = await response.json() as { id?: unknown; name?: unknown };
+      if (typeof createdTheme.id === 'string' && typeof createdTheme.name === 'string') {
+        appendThemeCard(createdTheme.name, createdTheme.id);
+        filterThemes();
+      }
+    } catch {
+      // Do not show a card unless the app persisted the theme.
+    }
   });
 
   function filterThemes() {
@@ -230,7 +258,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', image: devPreview }];
   .theme-menu { position: absolute; top: 10px; right: 10px; z-index: 2; }
   .theme-menu-button { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255, 255, 255, .14); border-radius: 8px; background: rgba(18, 21, 26, .78); color: #d9dce1; cursor: pointer; backdrop-filter: blur(7px); transition: border-color .2s, background .2s; } .theme-menu-button img { width: 15px; height: 15px; filter: invert(1); } .theme-menu-button:hover, .theme-menu-button[aria-expanded="true"] { border-color: #70b8f5; background: rgba(28, 61, 91, .9); }
   .theme-menu-popover { position: absolute; top: 36px; right: 0; width: 112px; padding: 5px; border: 1px solid #343a44; border-radius: 9px; background: #20242b; box-shadow: 0 12px 24px rgba(0, 0, 0, .3); } .theme-menu-popover button { width: 100%; padding: 8px 9px; border: 0; border-radius: 6px; background: transparent; color: #d9dce1; text-align: left; font: inherit; font-size: 12px; cursor: pointer; } .theme-menu-popover button:hover { background: #2d3540; color: #fff; }
-  .theme-preview { display: block; height: 192px; background: #20242b; } .theme-preview.has-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .theme-preview { display: block; height: 192px; background: #20242b; } .theme-preview.has-image img { display: block; width: 100%; height: 100%; object-fit: cover; } .theme-preview.generated-preview { background: #fff; }
   .theme-card-footer { justify-content: space-between; height: 55px; padding: 0 17px; border-top: 1px solid #2d3139; } .theme-name { color: #e9e8e5; font-size: 14px; font-weight: 600; }
   .card-arrow { color: #777b84; font-size: 18px; transition: color .2s, transform .2s; } .theme-card:hover .card-arrow { color: #55a8ff; transform: translate(2px, -2px); }
   .empty-state { grid-column: 1 / -1; padding: 52px 0; color: #777b84; font-size: 14px; text-align: center; }

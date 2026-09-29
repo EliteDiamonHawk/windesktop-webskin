@@ -29,6 +29,36 @@ export const setThemeSetting = (themeId: string, key: string, value: JsonValue) 
 export const deleteThemeSetting = (themeId: string, key: string) =>
   request<void>(`/themes/${encoded(themeId)}/${encoded(key)}`, { method: 'DELETE' });
 
+export type ThemeInstanceSettings = Record<string, JsonValue>;
+
+const isJsonObject = (value: JsonValue | undefined): value is { [key: string]: JsonValue } =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+export const getThemeInstanceSettings = async (themeId: string, instanceId: string, signal?: AbortSignal) => {
+  const themeSettings = await request<Record<string, JsonValue>>(`/themes/${encoded(themeId)}`, { signal });
+  const instances = themeSettings.instances;
+  if (!isJsonObject(instances)) return {};
+  const instance = instances[instanceId];
+  return isJsonObject(instance) ? instance : {};
+};
+
+export const setThemeInstanceSetting = async (
+  themeId: string,
+  instanceId: string,
+  key: string,
+  value: JsonValue,
+) => {
+  const themeSettings = await getThemeSettings(themeId);
+  const instances = isJsonObject(themeSettings.instances) ? themeSettings.instances : {};
+  const current = isJsonObject(instances[instanceId]) ? instances[instanceId] : {};
+  const nextInstances = {
+    ...instances,
+    [instanceId]: { ...current, [key]: value },
+  };
+  await setThemeSetting(themeId, 'instances', nextInstances);
+  return value;
+};
+
 export const getWidgetSettings = (widgetId: string) => request<Record<string, JsonValue>>(`/widgets/${encoded(widgetId)}`);
 export const getWidgetSetting = <T extends JsonValue>(widgetId: string, key: string) =>
   request<T>(`/widgets/${encoded(widgetId)}/${encoded(key)}`);

@@ -1,1 +1,26 @@
-export const defaults = {} as const;
+export const defaults = {
+  clock: {
+    preset: 'preframed',
+    format: 'hh:mm:ss A',
+    showAmPm: true,
+    color: '#000000',
+        frameColor: '#000000',
+        backgroundColor: '#000000',
+        textColor: '#000000',
+        analogColor: '#000000',
+    fontFamily: 'system-ui, sans-serif',
+    fontSize: '2rem',
+    fontWeight: 400,
+    letterSpacing: 'normal',
+    lineHeight: 1,
+    backgroundOpacity: 12,
+    borderOpacity: 100,
+    borderRadius: '14px',
+    borderWidth: '1px',
+    padding: '.75rem 1rem',
+        size: '8rem',
+        lineThickness: 1,
+        showSeconds: true,
+    digitalPosition: 'top',
+  },
+} as const;

@@ -1,13 +1,13 @@
-import { createClock as createPlainAnalogClock } from "./plain-analog.js";
+import { createClock as createPlainAnalogClock } from "./analog-plain.js";
 
-const STYLE_ID = "webskin-clock-analog-styles";
+const STYLE_ID = "webskin-clock-analog-prestyled-styles";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .webskin-clock--analog {
+    .webskin-clock--analog-prestyled {
       --webskin-analog-color: #5b4841;
       --webskin-analog-face: #cfb5ab;
       --webskin-analog-frame: var(--webskin-analog-color);
@@ -24,7 +24,7 @@ const ensureStyles = () => {
       display: inline-block;
       padding: .75rem;
     }
-    .webskin-clock--analog [data-webskin-clock-part="face"] { stroke-width: 2; }
+    .webskin-clock--analog-prestyled [data-webskin-clock-part="face"] { stroke-width: 2; }
   `;
   document.head.append(style);
 };
@@ -33,7 +33,7 @@ const ensureStyles = () => {
 export function createClock(options = {}) {
   ensureStyles();
   const element = createPlainAnalogClock(options);
-  element.classList.add("webskin-clock--analog");
+  element.classList.add("webskin-clock--analog-prestyled");
   if (options.color) {
     element.style.color = options.color;
     element.style.setProperty("--webskin-analog-color", options.color);

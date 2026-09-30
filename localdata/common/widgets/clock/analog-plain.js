@@ -1,5 +1,5 @@
 const SVG_NS = "http://www.w3.org/2000/svg";
-const STYLE_ID = "webskin-clock-plain-analog-styles";
+const STYLE_ID = "webskin-clock-analog-plain-styles";
 
 const svgElement = (tag, attributes = {}) => {
   const element = document.createElementNS(SVG_NS, tag);
@@ -12,7 +12,7 @@ const ensureStyles = () => {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .webskin-clock--plain-analog {
+    .webskin-clock--analog-plain {
       --webskin-analog-frame: #000;
       --webskin-analog-frame-opacity: 1;
       --webskin-analog-face: transparent;
@@ -31,37 +31,37 @@ const ensureStyles = () => {
       display: block;
       overflow: visible;
     }
-    .webskin-clock--plain-analog [data-webskin-clock-part="face"] {
+    .webskin-clock--analog-plain [data-webskin-clock-part="face"] {
       fill: var(--webskin-analog-face);
       fill-opacity: var(--webskin-analog-face-opacity);
       stroke: var(--webskin-analog-frame);
       stroke-opacity: var(--webskin-analog-frame-opacity);
       stroke-width: 2;
     }
-    .webskin-clock--plain-analog [data-webskin-clock-part="tick"] {
+    .webskin-clock--analog-plain [data-webskin-clock-part="tick"] {
       stroke: var(--webskin-analog-ticks);
       stroke-opacity: var(--webskin-analog-ticks-opacity);
       stroke-width: 1.5;
     }
-    .webskin-clock--plain-analog [data-webskin-clock-part="hour-hand"] {
+    .webskin-clock--analog-plain [data-webskin-clock-part="hour-hand"] {
       stroke: var(--webskin-analog-hour-hand);
       stroke-opacity: var(--webskin-analog-hour-hand-opacity);
       stroke-linecap: round;
       stroke-width: 4;
     }
-    .webskin-clock--plain-analog [data-webskin-clock-part="minute-hand"] {
+    .webskin-clock--analog-plain [data-webskin-clock-part="minute-hand"] {
       stroke: var(--webskin-analog-minute-hand);
       stroke-opacity: var(--webskin-analog-minute-hand-opacity);
       stroke-linecap: round;
       stroke-width: 2.5;
     }
-    .webskin-clock--plain-analog [data-webskin-clock-part="second-hand"] {
+    .webskin-clock--analog-plain [data-webskin-clock-part="second-hand"] {
       stroke: var(--webskin-analog-second-hand);
       stroke-opacity: var(--webskin-analog-second-hand-opacity);
       stroke-linecap: round;
       stroke-width: 1.2;
     }
-    .webskin-clock--plain-analog [data-webskin-clock-part="pin"] {
+    .webskin-clock--analog-plain [data-webskin-clock-part="pin"] {
       fill: var(--webskin-analog-hands);
       fill-opacity: var(--webskin-analog-hands-opacity);
     }
@@ -107,7 +107,7 @@ export function createClock(options = {}) {
     role: "img",
     "aria-label": "Analog clock",
   });
-  element.classList.add("webskin-clock", "webskin-clock--plain-analog", ...String(className).split(/\s+/).filter(Boolean));
+  element.classList.add("webskin-clock", "webskin-clock--analog-plain", ...String(className).split(/\s+/).filter(Boolean));
   element.dataset.webskinWidget = "clock";
   element.style.width = size;
   element.style.height = size;

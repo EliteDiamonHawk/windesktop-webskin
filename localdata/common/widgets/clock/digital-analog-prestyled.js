@@ -1,20 +1,20 @@
-import { createClock as createPrestyledDigital } from "./prestyled-digital.js";
-import { createClock as createPrestyledAnalog } from "./prestyled-analog.js";
+import { createClock as createDigitalPrestyled } from "./digital-prestyled.js";
+import { createClock as createAnalogPrestyled } from "./analog-prestyled.js";
 
-const STYLE_ID = "webskin-clock-prestyled-digital-analog-styles";
+const STYLE_ID = "webskin-clock-digital-analog-prestyled-styles";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .webskin-clock--prestyled-digital-analog {
+    .webskin-clock--digital-analog-prestyled {
       align-items: center;
       display: inline-flex;
       gap: 1rem;
     }
-    .webskin-clock--prestyled-digital-analog > .webskin-clock--analog,
-    .webskin-clock--prestyled-digital-analog > .webskin-clock--digital {
+    .webskin-clock--digital-analog-prestyled > .webskin-clock--analog-prestyled,
+    .webskin-clock--digital-analog-prestyled > .webskin-clock--digital-prestyled {
       flex: 0 0 auto;
     }
   `;
@@ -38,20 +38,20 @@ export function createClock(options = {}) {
   } = options;
 
   const element = document.createElement("div");
-  element.className = ["webskin-clock", "webskin-clock--prestyled-digital-analog", className]
+  element.className = ["webskin-clock", "webskin-clock--digital-analog-prestyled", className]
     .filter(Boolean)
     .join(" ");
   element.dataset.webskinWidget = "clock";
 
   const sharedOptions = { offsetMinutes };
-  const analog = createPrestyledAnalog({
+  const analog = createAnalogPrestyled({
     ...sharedOptions,
     size: analogSize,
     color,
     faceColor,
     frameColor,
   });
-  const digital = createPrestyledDigital({
+  const digital = createDigitalPrestyled({
     ...sharedOptions,
     format,
     seconds,

@@ -1,13 +1,17 @@
-import { createClock as createPlainClock } from "/common/widgets/clock/plain-digital.js";
-import { createClock as createPlainAnalogClock } from "/common/widgets/clock/plain-analog.js";
-import { createClock as createDigitalClock } from "/common/widgets/clock/prestyled-digital.js";
-import { createClock as createAnalogClock } from "/common/widgets/clock/prestyled-analog.js";
-import { createClock as createDigitalAnalogClock } from "/common/widgets/clock/prestyled-digital-analog.js";
+import { createClock as createPlainClock } from "/common/widgets/clock/digital-plain.js";
+import { createClock as createPlainAnalogClock } from "/common/widgets/clock/analog-plain.js";
+import { createClock as createDigitalClock } from "/common/widgets/clock/digital-prestyled.js";
+import { createClock as createAnalogClock } from "/common/widgets/clock/analog-prestyled.js";
+import { createClock as createAnalogClock2 } from "/common/widgets/clock/analog-prestyled2.js";
+import { createClock as createDigitalAnalogClock } from "/common/widgets/clock/digital-analog-prestyled.js";
 
 document.querySelector("#clock").append(createPlainClock());
-document.querySelector("#plain-analog-clock").append(createPlainAnalogClock());
+document.querySelector("#analog-plain-clock").append(createPlainAnalogClock());
 document.querySelector("#digital-clock").append(createDigitalClock());
 document.querySelector("#analog-clock").append(createAnalogClock());
+document.querySelector("#analog-clock-2").append(createAnalogClock2({
+  size: "9rem",
+}));
 
 document.querySelector("#combination-clock").append(createDigitalAnalogClock({
   analogSize: "8rem",

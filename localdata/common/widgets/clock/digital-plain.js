@@ -55,7 +55,7 @@ export function createClock(options = {}) {
   } = options;
 
   const element = document.createElement("time");
-  element.className = ["webskin-clock", "webskin-clock--plain", className].filter(Boolean).join(" ");
+  element.className = ["webskin-clock", "webskin-clock--digital-plain", className].filter(Boolean).join(" ");
   element.dataset.webskinWidget = "clock";
   element.setAttribute("aria-label", "Current time");
 

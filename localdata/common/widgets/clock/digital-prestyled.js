@@ -1,13 +1,13 @@
-import { createClock as createPlainClock } from "./plain-digital.js";
+import { createClock as createPlainClock } from "./digital-plain.js";
 
-const STYLE_ID = "webskin-clock-digital-styles";
+const STYLE_ID = "webskin-clock-digital-prestyled-styles";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .webskin-clock--digital {
+    .webskin-clock--digital-prestyled {
       --webskin-clock-color: #cfb5ab;
       align-items: baseline;
       background: #5b4841;
@@ -22,9 +22,9 @@ const ensureStyles = () => {
       padding: .75rem 1rem;
       white-space: nowrap;
     }
-    .webskin-clock--digital [data-webskin-clock-part="separator"] { opacity: .55; }
-    .webskin-clock--digital [data-webskin-clock-part="seconds"] { font-size: .62em; opacity: .72; }
-    .webskin-clock--digital [data-webskin-clock-part="period"] { font-size: .45em; letter-spacing: .04em; opacity: .72; }
+    .webskin-clock--digital-prestyled [data-webskin-clock-part="separator"] { opacity: .55; }
+    .webskin-clock--digital-prestyled [data-webskin-clock-part="seconds"] { font-size: .62em; opacity: .72; }
+    .webskin-clock--digital-prestyled [data-webskin-clock-part="period"] { font-size: .45em; letter-spacing: .04em; opacity: .72; }
   `;
   document.head.append(style);
 };
@@ -33,8 +33,8 @@ const ensureStyles = () => {
 export function createClock(options = {}) {
   ensureStyles();
   const element = createPlainClock(options);
-  element.classList.remove("webskin-clock--plain");
-  element.classList.add("webskin-clock--digital");
+  element.classList.remove("webskin-clock--digital-plain");
+  element.classList.add("webskin-clock--digital-prestyled");
   if (options.className) element.classList.add(...String(options.className).split(/\s+/).filter(Boolean));
   if (options.color) element.style.setProperty("--webskin-clock-color", options.color);
   return element;

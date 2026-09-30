@@ -191,7 +191,7 @@ const themes: Theme[] = [];
   .search-field { width: min(100%, 292px); height: 46px; flex: 0 0 auto; display: flex; align-items: center; gap: 11px; padding: 0 12px 0 15px; border: 1px solid #2d3139; border-radius: 13px; background: #1a1d23; color: #878b94; transition: border-color .2s, box-shadow .2s; }
   .search-field:focus-within { border-color: #4779a8; box-shadow: 0 0 0 3px rgba(85, 168, 255, .1); }
   .search-field svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
-  .search-field input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: #f4f3f1; font: inherit; font-size: 13px; }
+  .search-field input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: #f4f3f1; font: inherit; font-size: 13px; user-select: text; -webkit-user-select: text; }
   .search-field input::placeholder { color: #737780; } .search-field kbd { padding: 3px 6px; border: 1px solid #343841; border-radius: 5px; color: #737780; font: 11px/1.1 inherit; }
   .theme-section { margin-top: 77px; } .section-heading { justify-content: space-between; gap: 12px; margin-bottom: 20px; } .section-title { display: flex; align-items: center; gap: 12px; } h2 { color: #e8e7e3; font-size: 14px; font-weight: 600; letter-spacing: -.01em; } .theme-count { color: #6f737c; font-size: 12px; }
   .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 17px; }

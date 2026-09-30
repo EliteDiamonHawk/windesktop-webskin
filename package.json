@@ -1,9 +1,14 @@
 {
   "private": true,
   "scripts": {
-    "dev": "pnpm --parallel --filter @project/frontend --filter @project/backend run dev",
+    "dev": "pnpm build:assets && pnpm --parallel --filter @project/frontend --filter @project/backend --filter @project/common --filter @project/themes run dev",
     "dev:frontend": "pnpm --filter @project/frontend dev",
     "dev:backend": "pnpm --filter @project/backend dev",
-    "build": "pnpm --filter @project/frontend build"
+    "dev:common": "pnpm --filter @project/common dev",
+    "dev:themes": "pnpm --filter @project/themes dev",
+    "build:common": "pnpm --filter @project/common build",
+    "build:themes": "pnpm --filter @project/themes build",
+    "build:assets": "pnpm build:common && pnpm build:themes",
+    "build": "pnpm build:assets && pnpm --filter @project/frontend build"
   }
 }

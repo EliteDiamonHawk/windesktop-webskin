@@ -155,3 +155,5 @@ logs/
 
 # Local development settings
 /localdata/settings.json
+/localdata/common/
+/localdata/themes/dev/

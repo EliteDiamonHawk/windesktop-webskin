@@ -1,6 +1,8 @@
 packages:
   - frontend
   - backend
+  - common
+  - themes
 
 allowBuilds:
   esbuild: true

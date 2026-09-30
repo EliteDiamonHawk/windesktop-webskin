@@ -12,6 +12,9 @@ During development, persisted settings are stored in the repository's
 overrides either location.
 
 Runtime browser assets are served from `/common/*` and `/themes/<theme-id>/*`.
-Their filesystem roots are resolved centrally in `webskin.paths`: repository
+The root `common/` and `themes/` projects build browser-ready files into
+`localdata/common/` and `localdata/themes/` during development. Their
+filesystem roots are resolved centrally in `webskin.paths`: repository
 `localdata/` during development and the WinDesktop WebSkin directory under
-`LOCALAPPDATA` in production.
+`LOCALAPPDATA` in production. The runtime backend never runs Vite or a package
+manager.

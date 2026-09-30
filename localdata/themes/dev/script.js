@@ -15,7 +15,6 @@ document.querySelector("#analog-clock-2").append(createAnalogClock2({
 
 document.querySelector("#combination-clock").append(createDigitalAnalogClock({
   analogSize: "8rem",
-  seconds: false,
 }));
 
 const editor = document.querySelector("#clock-editor");

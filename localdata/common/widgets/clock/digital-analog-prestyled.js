@@ -58,7 +58,7 @@ export function createClock(options = {}) {
   ensureStyles();
   const {
     format = "24h",
-    seconds = true,
+    seconds = false,
     showPeriod = true,
     syntax,
     offsetMinutes = 0,

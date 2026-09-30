@@ -48,28 +48,17 @@ const ensureStyles = () => {
       stroke: var(--webskin-analog2-face);
       stroke-width: 1;
     }
+    svg.webskin-clock--analog-prestyled2 [data-webskin-clock-part="tick"] {
+      display: var(--webskin-analog2-ticks-display, none);
+    }
   `;
   document.head.append(style);
 };
 
 /** Create the WebSkin-provided second pre-styled analog clock treatment. */
 export function createClock(options = {}) {
-  const element = createPlainAnalogClock({
-    showTicks: false,
-    handsColor: "#cfb5ab",
-    hourHandColor: "#cfb5ab",
-    minuteHandColor: "#cfb5ab",
-    secondHandColor: "#cfb5ab",
-    ...options,
-  });
+  const element = createPlainAnalogClock(options);
   ensureStyles();
   element.classList.add("webskin-clock--analog-prestyled2");
-
-  const color = options.color ?? options.handsColor;
-  if (color) element.style.setProperty("--webskin-analog2-color", color);
-  if (options.faceColor) element.style.setProperty("--webskin-analog2-face", options.faceColor);
-  if (options.frameColor) element.style.setProperty("--webskin-analog2-frame", options.frameColor);
-  if (options.secondHandColor) element.style.setProperty("--webskin-analog2-second-hand", options.secondHandColor);
-  if (options.shadowColor) element.style.setProperty("--webskin-analog2-shadow", options.shadowColor);
   return element;
 }

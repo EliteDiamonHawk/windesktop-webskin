@@ -37,9 +37,12 @@ const ensureStyles = () => {
       --webskin-analog-face: var(--webskin-combination-analog-face);
       --webskin-analog-ticks: var(--webskin-combination-analog-color);
       --webskin-analog-hands: var(--webskin-combination-analog-color);
+      --webskin-analog-ticks-display: var(--webskin-combination-analog-ticks-display, none);
       background: var(--webskin-combination-analog-face);
       border-radius: .75rem;
       box-shadow: none;
+      width: 8rem;
+      height: 8rem;
       padding: .55rem;
     }
     .webskin-clock--digital-analog-prestyled > .webskin-clock--analog-plain [data-webskin-clock-part="face"] { stroke-width: 1.5; }
@@ -62,10 +65,6 @@ export function createClock(options = {}) {
     showPeriod = true,
     syntax,
     offsetMinutes = 0,
-    analogSize = "8rem",
-    color,
-    faceColor,
-    frameColor,
     className = "",
   } = options;
 
@@ -76,29 +75,17 @@ export function createClock(options = {}) {
   element.dataset.webskinWidget = "clock";
 
   const sharedOptions = { offsetMinutes };
-  const analog = createAnalogPlain({
-    ...sharedOptions,
-    size: analogSize,
-    showTicks: false,
-    color: color ?? "#5b4841",
-    faceColor: faceColor ?? "#cfb5ab",
-    frameColor: frameColor ?? "#cfb5ab",
-    handsColor: color ?? "#5b4841",
-  });
+  const analog = createAnalogPlain(sharedOptions);
   const digital = createDigitalPlain({
     ...sharedOptions,
     format,
     seconds,
     showPeriod,
     syntax,
-    color,
   });
+  analog.dataset.webskinClockPart = "analog";
+  digital.dataset.webskinClockPart = "digital";
   element.append(analog, digital);
-
-  element.style.setProperty("--webskin-combination-color", color ?? "#cfb5ab");
-  element.style.setProperty("--webskin-combination-analog-color", color ?? "#5b4841");
-  element.style.setProperty("--webskin-combination-analog-face", faceColor ?? "#cfb5ab");
-  element.style.setProperty("--webskin-combination-surface", faceColor ?? frameColor ?? "#5b4841");
 
   Object.defineProperty(element, "destroy", {
     configurable: true,

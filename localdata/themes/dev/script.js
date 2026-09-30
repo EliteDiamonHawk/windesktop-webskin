@@ -14,7 +14,6 @@ document.querySelector("#analog-clock-2").append(createAnalogClock2({
 }));
 
 document.querySelector("#combination-clock").append(createDigitalAnalogClock({
-  analogSize: "8rem",
 }));
 
 const editor = document.querySelector("#clock-editor");
@@ -68,7 +67,7 @@ const renderEditorClock = () => {
   const clock = variant === "plain"
     ? createPlainClock(clockOptions)
     : variant === "analog"
-      ? createAnalogClock({ size, color: values.get("color"), faceColor: values.get("background"), frameColor: values.get("frame"), showSeconds: clockOptions.seconds })
+      ? createAnalogClock(clockOptions)
       : createDigitalClock(clockOptions);
   clock.style.color = values.get("color");
   clock.style.backgroundColor = values.get("background");
@@ -77,6 +76,14 @@ const renderEditorClock = () => {
   clock.style.fontSize = size;
   clock.style.letterSpacing = `${Number(values.get("spacing")) / 100}em`;
   clock.style.padding = padding;
+  if (variant === "analog") {
+    clock.style.width = size;
+    clock.style.height = size;
+    clock.style.setProperty("--webskin-analog-color", values.get("color"));
+    clock.style.setProperty("--webskin-analog-face", values.get("background"));
+    clock.style.setProperty("--webskin-analog-frame", values.get("frame"));
+    clock.style.setProperty("--webskin-analog-second-hand-display", clockOptions.seconds ? "inline" : "none");
+  }
   preview.replaceChildren(clock);
   syncOutputs();
 };

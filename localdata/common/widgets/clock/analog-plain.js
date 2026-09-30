@@ -29,6 +29,8 @@ const ensureStyles = () => {
       --webskin-analog-second-hand-opacity: var(--webskin-analog-hands-opacity);
       color: #000;
       display: block;
+      width: 10rem;
+      height: 10rem;
       overflow: visible;
     }
     .webskin-clock--analog-plain [data-webskin-clock-part="face"] {
@@ -42,24 +44,28 @@ const ensureStyles = () => {
       stroke: var(--webskin-analog-ticks);
       stroke-opacity: var(--webskin-analog-ticks-opacity);
       stroke-width: 1.5;
+      display: var(--webskin-analog-ticks-display, inline);
     }
     .webskin-clock--analog-plain [data-webskin-clock-part="hour-hand"] {
       stroke: var(--webskin-analog-hour-hand);
       stroke-opacity: var(--webskin-analog-hour-hand-opacity);
       stroke-linecap: round;
       stroke-width: 4;
+      display: var(--webskin-analog-hour-hand-display, inline);
     }
     .webskin-clock--analog-plain [data-webskin-clock-part="minute-hand"] {
       stroke: var(--webskin-analog-minute-hand);
       stroke-opacity: var(--webskin-analog-minute-hand-opacity);
       stroke-linecap: round;
       stroke-width: 2.5;
+      display: var(--webskin-analog-minute-hand-display, inline);
     }
     .webskin-clock--analog-plain [data-webskin-clock-part="second-hand"] {
       stroke: var(--webskin-analog-second-hand);
       stroke-opacity: var(--webskin-analog-second-hand-opacity);
       stroke-linecap: round;
       stroke-width: 1.2;
+      display: var(--webskin-analog-second-hand-display, inline);
     }
     .webskin-clock--analog-plain [data-webskin-clock-part="pin"] {
       fill: var(--webskin-analog-hands);
@@ -79,25 +85,6 @@ const clockAngles = (now) => ({
 export function createClock(options = {}) {
   ensureStyles();
   const {
-    size = "10rem",
-    color,
-    frameColor,
-    frameOpacity,
-    faceColor,
-    faceOpacity,
-    handsColor,
-    handsOpacity,
-    hourHandColor,
-    hourHandOpacity,
-    minuteHandColor,
-    minuteHandOpacity,
-    secondHandColor,
-    secondHandOpacity,
-    showHourHand = true,
-    showMinuteHand = true,
-    showSecondHand = true,
-    showTicks = true,
-    showSeconds = true,
     offsetMinutes = 0,
     className = "",
   } = options;
@@ -109,21 +96,6 @@ export function createClock(options = {}) {
   });
   element.classList.add("webskin-clock", "webskin-clock--analog-plain", ...String(className).split(/\s+/).filter(Boolean));
   element.dataset.webskinWidget = "clock";
-  element.style.width = size;
-  element.style.height = size;
-  if (color) element.style.color = color;
-  if (frameColor) element.style.setProperty("--webskin-analog-frame", frameColor);
-  if (frameOpacity !== undefined) element.style.setProperty("--webskin-analog-frame-opacity", frameOpacity);
-  if (faceColor) element.style.setProperty("--webskin-analog-face", faceColor);
-  if (faceOpacity !== undefined) element.style.setProperty("--webskin-analog-face-opacity", faceOpacity);
-  if (handsColor) element.style.setProperty("--webskin-analog-hands", handsColor);
-  if (handsOpacity !== undefined) element.style.setProperty("--webskin-analog-hands-opacity", handsOpacity);
-  if (hourHandColor ?? handsColor) element.style.setProperty("--webskin-analog-hour-hand", hourHandColor ?? handsColor);
-  if ((hourHandOpacity ?? handsOpacity) !== undefined) element.style.setProperty("--webskin-analog-hour-hand-opacity", hourHandOpacity ?? handsOpacity);
-  if (minuteHandColor ?? handsColor) element.style.setProperty("--webskin-analog-minute-hand", minuteHandColor ?? handsColor);
-  if ((minuteHandOpacity ?? handsOpacity) !== undefined) element.style.setProperty("--webskin-analog-minute-hand-opacity", minuteHandOpacity ?? handsOpacity);
-  if (secondHandColor ?? handsColor) element.style.setProperty("--webskin-analog-second-hand", secondHandColor ?? handsColor);
-  if ((secondHandOpacity ?? handsOpacity) !== undefined) element.style.setProperty("--webskin-analog-second-hand-opacity", secondHandOpacity ?? handsOpacity);
 
   const face = svgElement("circle", { cx: "50", cy: "50", r: "44" });
   face.dataset.webskinClockPart = "face";
@@ -138,7 +110,6 @@ export function createClock(options = {}) {
       y2: String(50 - Math.cos(angle) * 42),
     });
     tick.dataset.webskinClockPart = "tick";
-    tick.hidden = !showTicks;
     element.append(tick);
   }
 
@@ -148,9 +119,6 @@ export function createClock(options = {}) {
   hourHand.dataset.webskinClockPart = "hour-hand";
   minuteHand.dataset.webskinClockPart = "minute-hand";
   secondHand.dataset.webskinClockPart = "second-hand";
-  hourHand.hidden = !showHourHand;
-  minuteHand.hidden = !showMinuteHand;
-  secondHand.hidden = !showSeconds || !showSecondHand;
   element.append(hourHand, minuteHand, secondHand);
 
   const pin = svgElement("circle", { cx: "50", cy: "50", r: "2.5" });

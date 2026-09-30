@@ -36,6 +36,5 @@ export function createClock(options = {}) {
   element.classList.remove("webskin-clock--digital-plain");
   element.classList.add("webskin-clock--digital-prestyled");
   if (options.className) element.classList.add(...String(options.className).split(/\s+/).filter(Boolean));
-  if (options.color) element.style.setProperty("--webskin-clock-color", options.color);
   return element;
 }

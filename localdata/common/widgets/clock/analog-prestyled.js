@@ -34,13 +34,5 @@ export function createClock(options = {}) {
   ensureStyles();
   const element = createPlainAnalogClock(options);
   element.classList.add("webskin-clock--analog-prestyled");
-  if (options.color) {
-    element.style.color = options.color;
-    element.style.setProperty("--webskin-analog-color", options.color);
-    element.style.setProperty("--webskin-analog-ticks", options.color);
-    element.style.setProperty("--webskin-analog-hands", options.color);
-  }
-  if (options.faceColor) element.style.setProperty("--webskin-analog-face", options.faceColor);
-  if (options.frameColor) element.style.setProperty("--webskin-analog-frame", options.frameColor);
   return element;
 }

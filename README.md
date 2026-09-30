@@ -57,6 +57,48 @@ attributes. The digital and analog variants add WebSkin styling; the theme
 still decides where to insert either returned element. There is no widget
 registry, DOM scanner, or automatic mounting system.
 
+Plain calendar widgets are available from `/common/widgets/time/`:
+
+```js
+import { createDate } from "/common/widgets/time/formatted-date-plain.js";
+import { createDay } from "/common/widgets/time/single-day-plain.js";
+import { createWeek } from "/common/widgets/time/week-plain.js";
+import { createMonth } from "/common/widgets/time/month-plain.js";
+
+document.querySelector("#calendar").append(createMonth());
+
+// Keep today's date in a stable position while the seven-day window rolls.
+document.querySelector("#week").append(createWeek({ daysBefore: 1, daysAfter: 5 }));
+// Lock the anchor date to an exact month-grid column and row, or just a row.
+document.querySelector("#month").append(createMonth({ lockDay: { x: 3, y: 2 } }));
+document.querySelector("#month-row").append(createMonth({ lockDay: { y: 2 } }));
+document.querySelector("#month-five-weeks").append(createMonth({ maxWeeks: 5 }));
+```
+
+Calendar widgets use local browser dates and locale formatting. They expose
+`data-webskin-calendar-part` hooks and represented-date state attributes for
+theme-owned styling, and accept an explicit `Date` or local `YYYY-MM-DD`
+string when a fixed date is needed. `maxWeeks: 5` limits a month to five
+visible weeks; for an unlocked six-week month, the visible window shifts to
+the final five weeks when the anchor date reaches week five or six.
+
+Pre-styled calendar variants wrap the same plain widgets and add a prepared
+surface treatment:
+
+```js
+import { createMonth } from "/common/widgets/time/month-prestyled.js";
+
+document.querySelector("#calendar").append(createMonth({
+  color: "#cfb5ab",
+  backgroundColor: "#5b4841",
+}));
+```
+
+Pre-styled widgets expose `--webskin-calendar-color`,
+`--webskin-calendar-background`, `--webskin-calendar-border`,
+`--webskin-calendar-today-background`, `--webskin-calendar-today-color`, and
+`--webskin-calendar-adjacent-opacity` for theme-owned overrides.
+
 ## Theme roots
 
 `backend/src/webskin/paths.py` is the single source of truth for locations.

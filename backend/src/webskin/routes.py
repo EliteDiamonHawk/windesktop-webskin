@@ -6,6 +6,7 @@ from fastapi import APIRouter, Body, HTTPException, status
 from fastapi.responses import FileResponse
 
 from .persistence import SettingsStorageError
+from .paths import get_theme_paths, safe_asset_path
 from .settings import SettingNotFoundError, SettingsService
 from .themes import ThemeNameConflictError, ThemeStorageError, UserThemeStorage, user_theme_storage
 
@@ -100,6 +101,13 @@ def create_themes_router(storage: UserThemeStorage | None = None) -> APIRouter:
         except ThemeStorageError as exc:
             raise HTTPException(status_code=503, detail="Theme storage is unavailable") from exc
 
+    @router.post("/{theme_id}/duplicate", status_code=status.HTTP_201_CREATED)
+    def duplicate_theme(theme_id: str) -> dict[str, Any]:
+        try:
+            return themes_storage.duplicate(theme_id)
+        except ThemeStorageError as exc:
+            raise HTTPException(status_code=404, detail="Theme was not found") from exc
+
     @router.delete("/{theme_id}", status_code=status.HTTP_204_NO_CONTENT)
     def delete_theme(theme_id: str) -> None:
         try:
@@ -137,17 +145,33 @@ def create_themes_router(storage: UserThemeStorage | None = None) -> APIRouter:
             raise HTTPException(status_code=404, detail="Theme preview was not found") from exc
         return FileResponse(preview_path, media_type="image/png")
 
-    @router.get("/{theme_id}/content")
-    @router.get("/{theme_id}/content/")
-    def get_theme_entry(theme_id: str) -> FileResponse:
-        return get_theme_content(theme_id, "")
+    return router
 
-    @router.get("/{theme_id}/content/{relative_path:path}")
-    def get_theme_content(theme_id: str, relative_path: str) -> FileResponse:
+
+def create_theme_assets_router(storage: UserThemeStorage | None = None) -> APIRouter:
+    """Serve the stable browser URLs used by every installed theme package."""
+    themes_storage = storage or user_theme_storage
+    router = APIRouter()
+
+    @router.get("/common/{relative_path:path}")
+    def get_common_asset(relative_path: str) -> FileResponse:
+        try:
+            common_path = safe_asset_path(get_theme_paths().common_root, relative_path)
+        except (ValueError, FileNotFoundError) as exc:
+            raise HTTPException(status_code=404, detail="Common asset was not found") from exc
+        return FileResponse(common_path)
+
+    @router.get("/themes/{theme_id}")
+    @router.get("/themes/{theme_id}/")
+    def get_theme_asset_root(theme_id: str) -> FileResponse:
+        return get_theme_asset(theme_id, "")
+
+    @router.get("/themes/{theme_id}/{relative_path:path}")
+    def get_theme_asset(theme_id: str, relative_path: str) -> FileResponse:
         try:
             content_path = themes_storage.content_path(theme_id, relative_path)
         except ThemeStorageError as exc:
-            raise HTTPException(status_code=404, detail="Theme content was not found") from exc
+            raise HTTPException(status_code=404, detail="Theme asset was not found") from exc
         return FileResponse(content_path)
 
     return router

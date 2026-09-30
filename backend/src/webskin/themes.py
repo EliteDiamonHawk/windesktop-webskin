@@ -13,6 +13,8 @@ import re
 from threading import RLock
 from typing import Any
 
+from .paths import get_theme_paths
+
 
 class ThemeStorageError(RuntimeError):
     """Raised when a user theme cannot be read or written safely."""
@@ -68,15 +70,12 @@ matching folders in this directory.
     }
 
     def __init__(self, path: Path | None = None) -> None:
-        configured_path = os.getenv("WEBSKIN_THEMES_PATH")
         if path is not None:
             self.path = path
-        elif configured_path:
-            self.path = Path(configured_path)
         else:
-            local_app_data = os.getenv("LOCALAPPDATA")
-            base = Path(local_app_data) if local_app_data else Path.home() / "AppData" / "Local"
-            self.path = base / "WinDesktopWebskin" / "themes"
+            # User-created packages share the same installed directory as
+            # bundled packages. The runtime serving path is identical for all.
+            self.path = get_theme_paths().theme_root
         self._lock = RLock()
 
     def list(self) -> list[dict[str, Any]]:
@@ -97,6 +96,8 @@ matching folders in this directory.
                     and metadata.get("id") == directory.name
                     and isinstance(metadata.get("name"), str)
                 ):
+                    if metadata.get("source") == "bundled":
+                        continue
                     if not (directory / "index.html").is_file():
                         continue
                     metadata_changed = False
@@ -125,7 +126,7 @@ matching folders in this directory.
                         "id": metadata["id"],
                         "name": metadata["name"],
                         "source": "user",
-                        "entry_url": f"/api/themes/{metadata['id']}/content/",
+                        "entry_url": f"/themes/{metadata['id']}/",
                         "preview": f"/api/themes/{metadata['id']}/preview" if (directory / "preview.png").is_file() else None,
                         "preview-after-loadtime": self._preview_after_loadtime(metadata),
                         "allow-new-preview": metadata.get("allow-new-preview") is not False,
@@ -177,9 +178,67 @@ matching folders in this directory.
                 "id": theme_id,
                 "name": clean_name,
                 "source": "user",
-                "entry_url": f"/api/themes/{theme_id}/content/",
+                "entry_url": f"/themes/{theme_id}/",
                 "preview-after-loadtime": 500,
                 "allow-new-preview": True,
+            }
+
+    def duplicate(self, theme_id: str) -> dict[str, Any]:
+        """Create a user-owned copy of a bundled or user theme."""
+        with self._lock:
+            if Path(theme_id).name != theme_id or not theme_id:
+                raise ThemeStorageError("Theme was not found")
+
+            source_path = self.path / theme_id
+            metadata = self._read_metadata(source_path)
+            if (
+                not source_path.is_dir()
+                or not isinstance(metadata, dict)
+                or not (source_path / "index.html").is_file()
+            ):
+                raise ThemeStorageError("Theme was not found")
+
+            source_name = metadata.get("name")
+            if not isinstance(source_name, str) or not source_name.strip():
+                raise ThemeStorageError("Theme metadata is invalid")
+
+            copy_name = self._unique_theme_name(self._clean_theme_name(f"{source_name} Copy"))
+            destination_path = self.path / copy_name
+            staging_path = Path(tempfile.mkdtemp(prefix=f".{copy_name}.", dir=self.path))
+            temporary_path: Path | None = None
+            copied_metadata = {
+                **metadata,
+                "id": copy_name,
+                "name": copy_name,
+                "source": "user",
+            }
+            try:
+                shutil.copytree(source_path, staging_path, dirs_exist_ok=True)
+                metadata_path = staging_path / "metadata.json"
+                with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=staging_path, prefix=".metadata.", suffix=".tmp", delete=False) as metadata_file:
+                    temporary_path = Path(metadata_file.name)
+                    json.dump(copied_metadata, metadata_file, indent=2)
+                    metadata_file.write("\n")
+                    metadata_file.flush()
+                    os.fsync(metadata_file.fileno())
+                os.replace(temporary_path, metadata_path)
+                os.replace(staging_path, destination_path)
+            except OSError as exc:
+                raise ThemeStorageError(f"Could not duplicate theme: {theme_id}") from exc
+            finally:
+                if temporary_path is not None:
+                    temporary_path.unlink(missing_ok=True)
+                if staging_path.exists():
+                    shutil.rmtree(staging_path, ignore_errors=True)
+
+            return {
+                "id": copy_name,
+                "name": copy_name,
+                "source": "user",
+                "entry_url": f"/themes/{copy_name}/",
+                "preview": f"/api/themes/{copy_name}/preview" if (destination_path / "preview.png").is_file() else None,
+                "preview-after-loadtime": self._preview_after_loadtime(copied_metadata),
+                "allow-new-preview": copied_metadata.get("allow-new-preview") is not False,
             }
 
     @staticmethod
@@ -323,7 +382,7 @@ matching folders in this directory.
                 "id": clean_name,
                 "name": clean_name,
                 "source": "user",
-                "entry_url": f"/api/themes/{clean_name}/content/",
+                "entry_url": f"/themes/{clean_name}/",
                 "preview": f"/api/themes/{clean_name}/preview" if (new_path / "preview.png").is_file() else None,
                 "preview-after-loadtime": self._preview_after_loadtime(updated_metadata),
                 "allow-new-preview": updated_metadata.get("allow-new-preview") is not False,
@@ -358,6 +417,9 @@ matching folders in this directory.
                     preview_file.flush()
                     os.fsync(preview_file.fileno())
                 os.replace(temporary_path, theme_path / "preview.png")
+                # A generated preview supersedes the package's old authored
+                # preview asset. Keep the generated PNG as the sole preview.
+                (theme_path / "preview.svg").unlink(missing_ok=True)
             except OSError as exc:
                 raise ThemeStorageError(f"Could not write theme preview: {theme_path / 'preview.png'}") from exc
             finally:

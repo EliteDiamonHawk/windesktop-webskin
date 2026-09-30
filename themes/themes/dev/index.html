@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dev</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="dev-theme">
+      <header class="dev-header">
+        <p class="eyebrow">WebSkin development theme</p>
+        <h1>Common widgets, ordinary DOM.</h1>
+        <p>This theme imports the plain clock from <code>/common/</code> and owns its layout, styling, and animation.</p>
+      </header>
+
+      <section class="showcase-grid" aria-label="Clock examples">
+        <article class="clock-card clock-card--plain">
+          <p class="card-label">Plain common clock</p>
+          <div id="clock" class="clock-stage"></div>
+          <p class="card-note">Each part is available through <code>data-webskin-clock-part</code> hooks.</p>
+        </article>
+        <article class="clock-card clock-card--digital">
+          <p class="card-label">Pre-styled common clock</p>
+          <div id="digital-clock" class="clock-stage"></div>
+          <p class="card-note">The theme still chooses where this prepared widget is inserted.</p>
+        </article>
+        <article class="clock-card clock-card--analog">
+          <p class="card-label">Pre-styled analog clock</p>
+          <div id="analog-clock" class="clock-stage"></div>
+          <p class="card-note">The analog face uses the same browser-ready common-widget contract.</p>
+        </article>
+      </section>
+
+      <section class="editor-card" aria-labelledby="editor-title">
+        <div class="editor-heading">
+          <div>
+            <p class="eyebrow">Live theme editor</p>
+            <h2 id="editor-title">Tune the pre-styled clock</h2>
+          </div>
+          <p>These controls are theme-owned. The widget only supplies working behavior and DOM.</p>
+        </div>
+        <div class="editor-layout">
+          <form id="clock-editor" class="editor-controls">
+            <label>Variant<select name="variant"><option value="digital">Pre-styled digital</option><option value="analog">Pre-styled analog</option><option value="plain">Plain</option></select></label>
+            <label>Format<select name="format"><option value="24h">24-hour</option><option value="12h">12-hour</option></select></label>
+            <label>Text color<input name="color" type="color" value="#b7f7d4" /></label>
+            <label>Background<input name="background" type="color" value="#171b24" /></label>
+            <label>Frame color<input name="frame" type="color" value="#b7f7d4" /></label>
+            <label>Size<input name="size" type="range" min="1" max="5" step=".1" value="2.7" /><output data-output="size">2.7rem</output></label>
+            <label>Corner radius<input name="radius" type="range" min="0" max="32" value="12" /><output data-output="radius">12px</output></label>
+            <label>Padding<input name="padding" type="range" min="4" max="32" value="12" /><output data-output="padding">12px</output></label>
+            <label>Letter spacing<input name="spacing" type="range" min="0" max="20" value="8" /><output data-output="spacing">.08em</output></label>
+            <label class="editor-check"><input name="seconds" type="checkbox" checked /> Show seconds</label>
+            <label class="editor-check"><input name="period" type="checkbox" checked /> Show AM/PM</label>
+            <button type="button" data-reset-editor>Reset editor</button>
+          </form>
+          <div id="editor-preview" class="editor-preview" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./script.js"></script>
+  </body>
+</html>

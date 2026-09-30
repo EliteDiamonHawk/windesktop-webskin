@@ -1,6 +1,5 @@
 ---
 import Layout from './_components/Layout.astro';
-import devPreview from '../../themes/dev/assets/images/preview.svg?url';
 import settingsIcon from './assets/images/settings.svg?url';
 import modeIcon from './assets/images/dark-light.svg?url';
 import dotsIcon from './assets/images/three-dots-svgrepo-com.svg?url';
@@ -20,7 +19,7 @@ type Theme = {
   allowNewPreview?: boolean;
 };
 
-const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', source: 'bundled', image: devPreview, previewAfterLoadtime: 500, allowNewPreview: true }];
+const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', source: 'bundled', image: '/themes/dev/assets/images/preview.svg', previewAfterLoadtime: 500, allowNewPreview: true }];
 ---
 
 <Layout>
@@ -70,8 +69,11 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
                 <img src={dotsIcon} alt="" aria-hidden="true" />
               </button>
               <div class="theme-menu-popover" role="menu" hidden>
-                <button type="button" role="menuitem" data-theme-action="duplicate-edit">Duplicate &amp; edit</button>
-                <button type="button" role="menuitem" data-theme-action="reload-preview">Reload preview</button>
+                <button type="button" role="menuitem" data-theme-action="duplicate">Duplicate</button>
+                <button type="button" role="menuitem" data-theme-action="edit">Edit</button>
+                <button type="button" role="menuitem" data-theme-action="rename">Rename</button>
+                <button type="button" role="menuitem" data-theme-action="reload-preview">Reload Preview</button>
+                <button type="button" role="menuitem" data-theme-action="delete">Delete</button>
               </div>
             </div>
           </article>
@@ -87,10 +89,11 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
                 <img src={dotsIcon} alt="" aria-hidden="true" />
               </button>
               <div class="theme-menu-popover" role="menu" hidden>
+                <button type="button" role="menuitem" data-theme-action="duplicate">Duplicate</button>
                 <button type="button" role="menuitem" data-theme-action="edit">Edit</button>
                 <button type="button" role="menuitem" data-theme-action="rename">Rename</button>
+                <button type="button" role="menuitem" data-theme-action="reload-preview">Reload Preview</button>
                 <button type="button" role="menuitem" data-theme-action="delete">Delete</button>
-                <button type="button" role="menuitem" data-theme-action="reload-preview">Reload preview</button>
               </div>
             </div>
           </article>
@@ -120,6 +123,8 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
 </Layout>
 
 <script>
+  import html2canvas from 'html2canvas';
+
   const search = document.querySelector<HTMLInputElement>('[data-theme-search]');
   let cards = [...document.querySelectorAll<HTMLElement>('[data-theme-card]')];
   const count = document.querySelector<HTMLElement>('[data-theme-count]');
@@ -159,19 +164,73 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
   const reloadThemePreview = async (menu: HTMLElement, action: HTMLButtonElement) => {
     const card = menu.closest<HTMLElement>('[data-theme-card]');
     const previewContainer = card?.querySelector<HTMLElement>('.theme-preview');
-    const preview = previewContainer?.querySelector<HTMLImageElement>('img');
-    if (!card || !previewContainer || !preview?.src) return;
+    const themeId = card?.dataset.themeId;
+    if (!card || !previewContainer || !themeId) return;
 
     action.disabled = true;
+    const originalLabel = action.textContent ?? 'Reload preview';
+    action.textContent = 'Generating…';
+    const frame = document.createElement('iframe');
+    frame.title = `Preview of ${card.dataset.themeName ?? themeId}`;
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.position = 'fixed';
+    frame.style.left = '-10000px';
+    frame.style.top = '0';
+    frame.style.width = '1200px';
+    frame.style.height = '800px';
+    frame.style.border = '0';
+    frame.style.visibility = 'hidden';
+    document.body.append(frame);
+
+    const wait = (duration: number) => new Promise<void>((resolve) => window.setTimeout(resolve, duration));
+    const waitForFrame = () => new Promise<void>((resolve, reject) => {
+      frame.addEventListener('load', () => resolve(), { once: true });
+      frame.addEventListener('error', () => reject(new Error('Theme preview could not be loaded')), { once: true });
+    });
+
     try {
-      const source = preview.src;
-      preview.src = '';
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      preview.src = `${source.split('?')[0]}?updated=${Date.now()}`;
+      frame.src = `/themes/${encodeURIComponent(themeId)}/`;
+      await waitForFrame();
+      const previewAfterLoadtime = Number(card.dataset.previewAfterLoadtime ?? '0');
+      if (previewAfterLoadtime > 0) await wait(previewAfterLoadtime);
+
+      const frameDocument = frame.contentDocument;
+      if (!frameDocument?.body) throw new Error('Theme preview has no document body');
+      await frameDocument.fonts?.ready;
+      await Promise.all([...frameDocument.images].map((image) => image.decode().catch(() => undefined)));
+
+      const canvas = await html2canvas(frameDocument.body, {
+        backgroundColor: null,
+        height: 800,
+        width: 1200,
+        windowHeight: 800,
+        windowWidth: 1200,
+        scale: 1,
+        useCORS: true,
+      });
+      const png = canvas.toDataURL('image/png');
+      const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}/preview`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ png }),
+      });
+      if (!response.ok) throw new Error('Preview could not be saved');
+
+      const imageSource = `/api/themes/${encodeURIComponent(themeId)}/preview?updated=${Date.now()}`;
+      let preview = previewContainer.querySelector<HTMLImageElement>('img');
+      if (!preview) {
+        preview = document.createElement('img');
+        preview.alt = '';
+        previewContainer.append(preview);
+      }
+      previewContainer.classList.add('has-image');
+      preview.src = imageSource;
       await preview.decode().catch(() => undefined);
     } catch (error) {
       console.error('Could not reload theme preview image', error);
     } finally {
+      frame.remove();
+      action.textContent = originalLabel;
       action.disabled = false;
     }
   };
@@ -195,6 +254,36 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
       renameInput?.focus();
       renameInput?.select();
     }, 0);
+  };
+
+  const duplicateTheme = async (menu: HTMLElement, action: HTMLButtonElement) => {
+    const card = menu.closest<HTMLElement>('[data-theme-card]');
+    const themeId = card?.dataset.themeId;
+    if (!card || !themeId) return;
+
+    action.disabled = true;
+    try {
+      const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}/duplicate`, { method: 'POST' });
+      if (!response.ok) throw new Error('Could not duplicate theme');
+      const duplicated = await response.json() as { id?: unknown; name?: unknown; entry_url?: unknown; source?: unknown; preview?: unknown; 'preview-after-loadtime'?: unknown; 'allow-new-preview'?: unknown };
+      if (typeof duplicated.id !== 'string' || typeof duplicated.name !== 'string' || typeof duplicated.entry_url !== 'string') {
+        throw new Error('Invalid duplicate response');
+      }
+      appendThemeCard(
+        duplicated.name,
+        duplicated.id,
+        duplicated.entry_url,
+        'user',
+        typeof duplicated.preview === 'string' ? duplicated.preview : undefined,
+        typeof duplicated['preview-after-loadtime'] === 'number' ? duplicated['preview-after-loadtime'] : 0,
+        duplicated['allow-new-preview'] !== false,
+      );
+      filterThemes();
+    } catch (error) {
+      console.error('Could not duplicate theme', error);
+    } finally {
+      action.disabled = false;
+    }
   };
 
   renameForm?.addEventListener('submit', async (event) => {
@@ -270,6 +359,9 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
     });
     menu.querySelectorAll<HTMLButtonElement>('[data-theme-action]').forEach((action) => {
       action.addEventListener('click', () => {
+        if (action.dataset.themeAction === 'duplicate') {
+          void duplicateTheme(menu, action);
+        }
         if (action.dataset.themeAction === 'reload-preview') {
           void reloadThemePreview(menu, action);
         }
@@ -340,6 +432,27 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
     cards = [...document.querySelectorAll<HTMLElement>('[data-theme-card]')];
   };
 
+  const restoreStoredPreview = async (card: HTMLElement) => {
+    const themeId = card.dataset.themeId;
+    const previewContainer = card.querySelector<HTMLElement>('.theme-preview');
+    if (!themeId || !previewContainer) return;
+
+    try {
+      const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}/preview`, { cache: 'no-store' });
+      if (!response.ok) return;
+      let preview = previewContainer.querySelector<HTMLImageElement>('img');
+      if (!preview) {
+        preview = document.createElement('img');
+        preview.alt = '';
+        previewContainer.append(preview);
+      }
+      previewContainer.classList.add('has-image');
+      preview.src = `/api/themes/${encodeURIComponent(themeId)}/preview?updated=${Date.now()}`;
+    } catch {
+      // Keep the bundled/static preview when the API is unavailable.
+    }
+  };
+
   const loadCreatedThemes = async () => {
     try {
       const response = await fetch('/api/themes');
@@ -359,11 +472,13 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
         }
       });
       filterThemes();
+      void Promise.all(cards.map(restoreStoredPreview));
     } catch {
       // Bundled themes remain available while the backend is unavailable.
     }
   };
   void loadCreatedThemes();
+  void Promise.all(cards.map(restoreStoredPreview));
 
   createThemeButton?.addEventListener('click', async () => {
     const adjectives = JSON.parse(createThemeButton.dataset.adjectives ?? '[]') as string[];

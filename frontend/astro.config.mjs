@@ -14,6 +14,14 @@ export default defineConfig({
         '/api': {
           target: process.env.API_URL ?? 'http://127.0.0.1:8000',
           changeOrigin: true
+        },
+        '/common': {
+          target: process.env.API_URL ?? 'http://127.0.0.1:8000',
+          changeOrigin: true
+        },
+        '/themes': {
+          target: process.env.API_URL ?? 'http://127.0.0.1:8000',
+          changeOrigin: true
         }
       }
     }

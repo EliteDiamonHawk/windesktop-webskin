@@ -96,40 +96,13 @@ matching folders in this directory.
                     and metadata.get("id") == directory.name
                     and isinstance(metadata.get("name"), str)
                 ):
-                    if metadata.get("source") == "bundled":
-                        continue
                     if not (directory / "index.html").is_file():
                         continue
-                    metadata_changed = False
-                    if "preview-after-loadtime" not in metadata:
-                        metadata["preview-after-loadtime"] = 500
-                        metadata_changed = True
-                    if "allow-new-preview" not in metadata:
-                        metadata["allow-new-preview"] = True
-                        metadata_changed = True
-                    if metadata_changed:
-                        temporary_path: Path | None = None
-                        try:
-                            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=directory, prefix=".metadata.", suffix=".tmp", delete=False) as metadata_file:
-                                temporary_path = Path(metadata_file.name)
-                                json.dump(metadata, metadata_file, indent=2)
-                                metadata_file.write("\n")
-                                metadata_file.flush()
-                                os.fsync(metadata_file.fileno())
-                            os.replace(temporary_path, metadata_path)
-                        except OSError as exc:
-                            raise ThemeStorageError(f"Could not update theme metadata: {metadata_path}") from exc
-                        finally:
-                            if temporary_path is not None:
-                                temporary_path.unlink(missing_ok=True)
                     themes.append({
                         "id": metadata["id"],
                         "name": metadata["name"],
-                        "source": "user",
                         "entry_url": f"/themes/{metadata['id']}/",
-                        "preview": f"/api/themes/{metadata['id']}/preview" if (directory / "preview.png").is_file() else None,
-                        "preview-after-loadtime": self._preview_after_loadtime(metadata),
-                        "allow-new-preview": metadata.get("allow-new-preview") is not False,
+                        "preview": self._preview_url(metadata["id"], directory),
                     })
             return sorted(themes, key=lambda theme: theme["name"].casefold())
 
@@ -144,9 +117,6 @@ matching folders in this directory.
             metadata = {
                 "id": theme_id,
                 "name": clean_name,
-                "background": "#ffffff",
-                "preview-after-loadtime": 500,
-                "allow-new-preview": True,
             }
             temporary_path: Path | None = None
             try:
@@ -177,10 +147,7 @@ matching folders in this directory.
             return {
                 "id": theme_id,
                 "name": clean_name,
-                "source": "user",
                 "entry_url": f"/themes/{theme_id}/",
-                "preview-after-loadtime": 500,
-                "allow-new-preview": True,
             }
 
     def duplicate(self, theme_id: str) -> dict[str, Any]:
@@ -210,7 +177,6 @@ matching folders in this directory.
                 **metadata,
                 "id": copy_name,
                 "name": copy_name,
-                "source": "user",
             }
             try:
                 shutil.copytree(source_path, staging_path, dirs_exist_ok=True)
@@ -234,12 +200,17 @@ matching folders in this directory.
             return {
                 "id": copy_name,
                 "name": copy_name,
-                "source": "user",
                 "entry_url": f"/themes/{copy_name}/",
-                "preview": f"/api/themes/{copy_name}/preview" if (destination_path / "preview.png").is_file() else None,
-                "preview-after-loadtime": self._preview_after_loadtime(copied_metadata),
-                "allow-new-preview": copied_metadata.get("allow-new-preview") is not False,
+                "preview": self._preview_url(copy_name, destination_path),
             }
+
+    @staticmethod
+    def _preview_url(theme_id: str, theme_path: Path) -> str | None:
+        if (theme_path / "preview.png").is_file():
+            return f"/api/themes/{theme_id}/preview"
+        if (theme_path / "assets" / "images" / "preview.svg").is_file():
+            return f"/themes/{theme_id}/assets/images/preview.svg"
+        return None
 
     @staticmethod
     def _clean_theme_name(name: str) -> str:
@@ -381,17 +352,9 @@ matching folders in this directory.
             return {
                 "id": clean_name,
                 "name": clean_name,
-                "source": "user",
                 "entry_url": f"/themes/{clean_name}/",
-                "preview": f"/api/themes/{clean_name}/preview" if (new_path / "preview.png").is_file() else None,
-                "preview-after-loadtime": self._preview_after_loadtime(updated_metadata),
-                "allow-new-preview": updated_metadata.get("allow-new-preview") is not False,
+                "preview": self._preview_url(clean_name, new_path),
             }
-
-    @staticmethod
-    def _preview_after_loadtime(metadata: dict[str, Any]) -> int:
-        value = metadata.get("preview-after-loadtime", 0)
-        return value if isinstance(value, int) and value >= 0 else 0
 
     def save_preview(self, theme_id: str, data_url: str) -> None:
         if not data_url.startswith("data:image/png;base64,"):

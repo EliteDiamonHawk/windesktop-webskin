@@ -13,13 +13,10 @@ type Theme = {
   id: string;
   name: string;
   entryUrl: string;
-  source: 'bundled' | 'user';
   image?: string;
-  previewAfterLoadtime?: number;
-  allowNewPreview?: boolean;
 };
 
-const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', source: 'bundled', image: '/themes/dev/assets/images/preview.svg', previewAfterLoadtime: 500, allowNewPreview: true }];
+const themes: Theme[] = [];
 ---
 
 <Layout>
@@ -59,7 +56,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
       </div>
       <div class="theme-grid" data-theme-grid>
         {themes.map((theme) => (
-          <article class="theme-card" data-theme-card data-theme-id={theme.id} data-theme-source={theme.source} data-theme-name={theme.name} data-preview-after-loadtime={theme.previewAfterLoadtime ?? 0} data-allow-new-preview={theme.allowNewPreview ?? true}>
+          <article class="theme-card" data-theme-card data-theme-id={theme.id} data-theme-name={theme.name}>
             <a class="theme-card-link" href={theme.entryUrl} aria-label={`Open ${theme.name} theme`}>
               <span class:list={["theme-preview", { "has-image": Boolean(theme.image) }]}>{theme.image && <img src={theme.image} alt="" />}</span>
               <span class="theme-card-footer"><span class="theme-name">{theme.name}</span><span class="card-arrow" aria-hidden="true">&#8599;</span></span>
@@ -211,7 +208,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
     try {
       const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}/duplicate`, { method: 'POST' });
       if (!response.ok) throw new Error('Could not duplicate theme');
-      const duplicated = await response.json() as { id?: unknown; name?: unknown; entry_url?: unknown; source?: unknown; preview?: unknown; 'preview-after-loadtime'?: unknown; 'allow-new-preview'?: unknown };
+      const duplicated = await response.json() as { id?: unknown; name?: unknown; entry_url?: unknown; preview?: unknown };
       if (typeof duplicated.id !== 'string' || typeof duplicated.name !== 'string' || typeof duplicated.entry_url !== 'string') {
         throw new Error('Invalid duplicate response');
       }
@@ -219,10 +216,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
         duplicated.name,
         duplicated.id,
         duplicated.entry_url,
-        'user',
         typeof duplicated.preview === 'string' ? duplicated.preview : undefined,
-        typeof duplicated['preview-after-loadtime'] === 'number' ? duplicated['preview-after-loadtime'] : 0,
-        duplicated['allow-new-preview'] !== false,
       );
       filterThemes();
     } catch (error) {
@@ -350,15 +344,11 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
   const titleCase = (word: string) => word.split(/(\s+|-)/).map((part) => /^[\s-]+$/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join('');
   const pick = (words: string[]) => words[Math.floor(Math.random() * words.length)];
 
-  const appendThemeCard = (name: string, id: string, entryUrl: string, source: 'bundled' | 'user', image?: string, previewAfterLoadtime = 0, allowNewPreview = true) => {
+  const appendThemeCard = (name: string, id: string, entryUrl: string, image?: string) => {
     const card = themeTemplate?.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
     if (!card) return;
     card.dataset.themeName = name;
     card.dataset.themeId = id;
-    card.dataset.themeSource = source;
-    card.dataset.previewAfterLoadtime = String(previewAfterLoadtime);
-    card.dataset.allowNewPreview = String(allowNewPreview);
-
     const link = card.querySelector<HTMLAnchorElement>('.theme-card-link');
     link?.setAttribute('href', entryUrl);
     link?.setAttribute('aria-label', `Open ${name} theme`);
@@ -378,53 +368,27 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
     cards = [...document.querySelectorAll<HTMLElement>('[data-theme-card]')];
   };
 
-  const restoreStoredPreview = async (card: HTMLElement) => {
-    const themeId = card.dataset.themeId;
-    const previewContainer = card.querySelector<HTMLElement>('.theme-preview');
-    if (card.dataset.themeSource === 'bundled' || !themeId || !previewContainer) return;
-
-    try {
-      const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}/preview`, { cache: 'no-store' });
-      if (!response.ok) return;
-      let preview = previewContainer.querySelector<HTMLImageElement>('img');
-      if (!preview) {
-        preview = document.createElement('img');
-        preview.alt = '';
-        previewContainer.append(preview);
-      }
-      previewContainer.classList.add('has-image');
-      preview.src = `/api/themes/${encodeURIComponent(themeId)}/preview?updated=${Date.now()}`;
-    } catch {
-      // Keep the bundled/static preview when the API is unavailable.
-    }
-  };
-
   const loadCreatedThemes = async () => {
     try {
       const response = await fetch('/api/themes');
       if (!response.ok) return;
-      const createdThemes = await response.json() as Array<{ id?: unknown; name?: unknown; entry_url?: unknown; source?: unknown; preview?: unknown; 'preview-after-loadtime'?: unknown; 'allow-new-preview'?: unknown }>;
+      const createdThemes = await response.json() as Array<{ id?: unknown; name?: unknown; entry_url?: unknown; preview?: unknown }>;
       createdThemes.forEach((theme) => {
         if (typeof theme.id === 'string' && typeof theme.name === 'string' && typeof theme.entry_url === 'string' && theme.name.trim()) {
           appendThemeCard(
             theme.name,
             theme.id,
             theme.entry_url,
-            theme.source === 'bundled' ? 'bundled' : 'user',
             typeof theme.preview === 'string' ? theme.preview : undefined,
-            typeof theme['preview-after-loadtime'] === 'number' ? theme['preview-after-loadtime'] : 0,
-            theme['allow-new-preview'] !== false,
           );
         }
       });
       filterThemes();
-      void Promise.all(cards.map(restoreStoredPreview));
     } catch {
-      // Bundled themes remain available while the backend is unavailable.
+      // Themes remain available while the backend is unavailable.
     }
   };
   void loadCreatedThemes();
-  void Promise.all(cards.map(restoreStoredPreview));
 
   createThemeButton?.addEventListener('click', async () => {
     const adjectives = JSON.parse(createThemeButton.dataset.adjectives ?? '[]') as string[];
@@ -439,16 +403,13 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
         body: JSON.stringify({ name }),
       });
       if (!response.ok) return;
-      const createdTheme = await response.json() as { id?: unknown; name?: unknown; entry_url?: unknown; source?: unknown; 'preview-after-loadtime'?: unknown; 'allow-new-preview'?: unknown };
+      const createdTheme = await response.json() as { id?: unknown; name?: unknown; entry_url?: unknown; preview?: unknown };
       if (typeof createdTheme.id === 'string' && typeof createdTheme.name === 'string' && typeof createdTheme.entry_url === 'string') {
         appendThemeCard(
           createdTheme.name,
           createdTheme.id,
           createdTheme.entry_url,
-          createdTheme.source === 'bundled' ? 'bundled' : 'user',
-          undefined,
-          typeof createdTheme['preview-after-loadtime'] === 'number' ? createdTheme['preview-after-loadtime'] : 0,
-          createdTheme['allow-new-preview'] !== false,
+          typeof createdTheme.preview === 'string' ? createdTheme.preview : undefined,
         );
         filterThemes();
       }

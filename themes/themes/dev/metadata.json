@@ -1,8 +1,5 @@
 {
   "id": "dev",
   "name": "dev",
-  "source": "bundled",
-  "description": "A static development theme that imports the shared browser clock.",
-  "preview-after-loadtime": 500,
-  "allow-new-preview": true
+  "description": "A static development theme that imports the shared browser clock."
 }

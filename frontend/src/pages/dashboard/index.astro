@@ -123,8 +123,6 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
 </Layout>
 
 <script>
-  import html2canvas from 'html2canvas';
-
   const search = document.querySelector<HTMLInputElement>('[data-theme-search]');
   let cards = [...document.querySelectorAll<HTMLElement>('[data-theme-card]')];
   const count = document.querySelector<HTMLElement>('[data-theme-count]');
@@ -164,72 +162,20 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
   const reloadThemePreview = async (menu: HTMLElement, action: HTMLButtonElement) => {
     const card = menu.closest<HTMLElement>('[data-theme-card]');
     const previewContainer = card?.querySelector<HTMLElement>('.theme-preview');
-    const themeId = card?.dataset.themeId;
-    if (!card || !previewContainer || !themeId) return;
+    const preview = previewContainer?.querySelector<HTMLImageElement>('img');
+    if (!card || !previewContainer || !preview?.src) return;
 
     action.disabled = true;
     const originalLabel = action.textContent ?? 'Reload preview';
-    action.textContent = 'Generating…';
-    const frame = document.createElement('iframe');
-    frame.title = `Preview of ${card.dataset.themeName ?? themeId}`;
-    frame.setAttribute('aria-hidden', 'true');
-    frame.style.position = 'fixed';
-    frame.style.left = '-10000px';
-    frame.style.top = '0';
-    frame.style.width = '1200px';
-    frame.style.height = '800px';
-    frame.style.border = '0';
-    frame.style.visibility = 'hidden';
-    document.body.append(frame);
-
-    const wait = (duration: number) => new Promise<void>((resolve) => window.setTimeout(resolve, duration));
-    const waitForFrame = () => new Promise<void>((resolve, reject) => {
-      frame.addEventListener('load', () => resolve(), { once: true });
-      frame.addEventListener('error', () => reject(new Error('Theme preview could not be loaded')), { once: true });
-    });
-
+    action.textContent = 'Reloading...';
     try {
-      frame.src = `/themes/${encodeURIComponent(themeId)}/`;
-      await waitForFrame();
-      const previewAfterLoadtime = Number(card.dataset.previewAfterLoadtime ?? '0');
-      if (previewAfterLoadtime > 0) await wait(previewAfterLoadtime);
-
-      const frameDocument = frame.contentDocument;
-      if (!frameDocument?.body) throw new Error('Theme preview has no document body');
-      await frameDocument.fonts?.ready;
-      await Promise.all([...frameDocument.images].map((image) => image.decode().catch(() => undefined)));
-
-      const canvas = await html2canvas(frameDocument.body, {
-        backgroundColor: null,
-        height: 800,
-        width: 1200,
-        windowHeight: 800,
-        windowWidth: 1200,
-        scale: 1,
-        useCORS: true,
-      });
-      const png = canvas.toDataURL('image/png');
-      const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}/preview`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ png }),
-      });
-      if (!response.ok) throw new Error('Preview could not be saved');
-
-      const imageSource = `/api/themes/${encodeURIComponent(themeId)}/preview?updated=${Date.now()}`;
-      let preview = previewContainer.querySelector<HTMLImageElement>('img');
-      if (!preview) {
-        preview = document.createElement('img');
-        preview.alt = '';
-        previewContainer.append(preview);
-      }
-      previewContainer.classList.add('has-image');
-      preview.src = imageSource;
+      const imageSource = new URL(preview.currentSrc || preview.src, window.location.href);
+      imageSource.searchParams.set('updated', String(Date.now()));
+      preview.src = imageSource.href;
       await preview.decode().catch(() => undefined);
     } catch (error) {
       console.error('Could not reload theme preview image', error);
     } finally {
-      frame.remove();
       action.textContent = originalLabel;
       action.disabled = false;
     }
@@ -435,7 +381,7 @@ const themes: Theme[] = [{ id: 'dev', name: 'dev', entryUrl: '/themes/dev/', sou
   const restoreStoredPreview = async (card: HTMLElement) => {
     const themeId = card.dataset.themeId;
     const previewContainer = card.querySelector<HTMLElement>('.theme-preview');
-    if (!themeId || !previewContainer) return;
+    if (card.dataset.themeSource === 'bundled' || !themeId || !previewContainer) return;
 
     try {
       const response = await fetch(`/api/themes/${encodeURIComponent(themeId)}/preview`, { cache: 'no-store' });

@@ -22,8 +22,6 @@ code { color: #2b6742; font-family: ui-monospace, monospace; font-size: .9em; }
 .clock-card--plain-analog .clock-stage { background: #fff; border-color: #d5e0d5; }
 .clock-card--plain-analog .webskin-clock--plain-analog { width: 9rem; height: 9rem; }
 .clock-card--digital .clock-stage { background: #111821; border-color: #263c32; }
-.clock-card--analog .clock-stage { background: #fdfcf4; border-color: #d9dfc8; }
-.clock-card--analog .webskin-clock { color: #d6a03e; }
 .clock-card--combination .clock-stage { flex-wrap: wrap; gap: 22px; background: #17251e; border-color: #35583f; }
 .clock-card--combination .webskin-clock--digital { font-size: 1.25rem; }
 .card-note { color: #718075; font-size: .82rem; line-height: 1.5; }

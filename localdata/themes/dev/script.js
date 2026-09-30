@@ -7,7 +7,7 @@ import { createClock as createDigitalAnalogClock } from "/common/widgets/clock/p
 document.querySelector("#clock").append(createPlainClock());
 document.querySelector("#plain-analog-clock").append(createPlainAnalogClock());
 document.querySelector("#digital-clock").append(createDigitalClock());
-document.querySelector("#analog-clock").append(createAnalogClock({ size: "9rem", color: "#d6a03e", faceColor: "#fffdf5", frameColor: "#678c70" }));
+document.querySelector("#analog-clock").append(createAnalogClock());
 
 document.querySelector("#combination-clock").append(createDigitalAnalogClock({
   analogSize: "8rem",

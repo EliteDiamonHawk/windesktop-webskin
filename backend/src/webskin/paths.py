@@ -45,7 +45,7 @@ def resolve_themes_root() -> Path:
     if getattr(sys, "frozen", False) or production:
         return (_local_app_data() / "WinDesktop WebSkin" / "themes").resolve()
 
-    return (REPOSITORY_ROOT / "themes").resolve()
+    return (REPOSITORY_ROOT / "localdata").resolve()
 
 
 def get_theme_paths() -> ThemePaths:

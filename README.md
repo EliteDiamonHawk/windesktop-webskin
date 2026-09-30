@@ -18,7 +18,7 @@ Themes are browser-ready runtime packages, not framework-specific source
 projects. The repository keeps them in one top-level root:
 
 ```text
-themes/
+localdata/
 ├── common/                 # WebSkin-owned browser modules and shared assets
 │   └── widgets/clock/
 │       ├── plain.js
@@ -54,7 +54,7 @@ registry, DOM scanner, or automatic mounting system.
 ## Theme roots
 
 `backend/src/webskin/paths.py` is the single source of truth for locations.
-Development resolves `THEMES_ROOT` to the repository's top-level `themes/`.
+Development resolves `THEMES_ROOT` to the repository's top-level `localdata/`.
 Production resolves it to `%LOCALAPPDATA%/WinDesktop WebSkin/themes/` using the
 Windows `LOCALAPPDATA` value. `WEBSKIN_THEMES_ROOT` is available as an explicit
 host override. `THEMES_ROOT/common` and `THEMES_ROOT/themes` are served

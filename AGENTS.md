@@ -18,10 +18,10 @@ cooperating parts:
 - `wv2wall/` is a separate Git submodule containing the Windows Forms/WebView2
   wallpaper host. It is not part of the pnpm workspace.
 
-The repository also contains the browser-ready runtime content in `themes/`:
+The repository also contains the browser-ready runtime content in `localdata/`:
 
 ```text
-themes/
+localdata/
 |-- common/                 # WebSkin-owned browser modules/assets
 |   `-- widgets/clock/      # plain, digital, and analog clock modules
 `-- themes/                 # installed theme packages
@@ -92,7 +92,7 @@ Resolution order:
 
 1. `WEBSKIN_THEMES_ROOT`, when set.
 2. Production/frozen mode: `%LOCALAPPDATA%/WinDesktop WebSkin/themes/`.
-3. Development mode: the repository's top-level `themes/` directory.
+3. Development mode: the repository's top-level `localdata/` directory.
 
 `WEBSKIN_ENV=production`/`prod`/`release` or
 `WEBSKIN_PRODUCTION=1|true|yes` selects production mode. Runtime code should

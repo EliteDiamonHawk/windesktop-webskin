@@ -1,4 +1,4 @@
-import { createClock as createPlainClock } from "./plain.js";
+import { createClock as createPlainClock } from "./plain-digital.js";
 
 const STYLE_ID = "webskin-clock-digital-styles";
 
@@ -8,15 +8,15 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-clock--digital {
-      --webskin-clock-color: #f5f7fb;
+      --webskin-clock-color: #cfb5ab;
       align-items: baseline;
-      background: #171b24;
-      border: 1px solid color-mix(in srgb, var(--webskin-clock-color) 28%, transparent);
+      background: #5b4841;
+      border: 1px solid #5b4841;
       border-radius: .75rem;
       box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       color: var(--webskin-clock-color);
       display: inline-flex;
-      font: 600 clamp(1.5rem, 5vw, 3rem)/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font: 600 clamp(1.5rem, 5vw, 3rem)/1 "Segoe Print", "Comic Sans MS", cursive;
       gap: .35rem;
       letter-spacing: .08em;
       padding: .75rem 1rem;
@@ -32,11 +32,7 @@ const ensureStyles = () => {
 /** Create the WebSkin-provided pre-styled digital clock. */
 export function createClock(options = {}) {
   ensureStyles();
-  const element = createPlainClock({
-    format: options.format ?? "24h",
-    seconds: options.seconds ?? true,
-    showPeriod: options.showPeriod ?? true,
-  });
+  const element = createPlainClock(options);
   element.classList.remove("webskin-clock--plain");
   element.classList.add("webskin-clock--digital");
   if (options.className) element.classList.add(...String(options.className).split(/\s+/).filter(Boolean));

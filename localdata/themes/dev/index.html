@@ -16,19 +16,29 @@
 
       <section class="showcase-grid" aria-label="Clock examples">
         <article class="clock-card clock-card--plain">
-          <p class="card-label">Plain common clock</p>
+          <p class="card-label">Plain digital</p>
           <div id="clock" class="clock-stage"></div>
-          <p class="card-note">Each part is available through <code>data-webskin-clock-part</code> hooks.</p>
+          <p class="card-note">Unchanged output from the plain clock module.</p>
+        </article>
+        <article class="clock-card clock-card--plain-analog">
+          <p class="card-label">Plain analog</p>
+          <div id="plain-analog-clock" class="clock-stage"></div>
+          <p class="card-note">The analog clock with neutral, theme-owned presentation.</p>
         </article>
         <article class="clock-card clock-card--digital">
-          <p class="card-label">Pre-styled common clock</p>
+          <p class="card-label">Pre-styled digital</p>
           <div id="digital-clock" class="clock-stage"></div>
-          <p class="card-note">The theme still chooses where this prepared widget is inserted.</p>
+          <p class="card-note">The common module supplies its own prepared digital treatment.</p>
         </article>
         <article class="clock-card clock-card--analog">
           <p class="card-label">Pre-styled analog clock</p>
           <div id="analog-clock" class="clock-stage"></div>
-          <p class="card-note">The analog face uses the same browser-ready common-widget contract.</p>
+          <p class="card-note">The common module supplies its own prepared analog treatment.</p>
+        </article>
+        <article class="clock-card clock-card--combination">
+          <p class="card-label">Pre-styled analog + digital</p>
+          <div id="combination-clock" class="clock-stage"></div>
+          <p class="card-note">Two pre-styled clocks can be composed by the theme.</p>
         </article>
       </section>
 
@@ -44,9 +54,9 @@
           <form id="clock-editor" class="editor-controls">
             <label>Variant<select name="variant"><option value="digital">Pre-styled digital</option><option value="analog">Pre-styled analog</option><option value="plain">Plain</option></select></label>
             <label>Format<select name="format"><option value="24h">24-hour</option><option value="12h">12-hour</option></select></label>
-            <label>Text color<input name="color" type="color" value="#b7f7d4" /></label>
-            <label>Background<input name="background" type="color" value="#171b24" /></label>
-            <label>Frame color<input name="frame" type="color" value="#b7f7d4" /></label>
+            <label>Text color<input name="color" type="color" value="#cfb5ab" /></label>
+            <label>Background<input name="background" type="color" value="#5b4841" /></label>
+            <label>Frame color<input name="frame" type="color" value="#5b4841" /></label>
             <label>Size<input name="size" type="range" min="1" max="5" step=".1" value="2.7" /><output data-output="size">2.7rem</output></label>
             <label>Corner radius<input name="radius" type="range" min="0" max="32" value="12" /><output data-output="radius">12px</output></label>
             <label>Padding<input name="padding" type="range" min="4" max="32" value="12" /><output data-output="padding">12px</output></label>

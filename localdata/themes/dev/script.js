@@ -1,10 +1,20 @@
-import { createClock as createPlainClock } from "/common/widgets/clock/plain.js";
-import { createClock as createDigitalClock } from "/common/widgets/clock/digital.js";
-import { createClock as createAnalogClock } from "/common/widgets/clock/analog.js";
+import { createClock as createPlainClock } from "/common/widgets/clock/plain-digital.js";
+import { createClock as createPlainAnalogClock } from "/common/widgets/clock/plain-analog.js";
+import { createClock as createDigitalClock } from "/common/widgets/clock/prestyled-digital.js";
+import { createClock as createAnalogClock } from "/common/widgets/clock/prestyled-analog.js";
+import { createClock as createDigitalAnalogClock } from "/common/widgets/clock/prestyled-digital-analog.js";
 
-document.querySelector("#clock").append(createPlainClock({ format: "12h", seconds: true }));
-document.querySelector("#digital-clock").append(createDigitalClock({ format: "24h", seconds: true, color: "#b7f7d4" }));
+document.querySelector("#clock").append(createPlainClock());
+document.querySelector("#plain-analog-clock").append(createPlainAnalogClock());
+document.querySelector("#digital-clock").append(createDigitalClock());
 document.querySelector("#analog-clock").append(createAnalogClock({ size: "9rem", color: "#d6a03e", faceColor: "#fffdf5", frameColor: "#678c70" }));
+
+document.querySelector("#combination-clock").append(createDigitalAnalogClock({
+  analogSize: "8rem",
+  seconds: false,
+  faceColor: "#fffdf5",
+  frameColor: "#678c70",
+}));
 
 const editor = document.querySelector("#clock-editor");
 const preview = document.querySelector("#editor-preview");
@@ -12,9 +22,9 @@ const resetButton = document.querySelector("[data-reset-editor]");
 const defaults = {
   variant: "digital",
   format: "24h",
-  color: "#b7f7d4",
-  background: "#171b24",
-  frame: "#b7f7d4",
+  color: "#cfb5ab",
+  background: "#5b4841",
+  frame: "#5b4841",
   size: "2.7",
   radius: "12",
   padding: "12",

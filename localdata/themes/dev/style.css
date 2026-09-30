@@ -18,14 +18,14 @@ code { color: #2b6742; font-family: ui-monospace, monospace; font-size: .9em; }
 .showcase-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .clock-card { min-height: 290px; padding: 24px; border: 1px solid #d5e0d5; border-radius: 24px; background: rgb(255 255 255 / .75); box-shadow: 0 22px 50px rgb(39 77 47 / .09); }
 .clock-stage { min-height: 150px; display: flex; align-items: center; justify-content: center; margin: 28px 0; border-block: 1px solid #e4ebe2; }
-.clock-card--plain .webskin-clock { display: inline-flex; align-items: center; color: #2e6645; font: 800 clamp(2rem, 7vw, 4.4rem)/1 Georgia, serif; font-style: italic; letter-spacing: -.06em; transform: rotate(-3deg); }
-.clock-card--plain .webskin-clock [data-webskin-clock-part="hours"] { color: #b34c3f; }
-.clock-card--plain .webskin-clock [data-webskin-clock-part="separator"] { margin: 0 .12em; color: #d6a03e; animation: blink 1s steps(2, jump-none) infinite; }
-.clock-card--plain .webskin-clock [data-webskin-clock-part="seconds"] { margin-left: .18em; color: #678c70; font-size: .42em; letter-spacing: .02em; transform: translateY(-.55em) rotate(3deg); }
-.clock-card--plain .webskin-clock [data-webskin-clock-part="period"] { margin-left: .2em; color: #8764a7; font: 800 .28em/1 ui-sans-serif, sans-serif; letter-spacing: .08em; transform: translateY(-1.1em); }
+.clock-card--plain .webskin-clock { display: inline-flex; align-items: center; font-size: clamp(2rem, 7vw, 4.4rem); }
+.clock-card--plain-analog .clock-stage { background: #fff; border-color: #d5e0d5; }
+.clock-card--plain-analog .webskin-clock--plain-analog { width: 9rem; height: 9rem; }
 .clock-card--digital .clock-stage { background: #111821; border-color: #263c32; }
 .clock-card--analog .clock-stage { background: #fdfcf4; border-color: #d9dfc8; }
 .clock-card--analog .webskin-clock { color: #d6a03e; }
+.clock-card--combination .clock-stage { flex-wrap: wrap; gap: 22px; background: #17251e; border-color: #35583f; }
+.clock-card--combination .webskin-clock--digital { font-size: 1.25rem; }
 .card-note { color: #718075; font-size: .82rem; line-height: 1.5; }
 .editor-card { margin-top: 18px; padding: 24px; border: 1px solid #cbd9cc; border-radius: 24px; background: #17251e; color: #f4f7f1; box-shadow: 0 22px 50px rgb(39 77 47 / .14); }
 .editor-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 22px; }

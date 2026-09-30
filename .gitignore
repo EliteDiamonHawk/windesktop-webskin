@@ -152,3 +152,6 @@ logs/
 
 # Local package manager store
 .pnpm-store/
+
+# Local development settings
+/localdata/settings.json

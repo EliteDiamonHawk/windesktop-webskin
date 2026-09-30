@@ -9,6 +9,6 @@
   <circle cx="343" cy="446" r="130" fill="#fdfcf4" stroke="#678c70" stroke-width="12"/>
   <circle cx="343" cy="446" r="12" fill="#2e6645"/>
   <path d="M343 446 343 350M343 446 414 492" fill="none" stroke="#2e6645" stroke-width="12" stroke-linecap="round"/>
-  <text x="857" y="455" fill="#b7f7d4" font-family="ui-monospace, monospace" font-size="76" text-anchor="middle">03:42</text>
+  <text x="857" y="455" fill="#cfb5ab" font-family="ui-monospace, monospace" font-size="76" text-anchor="middle">03:42</text>
   <text x="857" y="522" fill="#93d7ab" font-family="ui-sans-serif, sans-serif" font-size="28" letter-spacing="8" text-anchor="middle">WEB SKIN</text>
 </svg>

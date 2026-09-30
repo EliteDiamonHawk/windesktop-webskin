@@ -8,10 +8,13 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from threading import RLock
 from typing import Any, Protocol
+
+from .paths import REPOSITORY_ROOT
 
 
 class SettingsStorageError(RuntimeError):
@@ -38,9 +41,19 @@ class JsonSettingsStorage:
         elif configured_path:
             self.path = Path(configured_path)
         else:
-            local_app_data = os.getenv("LOCALAPPDATA")
-            base = Path(local_app_data) if local_app_data else Path.home() / "AppData" / "Local"
-            self.path = base / "WinDesktopWebskin" / "settings.json"
+            environment = os.getenv("WEBSKIN_ENV", "development").casefold()
+            production_flag = os.getenv("WEBSKIN_PRODUCTION", "").casefold()
+            production = (
+                getattr(sys, "frozen", False)
+                or environment in {"production", "prod", "release"}
+                or production_flag in {"1", "true", "yes"}
+            )
+            if production:
+                local_app_data = os.getenv("LOCALAPPDATA")
+                base = Path(local_app_data) if local_app_data else Path.home() / "AppData" / "Local"
+                self.path = base / "WinDesktopWebskin" / "settings.json"
+            else:
+                self.path = REPOSITORY_ROOT / "localdata" / "settings.json"
         self._lock = RLock()
 
     def get_namespace(self, namespace: str, identifier: str | None = None) -> dict[str, Any]:

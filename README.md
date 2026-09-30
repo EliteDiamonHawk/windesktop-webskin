@@ -20,10 +20,13 @@ projects. The repository keeps them in one top-level root:
 ```text
 localdata/
 ├── common/                 # WebSkin-owned browser modules and shared assets
-│   └── widgets/clock/
-│       ├── plain.js
-│       ├── digital.js
-│       └── analog.js
+│   └── widgets/time/
+│       ├── digital-plain.js
+│       ├── digital-prestyled.js
+│       ├── analog-plain.js
+│       ├── analog-prestyled.js
+│       ├── analog-prestyled2.js
+│       └── digital-analog-prestyled.js
 └── themes/                 # installed theme packages
     └── dev/
         ├── metadata.json
@@ -41,7 +44,7 @@ The backend serves common files at `/common/...` and theme files at
 `/themes/<theme-id>/...`. A theme can consume a shared widget directly:
 
 ```js
-import { createClock } from "/common/widgets/clock/plain.js";
+import { createClock } from "/common/widgets/time/digital-plain.js";
 
 document.querySelector("#clock").append(createClock());
 ```

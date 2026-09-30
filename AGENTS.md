@@ -23,7 +23,7 @@ The repository also contains the browser-ready runtime content in `localdata/`:
 ```text
 localdata/
 |-- common/                 # WebSkin-owned browser modules/assets
-|   `-- widgets/clock/      # plain, digital, and analog clock modules
+|   `-- widgets/time/       # plain, digital, and analog time modules
 `-- themes/                 # installed theme packages
     `-- dev/                # bundled development theme
 ```
@@ -69,7 +69,7 @@ URLs in `index.html` must work below `/themes/{theme_id}/`. Shared WebSkin
 modules are imported from stable URLs, for example:
 
 ```js
-import { createClock } from "/common/widgets/clock/plain.js";
+import { createClock } from "/common/widgets/time/digital-plain.js";
 ```
 
 Common widgets return normal DOM and expose stable `data-webskin-*` hooks. A

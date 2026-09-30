@@ -1,9 +1,9 @@
-import { createClock as createPlainClock } from "/common/widgets/clock/digital-plain.js";
-import { createClock as createPlainAnalogClock } from "/common/widgets/clock/analog-plain.js";
-import { createClock as createDigitalClock } from "/common/widgets/clock/digital-prestyled.js";
-import { createClock as createAnalogClock } from "/common/widgets/clock/analog-prestyled.js";
-import { createClock as createAnalogClock2 } from "/common/widgets/clock/analog-prestyled2.js";
-import { createClock as createDigitalAnalogClock } from "/common/widgets/clock/digital-analog-prestyled.js";
+import { createClock as createPlainClock } from "/common/widgets/time/digital-plain.js";
+import { createClock as createPlainAnalogClock } from "/common/widgets/time/analog-plain.js";
+import { createClock as createDigitalClock } from "/common/widgets/time/digital-prestyled.js";
+import { createClock as createAnalogClock } from "/common/widgets/time/analog-prestyled.js";
+import { createClock as createAnalogClock2 } from "/common/widgets/time/analog-prestyled2.js";
+import { createClock as createDigitalAnalogClock } from "/common/widgets/time/digital-analog-prestyled.js";
 
 document.querySelector("#clock").append(createPlainClock());
 document.querySelector("#analog-plain-clock").append(createPlainAnalogClock());

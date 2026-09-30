@@ -208,8 +208,13 @@ matching folders in this directory.
     def _preview_url(theme_id: str, theme_path: Path) -> str | None:
         if (theme_path / "preview.png").is_file():
             return f"/api/themes/{theme_id}/preview"
-        if (theme_path / "assets" / "images" / "preview.svg").is_file():
-            return f"/themes/{theme_id}/assets/images/preview.svg"
+        preview_filenames = ("preview.png", "preview.jpeg", "preview.jpg", "preview.svg", "preview.webp", "preview.gif")
+        for relative_directory in (Path(), Path("assets") / "images"):
+            for filename in preview_filenames:
+                preview_path = theme_path / relative_directory / filename
+                if preview_path.is_file():
+                    relative_path = (relative_directory / filename).as_posix()
+                    return f"/themes/{theme_id}/{relative_path}"
         return None
 
     @staticmethod

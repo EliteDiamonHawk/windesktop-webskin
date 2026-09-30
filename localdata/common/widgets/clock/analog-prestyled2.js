@@ -9,6 +9,7 @@ const ensureStyles = () => {
   style.textContent = `
     svg.webskin-clock--analog-prestyled2 {
       --webskin-analog2-color: #5b4841;
+      --webskin-analog2-accent: #cfb5ab;
       --webskin-analog2-face: #5b4841;
       --webskin-analog2-frame: #5b4841;
       --webskin-analog2-shadow: rgb(91 72 65 / .42);
@@ -33,13 +34,13 @@ const ensureStyles = () => {
     }
     svg.webskin-clock--analog-prestyled2 [data-webskin-clock-part="hour-hand"],
     svg.webskin-clock--analog-prestyled2 [data-webskin-clock-part="minute-hand"] {
-      stroke: #cfb5ab;
+      stroke: var(--webskin-analog2-accent);
       stroke-linecap: round;
     }
     svg.webskin-clock--analog-prestyled2 [data-webskin-clock-part="hour-hand"] { stroke-width: 5; }
     svg.webskin-clock--analog-prestyled2 [data-webskin-clock-part="minute-hand"] { stroke-width: 3; }
     svg.webskin-clock--analog-prestyled2 [data-webskin-clock-part="second-hand"] {
-      stroke: #cfb5ab;
+      stroke: var(--webskin-analog2-accent);
       stroke-linecap: round;
       stroke-width: 1.5;
     }
@@ -57,8 +58,14 @@ const ensureStyles = () => {
 
 /** Create the WebSkin-provided second pre-styled analog clock treatment. */
 export function createClock(options = {}) {
-  const element = createPlainAnalogClock(options);
+  const element = createPlainAnalogClock({ ...options, smooth: options.smooth ?? true });
   ensureStyles();
   element.classList.add("webskin-clock--analog-prestyled2");
+  if (options.color) element.style.setProperty("--webskin-analog2-accent", options.color);
+  if (options.backgroundColor) {
+    element.style.setProperty("--webskin-analog2-color", options.backgroundColor);
+    element.style.setProperty("--webskin-analog2-face", options.backgroundColor);
+    element.style.setProperty("--webskin-analog2-frame", options.backgroundColor);
+  }
   return element;
 }

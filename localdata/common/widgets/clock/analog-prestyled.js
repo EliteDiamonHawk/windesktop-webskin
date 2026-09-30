@@ -32,7 +32,9 @@ const ensureStyles = () => {
 /** Create the WebSkin-provided pre-styled analog clock. */
 export function createClock(options = {}) {
   ensureStyles();
-  const element = createPlainAnalogClock(options);
+  const element = createPlainAnalogClock({ ...options, smooth: options.smooth ?? true });
   element.classList.add("webskin-clock--analog-prestyled");
+  if (options.color) element.style.setProperty("--webskin-analog-color", options.color);
+  if (options.backgroundColor) element.style.setProperty("--webskin-analog-face", options.backgroundColor);
   return element;
 }

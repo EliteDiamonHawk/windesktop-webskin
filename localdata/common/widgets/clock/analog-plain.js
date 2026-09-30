@@ -75,10 +75,10 @@ const ensureStyles = () => {
   document.head.append(style);
 };
 
-const clockAngles = (now) => ({
-  hour: ((now.getHours() % 12) + now.getMinutes() / 60) * 30,
-  minute: (now.getMinutes() + now.getSeconds() / 60) * 6,
-  second: now.getSeconds() * 6,
+const clockAngles = (now, smooth) => ({
+  hour: ((now.getHours() % 12) + now.getMinutes() / 60 + (smooth ? now.getSeconds() / 3600 : 0)) * 30,
+  minute: (now.getMinutes() + (smooth ? now.getSeconds() / 60 : 0)) * 6,
+  second: (now.getSeconds() + (smooth ? now.getMilliseconds() / 1000 : 0)) * 6,
 });
 
 /** Create a behavior-first analog clock with theme-overridable CSS hooks. */
@@ -86,6 +86,7 @@ export function createClock(options = {}) {
   ensureStyles();
   const {
     offsetMinutes = 0,
+    smooth = false,
     className = "",
   } = options;
 
@@ -126,17 +127,30 @@ export function createClock(options = {}) {
   element.append(pin);
 
   const render = () => {
-    const angles = clockAngles(new Date(Date.now() + Number(offsetMinutes) * 60_000));
+    const angles = clockAngles(new Date(Date.now() + Number(offsetMinutes) * 60_000), smooth);
     hourHand.setAttribute("transform", `rotate(${angles.hour} 50 50)`);
     minuteHand.setAttribute("transform", `rotate(${angles.minute} 50 50)`);
     secondHand.setAttribute("transform", `rotate(${angles.second} 50 50)`);
   };
 
   render();
-  const timer = window.setInterval(render, 1000);
+  let animationFrame;
+  let timer;
+  if (smooth) {
+    const animate = () => {
+      render();
+      animationFrame = window.requestAnimationFrame(animate);
+    };
+    animationFrame = window.requestAnimationFrame(animate);
+  } else {
+    timer = window.setInterval(render, 1000);
+  }
   Object.defineProperty(element, "destroy", {
     configurable: true,
-    value: () => window.clearInterval(timer),
+    value: () => {
+      if (animationFrame !== undefined) window.cancelAnimationFrame(animationFrame);
+      if (timer !== undefined) window.clearInterval(timer);
+    },
   });
   return element;
 }

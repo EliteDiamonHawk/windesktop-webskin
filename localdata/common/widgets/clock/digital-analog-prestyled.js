@@ -65,6 +65,9 @@ export function createClock(options = {}) {
     showPeriod = true,
     syntax,
     offsetMinutes = 0,
+    smooth,
+    color,
+    backgroundColor,
     className = "",
   } = options;
 
@@ -75,7 +78,7 @@ export function createClock(options = {}) {
   element.dataset.webskinWidget = "clock";
 
   const sharedOptions = { offsetMinutes };
-  const analog = createAnalogPlain(sharedOptions);
+  const analog = createAnalogPlain({ ...sharedOptions, smooth: smooth ?? true });
   const digital = createDigitalPlain({
     ...sharedOptions,
     format,
@@ -86,6 +89,12 @@ export function createClock(options = {}) {
   analog.dataset.webskinClockPart = "analog";
   digital.dataset.webskinClockPart = "digital";
   element.append(analog, digital);
+  if (color) element.style.setProperty("--webskin-combination-color", color);
+  if (backgroundColor) {
+    element.style.setProperty("--webskin-combination-analog-color", backgroundColor);
+    element.style.setProperty("--webskin-combination-surface", backgroundColor);
+  }
+  if (color) element.style.setProperty("--webskin-combination-analog-face", color);
 
   Object.defineProperty(element, "destroy", {
     configurable: true,

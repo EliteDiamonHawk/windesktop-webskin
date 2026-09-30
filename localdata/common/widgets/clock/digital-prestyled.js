@@ -9,9 +9,10 @@ const ensureStyles = () => {
   style.textContent = `
     .webskin-clock--digital-prestyled {
       --webskin-clock-color: #cfb5ab;
+      --webskin-clock-background: #5b4841;
       align-items: baseline;
-      background: #5b4841;
-      border: 1px solid #5b4841;
+      background: var(--webskin-clock-background);
+      border: 1px solid var(--webskin-clock-background);
       border-radius: .75rem;
       box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       color: var(--webskin-clock-color);
@@ -36,5 +37,7 @@ export function createClock(options = {}) {
   element.classList.remove("webskin-clock--digital-plain");
   element.classList.add("webskin-clock--digital-prestyled");
   if (options.className) element.classList.add(...String(options.className).split(/\s+/).filter(Boolean));
+  if (options.color) element.style.setProperty("--webskin-clock-color", options.color);
+  if (options.backgroundColor) element.style.setProperty("--webskin-clock-background", options.backgroundColor);
   return element;
 }

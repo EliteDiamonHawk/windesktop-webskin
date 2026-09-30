@@ -1,5 +1,6 @@
 import { createClock as createDigitalPlain } from "./digital-plain.js";
 import { createClock as createAnalogPlain } from "./analog-plain.js";
+import { Widget } from "../widgets.js";
 
 const STYLE_ID = "webskin-clock-digital-analog-prestyled-styles";
 
@@ -56,52 +57,54 @@ const ensureStyles = () => {
   document.head.append(style);
 };
 
-/** Create the WebSkin-provided digital and reversed analog treatment. */
-export function createClock(options = {}) {
-  ensureStyles();
-  const {
-    format = "24h",
-    seconds = false,
-    showPeriod = true,
-    syntax,
-    offsetMinutes = 0,
-    smooth,
-    color,
-    backgroundColor,
-    className = "",
-  } = options;
+class DigitalAnalogClock extends Widget {
+  constructor(options = {}) {
+    ensureStyles();
+    const {
+      format = "24h",
+      seconds = false,
+      showPeriod = true,
+      syntax,
+      offsetMinutes = 0,
+      smooth,
+      color,
+      backgroundColor,
+      className = "",
+    } = options;
 
-  const element = document.createElement("div");
-  element.className = ["webskin-clock", "webskin-clock--digital-analog-prestyled", className]
-    .filter(Boolean)
-    .join(" ");
-  element.dataset.webskinWidget = "clock";
+    const element = document.createElement("div");
+    super(element, { type: "clock" });
+    element.className = ["webskin-clock", "webskin-clock--digital-analog-prestyled", className]
+      .filter(Boolean)
+      .join(" ");
 
-  const sharedOptions = { offsetMinutes };
-  const analog = createAnalogPlain({ ...sharedOptions, smooth: smooth ?? true });
-  const digital = createDigitalPlain({
-    ...sharedOptions,
-    format,
-    seconds,
-    showPeriod,
-    syntax,
-  });
-  analog.dataset.webskinClockPart = "analog";
-  digital.dataset.webskinClockPart = "digital";
-  element.append(analog, digital);
-  if (color) element.style.setProperty("--webskin-combination-color", color);
-  if (backgroundColor) {
-    element.style.setProperty("--webskin-combination-analog-color", backgroundColor);
-    element.style.setProperty("--webskin-combination-surface", backgroundColor);
-  }
-  if (color) element.style.setProperty("--webskin-combination-analog-face", color);
+    const sharedOptions = { offsetMinutes };
+    const analog = createAnalogPlain({ ...sharedOptions, smooth: smooth ?? true });
+    const digital = createDigitalPlain({
+      ...sharedOptions,
+      format,
+      seconds,
+      showPeriod,
+      syntax,
+    });
+    analog.dataset.webskinClockPart = "analog";
+    digital.dataset.webskinClockPart = "digital";
+    element.append(analog, digital);
+    if (color) element.style.setProperty("--webskin-combination-color", color);
+    if (backgroundColor) {
+      element.style.setProperty("--webskin-combination-analog-color", backgroundColor);
+      element.style.setProperty("--webskin-combination-surface", backgroundColor);
+    }
+    if (color) element.style.setProperty("--webskin-combination-analog-face", color);
 
-  Object.defineProperty(element, "destroy", {
-    configurable: true,
-    value: () => {
+    this.addCleanup(() => {
       analog.destroy?.();
       digital.destroy?.();
-    },
-  });
-  return element;
+    });
+  }
+}
+
+/** Create the WebSkin-provided digital and reversed analog treatment. */
+export function createClock(options = {}) {
+  return new DigitalAnalogClock(options).element;
 }

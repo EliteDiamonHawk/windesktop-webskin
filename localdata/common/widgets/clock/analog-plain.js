@@ -1,3 +1,5 @@
+import { Widget } from "../widgets.js";
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 const STYLE_ID = "webskin-clock-analog-plain-styles";
 
@@ -81,76 +83,78 @@ const clockAngles = (now, smooth) => ({
   second: (now.getSeconds() + (smooth ? now.getMilliseconds() / 1000 : 0)) * 6,
 });
 
-/** Create a behavior-first analog clock with theme-overridable CSS hooks. */
-export function createClock(options = {}) {
-  ensureStyles();
-  const {
-    offsetMinutes = 0,
-    smooth = false,
-    className = "",
-  } = options;
+class PlainAnalogClock extends Widget {
+  constructor(options = {}) {
+    ensureStyles();
+    const {
+      offsetMinutes = 0,
+      smooth = false,
+      className = "",
+    } = options;
 
-  const element = svgElement("svg", {
-    viewBox: "0 0 100 100",
-    role: "img",
-    "aria-label": "Analog clock",
-  });
-  element.classList.add("webskin-clock", "webskin-clock--analog-plain", ...String(className).split(/\s+/).filter(Boolean));
-  element.dataset.webskinWidget = "clock";
-
-  const face = svgElement("circle", { cx: "50", cy: "50", r: "44" });
-  face.dataset.webskinClockPart = "face";
-  element.append(face);
-
-  for (let index = 0; index < 12; index += 1) {
-    const angle = index * 30 * Math.PI / 180;
-    const tick = svgElement("line", {
-      x1: String(50 + Math.sin(angle) * 38),
-      y1: String(50 - Math.cos(angle) * 38),
-      x2: String(50 + Math.sin(angle) * 42),
-      y2: String(50 - Math.cos(angle) * 42),
+    const element = svgElement("svg", {
+      viewBox: "0 0 100 100",
+      role: "img",
+      "aria-label": "Analog clock",
     });
-    tick.dataset.webskinClockPart = "tick";
-    element.append(tick);
-  }
+    super(element, { type: "clock" });
+    element.classList.add("webskin-clock", "webskin-clock--analog-plain", ...String(className).split(/\s+/).filter(Boolean));
 
-  const hourHand = svgElement("line", { x1: "50", y1: "50", x2: "50", y2: "27" });
-  const minuteHand = svgElement("line", { x1: "50", y1: "50", x2: "50", y2: "16" });
-  const secondHand = svgElement("line", { x1: "50", y1: "53", x2: "50", y2: "12" });
-  hourHand.dataset.webskinClockPart = "hour-hand";
-  minuteHand.dataset.webskinClockPart = "minute-hand";
-  secondHand.dataset.webskinClockPart = "second-hand";
-  element.append(hourHand, minuteHand, secondHand);
+    const face = svgElement("circle", { cx: "50", cy: "50", r: "44" });
+    face.dataset.webskinClockPart = "face";
+    element.append(face);
 
-  const pin = svgElement("circle", { cx: "50", cy: "50", r: "2.5" });
-  pin.dataset.webskinClockPart = "pin";
-  element.append(pin);
+    for (let index = 0; index < 12; index += 1) {
+      const angle = index * 30 * Math.PI / 180;
+      const tick = svgElement("line", {
+        x1: String(50 + Math.sin(angle) * 38),
+        y1: String(50 - Math.cos(angle) * 38),
+        x2: String(50 + Math.sin(angle) * 42),
+        y2: String(50 - Math.cos(angle) * 42),
+      });
+      tick.dataset.webskinClockPart = "tick";
+      element.append(tick);
+    }
 
-  const render = () => {
-    const angles = clockAngles(new Date(Date.now() + Number(offsetMinutes) * 60_000), smooth);
-    hourHand.setAttribute("transform", `rotate(${angles.hour} 50 50)`);
-    minuteHand.setAttribute("transform", `rotate(${angles.minute} 50 50)`);
-    secondHand.setAttribute("transform", `rotate(${angles.second} 50 50)`);
-  };
+    const hourHand = svgElement("line", { x1: "50", y1: "50", x2: "50", y2: "27" });
+    const minuteHand = svgElement("line", { x1: "50", y1: "50", x2: "50", y2: "16" });
+    const secondHand = svgElement("line", { x1: "50", y1: "53", x2: "50", y2: "12" });
+    hourHand.dataset.webskinClockPart = "hour-hand";
+    minuteHand.dataset.webskinClockPart = "minute-hand";
+    secondHand.dataset.webskinClockPart = "second-hand";
+    element.append(hourHand, minuteHand, secondHand);
 
-  render();
-  let animationFrame;
-  let timer;
-  if (smooth) {
-    const animate = () => {
-      render();
-      animationFrame = window.requestAnimationFrame(animate);
+    const pin = svgElement("circle", { cx: "50", cy: "50", r: "2.5" });
+    pin.dataset.webskinClockPart = "pin";
+    element.append(pin);
+
+    const render = () => {
+      const angles = clockAngles(new Date(Date.now() + Number(offsetMinutes) * 60_000), smooth);
+      hourHand.setAttribute("transform", `rotate(${angles.hour} 50 50)`);
+      minuteHand.setAttribute("transform", `rotate(${angles.minute} 50 50)`);
+      secondHand.setAttribute("transform", `rotate(${angles.second} 50 50)`);
     };
-    animationFrame = window.requestAnimationFrame(animate);
-  } else {
-    timer = window.setInterval(render, 1000);
-  }
-  Object.defineProperty(element, "destroy", {
-    configurable: true,
-    value: () => {
+
+    render();
+    let animationFrame;
+    let timer;
+    if (smooth) {
+      const animate = () => {
+        render();
+        animationFrame = window.requestAnimationFrame(animate);
+      };
+      animationFrame = window.requestAnimationFrame(animate);
+    } else {
+      timer = window.setInterval(render, 1000);
+    }
+    this.addCleanup(() => {
       if (animationFrame !== undefined) window.cancelAnimationFrame(animationFrame);
       if (timer !== undefined) window.clearInterval(timer);
-    },
-  });
-  return element;
+    });
+  }
+}
+
+/** Create a behavior-first analog clock with theme-overridable CSS hooks. */
+export function createClock(options = {}) {
+  return new PlainAnalogClock(options).element;
 }

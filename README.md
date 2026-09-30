@@ -46,6 +46,11 @@ import { createClock } from "/common/widgets/clock/plain.js";
 document.querySelector("#clock").append(createClock());
 ```
 
+Shared widgets follow the contract in `/common/widgets/widgets.js`: each
+widget returns its root DOM element and exposes an optional `destroy()` method
+for cleanup. The plain clock implementations extend the shared `Widget`
+base, and styled clock variants build on those plain implementations.
+
 The plain clock returns normal DOM with stable `data-webskin-clock-part`
 attributes. The digital and analog variants add WebSkin styling; the theme
 still decides where to insert either returned element. There is no widget

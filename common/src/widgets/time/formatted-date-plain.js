@@ -1,5 +1,5 @@
 // Plain calendar view in the shared time widget category.
-import { Widget } from "../widgets.js";
+import { Widget } from "../widgets.js?v=calendar-date-5";
 import {
   calendarDateState,
   createCalendarFormatters,
@@ -8,10 +8,11 @@ import {
   normalizeDate,
   parseDateFormat,
   resolveLocale,
+  resolveHighlightDate,
   tokenPart,
   tokenValue,
   watchCurrentDate,
-} from "./calendar-data.js";
+} from "./calendar-data.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-formatted-date-plain-styles";
 
@@ -35,8 +36,8 @@ const createPart = (part, text = "") => {
   return element;
 };
 
-const applyDateState = (element, date) => {
-  const state = calendarDateState(date);
+const applyDateState = (element, date, highlightDate) => {
+  const state = calendarDateState(date, true, highlightDate);
   element.dataset.webskinCalendarDate = state.date;
   element.dataset.webskinCalendarWeekday = state.weekday;
   element.dataset.webskinCalendarWeekdayIndex = String(state.weekdayIndex);
@@ -49,6 +50,7 @@ class PlainFormattedDate extends Widget {
     ensureStyles();
     const {
       date: suppliedDate,
+      highlightDate: suppliedHighlightDate,
       locale: suppliedLocale,
       format,
       className = "",
@@ -56,6 +58,7 @@ class PlainFormattedDate extends Widget {
 
     const locale = resolveLocale(suppliedLocale);
     const formatters = createCalendarFormatters(locale);
+    const highlightDate = resolveHighlightDate(suppliedDate, suppliedHighlightDate);
     const element = document.createElement("time");
     super(element, { type: "calendar" });
     element.className = ["webskin-calendar", "webskin-calendar--formatted-date-plain", className]
@@ -83,7 +86,7 @@ class PlainFormattedDate extends Widget {
             : segment.value;
       }
       element.dateTime = dateKey(current);
-      applyDateState(element, current);
+      applyDateState(element, current, highlightDate);
       element.setAttribute("aria-label", formatters.medium.format(current));
     };
 

@@ -32,6 +32,10 @@ code { color: #2b6742; font-family: ui-monospace, monospace; font-size: .9em; }
 .calendar-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 22px; }
 .calendar-heading h2 { margin: 8px 0 0; color: #17251e; font-size: clamp(1.5rem, 4vw, 2.5rem); letter-spacing: -.05em; }
 .calendar-heading > p { max-width: 300px; margin: 0; color: #5d6d63; font-size: .82rem; line-height: 1.5; }
+.calendar-controls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.calendar-controls button { min-height: 32px; padding: 6px 10px; border: 1px solid #b7cbb9; border-radius: 8px; background: #f7fbf6; color: #2b6742; cursor: pointer; font: inherit; font-size: .72rem; font-weight: 750; }
+.calendar-controls button:hover { background: #fff; border-color: #6b9a76; }
+.calendar-controls output { min-width: 136px; color: #5d6d63; font-size: .76rem; font-weight: 700; text-align: center; }
 .calendar-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .calendar-card { min-height: 250px; padding: 20px; border: 1px solid #d5e0d5; border-radius: 18px; background: rgb(255 255 255 / .8); }
 .calendar-stage { min-height: 138px; display: grid; place-items: center; margin: 20px 0; border-block: 1px solid #e4ebe2; }

@@ -1,5 +1,5 @@
 // Plain calendar view in the shared time widget category.
-import { Widget } from "../widgets.js";
+import { Widget } from "../widgets.js?v=calendar-date-5";
 import {
   calendarDateState,
   createCalendarFormatters,
@@ -11,11 +11,12 @@ import {
   localeWeekStartsOn,
   normalizeDate,
   resolveLocale,
+  resolveHighlightDate,
   resolveMonthLock,
   resolveMonthMaxWeeks,
   weekdayOrder,
   watchCurrentDate,
-} from "./calendar-data.js";
+} from "./calendar-data.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-month-plain-styles";
 
@@ -53,8 +54,8 @@ const createPart = (part, text = "", tag = "span") => {
   return element;
 };
 
-const applyDateState = (element, date, inMonth) => {
-  const state = calendarDateState(date, inMonth);
+const applyDateState = (element, date, inMonth, highlightDate) => {
+  const state = calendarDateState(date, inMonth, highlightDate);
   element.dataset.webskinCalendarDate = state.date;
   element.dataset.webskinCalendarWeekday = state.weekday;
   element.dataset.webskinCalendarWeekdayIndex = String(state.weekdayIndex);
@@ -63,12 +64,12 @@ const applyDateState = (element, date, inMonth) => {
   element.dateTime = state.date;
 };
 
-const createCell = (date, inMonth, formatters) => {
+const createCell = (date, inMonth, formatters, highlightDate) => {
   const cell = document.createElement("time");
   cell.dataset.webskinCalendarPart = "date-cell";
   const day = createPart("day", String(date.getDate()));
   cell.append(day);
-  applyDateState(cell, date, inMonth);
+  applyDateState(cell, date, inMonth, highlightDate);
   return cell;
 };
 
@@ -81,11 +82,13 @@ class PlainMonth extends Widget {
       weekStartsOn,
       lockDay,
       maxWeeks: suppliedMaxWeeks,
+      highlightDate: suppliedHighlightDate,
       className = "",
     } = options;
 
     const locale = resolveLocale(suppliedLocale);
     const formatters = createCalendarFormatters(locale);
+    const highlightDate = resolveHighlightDate(suppliedDate, suppliedHighlightDate);
     const firstDay = localeWeekStartsOn(locale, weekStartsOn);
     const maxWeeks = resolveMonthMaxWeeks(suppliedMaxWeeks);
     const monthLock = resolveMonthLock(lockDay, maxWeeks);
@@ -143,7 +146,7 @@ class PlainMonth extends Widget {
       }
       month.textContent = localizedMonth(anchor, formatters, "long");
       year.textContent = String(anchor.getFullYear());
-      grid.replaceChildren(...cells.map(({ date, inMonth }) => createCell(date, inMonth, formatters)));
+      grid.replaceChildren(...cells.map(({ date, inMonth }) => createCell(date, inMonth, formatters, highlightDate)));
     };
 
     render(suppliedDate);

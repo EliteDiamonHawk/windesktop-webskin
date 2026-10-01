@@ -1,5 +1,5 @@
 // Plain calendar view in the shared time widget category.
-import { Widget } from "../widgets.js";
+import { Widget } from "../widgets.js?v=calendar-date-5";
 import {
   calendarDateState,
   createCalendarFormatters,
@@ -8,8 +8,9 @@ import {
   localizedWeekday,
   normalizeDate,
   resolveLocale,
+  resolveHighlightDate,
   watchCurrentDate,
-} from "./calendar-data.js";
+} from "./calendar-data.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-single-day-plain-styles";
 
@@ -33,8 +34,8 @@ const createPart = (part, text = "") => {
   return element;
 };
 
-const renderDateParts = (parts, date, formatters) => {
-  const state = calendarDateState(date);
+const renderDateParts = (parts, date, formatters, highlightDate) => {
+  const state = calendarDateState(date, true, highlightDate);
   parts.weekday.textContent = localizedWeekday(date.getDay(), formatters, "long");
   parts.day.textContent = String(date.getDate());
   parts.month.textContent = localizedMonth(date, formatters, "long");
@@ -53,12 +54,14 @@ class PlainSingleDay extends Widget {
     ensureStyles();
     const {
       date: suppliedDate,
+      highlightDate: suppliedHighlightDate,
       locale: suppliedLocale,
       className = "",
     } = options;
 
     const locale = resolveLocale(suppliedLocale);
     const formatters = createCalendarFormatters(locale);
+    const highlightDate = resolveHighlightDate(suppliedDate, suppliedHighlightDate);
     const element = document.createElement("time");
     super(element, { type: "calendar" });
     element.className = ["webskin-calendar", "webskin-calendar--single-day-plain", className]
@@ -74,7 +77,7 @@ class PlainSingleDay extends Widget {
     };
     element.append(parts.weekday, parts.day, parts.month, parts.year);
 
-    const render = (nextDate) => renderDateParts(parts, normalizeDate(nextDate), formatters);
+    const render = (nextDate) => renderDateParts(parts, normalizeDate(nextDate), formatters, highlightDate);
     render(suppliedDate);
     if (suppliedDate === undefined) this.addCleanup(watchCurrentDate(render));
   }

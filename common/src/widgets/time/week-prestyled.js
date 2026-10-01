@@ -1,5 +1,5 @@
 // Pre-styled calendar view in the shared time widget category.
-import { createWeek as createPlainWeek } from "./week-plain.js";
+import { createWeek as createPlainWeek } from "./week-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-week-prestyled-styles";
 

@@ -41,6 +41,13 @@ export const normalizeDate = (value) => {
   throw new TypeError("Calendar dates must be Date objects or YYYY-MM-DD strings");
 };
 
+/** Resolve the date used for the current/today state of a calendar. */
+export const resolveHighlightDate = (date, highlightDate) => (
+  highlightDate === undefined
+    ? date === undefined ? undefined : normalizeDate(date)
+    : normalizeDate(highlightDate)
+);
+
 export const dateKey = (date) => `${String(date.getFullYear()).padStart(4, "0")}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
 export const sameDate = (left, right) => (
@@ -213,11 +220,11 @@ export const getRollingMonthGrid = (date, weekStartsOn, lockDay, maxWeeks = 6) =
   };
 };
 
-export const calendarDateState = (date, inMonth = true) => ({
+export const calendarDateState = (date, inMonth = true, highlightDate = today()) => ({
   date: dateKey(date),
   weekday: DAY_NAMES[date.getDay()],
   weekdayIndex: date.getDay(),
-  today: sameDate(date, today()),
+  today: sameDate(date, highlightDate),
   inMonth,
 });
 

@@ -1,5 +1,5 @@
 // Pre-styled calendar view in the shared time widget category.
-import { createDay as createPlainDay } from "./single-day-plain.js";
+import { createDay as createPlainDay } from "./single-day-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-single-day-prestyled-styles";
 

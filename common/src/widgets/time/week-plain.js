@@ -1,5 +1,5 @@
 // Plain calendar view in the shared time widget category.
-import { Widget } from "../widgets.js";
+import { Widget } from "../widgets.js?v=calendar-date-5";
 import {
   addDays,
   calendarDateState,
@@ -12,10 +12,11 @@ import {
   localeWeekStartsOn,
   normalizeDate,
   resolveLocale,
+  resolveHighlightDate,
   resolveWeekWindow,
   startOfWeek,
   watchCurrentDate,
-} from "./calendar-data.js";
+} from "./calendar-data.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-week-plain-styles";
 
@@ -46,8 +47,8 @@ const createPart = (part, text = "") => {
   return element;
 };
 
-const applyDateState = (element, date) => {
-  const state = calendarDateState(date);
+const applyDateState = (element, date, highlightDate) => {
+  const state = calendarDateState(date, true, highlightDate);
   element.dataset.webskinCalendarDate = state.date;
   element.dataset.webskinCalendarWeekday = state.weekday;
   element.dataset.webskinCalendarWeekdayIndex = String(state.weekdayIndex);
@@ -56,19 +57,19 @@ const applyDateState = (element, date) => {
   element.dateTime = state.date;
 };
 
-const createCell = (date, formatters) => {
+const createCell = (date, formatters, highlightDate) => {
   const cell = document.createElement("time");
   cell.dataset.webskinCalendarPart = "date-cell";
   const weekday = createPart("weekday");
   const day = createPart("day");
   const month = createPart("month");
   cell.append(weekday, day, month);
-  renderCell(cell, { weekday, day, month }, date, formatters);
+  renderCell(cell, { weekday, day, month }, date, formatters, highlightDate);
   return { cell, parts: { weekday, day, month } };
 };
 
-const renderCell = (cell, parts, date, formatters) => {
-  applyDateState(cell, date);
+const renderCell = (cell, parts, date, formatters, highlightDate) => {
+  applyDateState(cell, date, highlightDate);
   parts.weekday.textContent = localizedWeekday(date.getDay(), formatters, "short");
   parts.weekday.dataset.webskinCalendarToday = cell.dataset.webskinCalendarToday;
   parts.day.textContent = String(date.getDate());
@@ -84,11 +85,13 @@ class PlainWeek extends Widget {
       weekStartsOn,
       daysBefore,
       daysAfter,
+      highlightDate: suppliedHighlightDate,
       className = "",
     } = options;
 
     const locale = resolveLocale(suppliedLocale);
     const formatters = createCalendarFormatters(locale);
+    const highlightDate = resolveHighlightDate(suppliedDate, suppliedHighlightDate);
     const firstDay = localeWeekStartsOn(locale, weekStartsOn);
     const rollingWindow = resolveWeekWindow(daysBefore, daysAfter);
     const element = document.createElement("div");
@@ -121,7 +124,7 @@ class PlainWeek extends Widget {
       for (const cell of cells) cell.cell.remove();
       cells.length = 0;
       for (const day of days) {
-        const nextCell = createCell(day, formatters);
+        const nextCell = createCell(day, formatters, highlightDate);
         cells.push(nextCell);
         grid.append(nextCell.cell);
       }

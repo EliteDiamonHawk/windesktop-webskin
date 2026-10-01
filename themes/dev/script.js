@@ -4,14 +4,14 @@ import { createClock as createDigitalClock } from "/common/widgets/time/digital-
 import { createClock as createAnalogClock } from "/common/widgets/time/analog-prestyled.js";
 import { createClock as createAnalogClock2 } from "/common/widgets/time/analog-prestyled2.js";
 import { createClock as createDigitalAnalogClock } from "/common/widgets/time/digital-analog-prestyled.js";
-import { createDate } from "/common/widgets/time/formatted-date-plain.js";
-import { createDay } from "/common/widgets/time/single-day-plain.js";
-import { createWeek } from "/common/widgets/time/week-plain.js";
-import { createMonth } from "/common/widgets/time/month-plain.js";
-import { createDate as createPrestyledDate } from "/common/widgets/time/formatted-date-prestyled.js";
-import { createDay as createPrestyledDay } from "/common/widgets/time/single-day-prestyled.js";
-import { createWeek as createPrestyledWeek } from "/common/widgets/time/week-prestyled.js";
-import { createMonth as createPrestyledMonth } from "/common/widgets/time/month-prestyled.js";
+import { createDate } from "/common/widgets/time/formatted-date-plain.js?v=calendar-date-5";
+import { createDay } from "/common/widgets/time/single-day-plain.js?v=calendar-date-5";
+import { createWeek } from "/common/widgets/time/week-plain.js?v=calendar-date-5";
+import { createMonth } from "/common/widgets/time/month-plain.js?v=calendar-date-5";
+import { createDate as createPrestyledDate } from "/common/widgets/time/formatted-date-prestyled.js?v=calendar-date-5";
+import { createDay as createPrestyledDay } from "/common/widgets/time/single-day-prestyled.js?v=calendar-date-5";
+import { createWeek as createPrestyledWeek } from "/common/widgets/time/week-prestyled.js?v=calendar-date-5";
+import { createMonth as createPrestyledMonth } from "/common/widgets/time/month-prestyled.js?v=calendar-date-5";
 
 document.querySelector("#clock").append(createPlainClock());
 document.querySelector("#analog-plain-clock").append(createPlainAnalogClock());
@@ -30,15 +30,58 @@ document.querySelector("#formatted-date").append(createDate({
 document.querySelector("#single-day").append(createDay());
 document.querySelector("#calendar-week").append(createWeek({ daysBefore: 1, daysAfter: 5 }));
 document.querySelector("#calendar-month").append(createMonth({ maxWeeks: 5 }));
-document.querySelector("#formatted-date-prestyled").append(createPrestyledDate({
-  format: "ddd, MMM D, YYYY",
-}));
-document.querySelector("#single-day-prestyled").append(createPrestyledDay());
-document.querySelector("#calendar-week-prestyled").append(createPrestyledWeek({ daysBefore: 3, daysAfter: 3 }));
-document.querySelector("#calendar-month-prestyled").append(createPrestyledMonth({
-  maxWeeks: 5,
-  lockDay: { x: 3, y: 2 },
-}));
+const calendarDateOutput = document.querySelector("[data-calendar-current-date]");
+const calendarShiftButtons = document.querySelectorAll("[data-calendar-shift]");
+const calendarTodayButton = document.querySelector("[data-calendar-today]");
+let prestyledCalendarDate = new Date();
+
+const dateInputValue = (date) => (
+  `${String(date.getFullYear()).padStart(4, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+);
+
+const shiftCalendarDate = (date, amount) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  next.setHours(12, 0, 0, 0);
+  return next;
+};
+
+const renderPrestyledCalendars = () => {
+  const widgets = [
+    ["#formatted-date-prestyled", createPrestyledDate({ date: prestyledCalendarDate, format: "ddd, MMM D, YYYY" })],
+    ["#single-day-prestyled", createPrestyledDay({ date: prestyledCalendarDate })],
+    ["#calendar-week-prestyled-unlocked", createPrestyledWeek({ date: prestyledCalendarDate })],
+    ["#calendar-week-prestyled-locked", createPrestyledWeek({ date: prestyledCalendarDate, daysBefore: 3, daysAfter: 3 })],
+    // Keep this unlocked month at five weeks; it intentionally never uses the six-week default.
+    ["#calendar-month-prestyled-unlocked", createPrestyledMonth({ date: prestyledCalendarDate, maxWeeks: 5 })],
+    ["#calendar-month-prestyled-row-locked", createPrestyledMonth({ date: prestyledCalendarDate, maxWeeks: 5, lockDay: { y: 2 } })],
+    ["#calendar-month-prestyled-cell-locked", createPrestyledMonth({ date: prestyledCalendarDate, maxWeeks: 5, lockDay: { x: 3, y: 2 } })],
+  ];
+  for (const [selector, widget] of widgets) {
+    document.querySelector(selector)?.replaceChildren(widget);
+  }
+  if (calendarDateOutput) {
+    calendarDateOutput.value = dateInputValue(prestyledCalendarDate);
+    calendarDateOutput.textContent = prestyledCalendarDate.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+};
+
+calendarShiftButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    prestyledCalendarDate = shiftCalendarDate(prestyledCalendarDate, Number(button.dataset.calendarShift));
+    renderPrestyledCalendars();
+  });
+});
+calendarTodayButton?.addEventListener("click", () => {
+  prestyledCalendarDate = new Date();
+  renderPrestyledCalendars();
+});
+renderPrestyledCalendars();
 
 const editor = document.querySelector("#clock-editor");
 const preview = document.querySelector("#editor-preview");

@@ -87,6 +87,12 @@
           </div>
           <p>These variants add a prepared visual treatment while keeping the same date behavior and semantic hooks.</p>
         </div>
+        <div class="calendar-controls" aria-label="Change the calendar date">
+          <button type="button" data-calendar-shift="-1">Previous day</button>
+          <output data-calendar-current-date aria-live="polite"></output>
+          <button type="button" data-calendar-shift="1">Next day</button>
+          <button type="button" data-calendar-today>Today</button>
+        </div>
         <div class="calendar-grid">
           <article class="calendar-card calendar-card--formatted">
             <p class="card-label">Formatted date pre-styled</p>
@@ -99,14 +105,29 @@
             <p class="card-note">The same single-day representation with ready-made emphasis.</p>
           </article>
           <article class="calendar-card calendar-card--week">
-            <p class="card-label">Week pre-styled</p>
-            <div id="calendar-week-prestyled" class="calendar-stage"></div>
-            <p class="card-note">A seven-day view with today locked to the fourth position.</p>
+            <p class="card-label">Week pre-styled · not locked</p>
+            <div id="calendar-week-prestyled-unlocked" class="calendar-stage"></div>
+            <p class="card-note">A seven-day view that follows the current week naturally.</p>
+          </article>
+          <article class="calendar-card calendar-card--week">
+            <p class="card-label">Week pre-styled · locked</p>
+            <div id="calendar-week-prestyled-locked" class="calendar-stage"></div>
+            <p class="card-note">A seven-day view with today fixed to the fourth position.</p>
           </article>
           <article class="calendar-card calendar-card--month">
-            <p class="card-label">Month pre-styled</p>
-            <div id="calendar-month-prestyled" class="calendar-stage"></div>
-            <p class="card-note">A five-week grid with today locked to column four, row three.</p>
+            <p class="card-label">Month pre-styled · not locked</p>
+            <div id="calendar-month-prestyled-unlocked" class="calendar-stage"></div>
+            <p class="card-note">A five-week grid that follows the current month naturally.</p>
+          </article>
+          <article class="calendar-card calendar-card--month">
+            <p class="card-label">Month pre-styled · row locked</p>
+            <div id="calendar-month-prestyled-row-locked" class="calendar-stage"></div>
+            <p class="card-note">Today stays on the third visible row while its weekday column follows the date.</p>
+          </article>
+          <article class="calendar-card calendar-card--month">
+            <p class="card-label">Month pre-styled · cell locked</p>
+            <div id="calendar-month-prestyled-cell-locked" class="calendar-stage"></div>
+            <p class="card-note">Today stays locked to column four, row three.</p>
           </article>
         </div>
       </section>
@@ -138,6 +159,6 @@
         </div>
       </section>
     </main>
-    <script type="module" src="./script.js"></script>
+    <script type="module" src="./script.js?v=calendar-date-5"></script>
   </body>
 </html>

@@ -6,7 +6,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "pnpm --filter @project/frontend exec astro dev stop && astro dev",
     "build": "astro build",
     "check": "astro check",
     "preview": "astro preview",

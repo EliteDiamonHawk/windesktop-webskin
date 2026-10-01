@@ -1,5 +1,5 @@
 // Pre-styled calendar view in the shared time widget category.
-import { createDate as createPlainDate } from "./formatted-date-plain.js";
+import { createDate as createPlainDate } from "./formatted-date-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-formatted-date-prestyled-styles";
 

@@ -20,8 +20,13 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-calendar--single-day-plain {
+      box-sizing: border-box;
       display: inline-flex;
       flex-direction: column;
+      width: var(--webskin-calendar-width, 14rem);
+      height: var(--webskin-calendar-height, 10rem);
+      min-width: 0;
+      min-height: 0;
     }
   `;
   document.head.append(style);

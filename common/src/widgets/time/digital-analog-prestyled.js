@@ -18,9 +18,14 @@ const ensureStyles = () => {
       background: var(--webskin-combination-surface);
       border: 1px solid var(--webskin-combination-surface);
       border-radius: .75rem;
+      box-sizing: border-box;
       box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       display: inline-flex;
       gap: 1rem;
+      width: var(--webskin-clock-width, 30rem);
+      height: var(--webskin-clock-height, 10rem);
+      min-width: 0;
+      min-height: 0;
       padding: .75rem 1rem;
     }
     .webskin-clock--digital-analog-prestyled > .webskin-clock--analog-plain,
@@ -29,7 +34,7 @@ const ensureStyles = () => {
     }
     .webskin-clock--digital-analog-prestyled > .webskin-clock--digital-plain {
       color: var(--webskin-combination-color);
-      font: 600 clamp(1.5rem, 5vw, 3rem)/1 "Segoe Print", "Comic Sans MS", cursive;
+      font: 600 var(--webskin-clock-font-size, clamp(1.5rem, 5vw, 3rem))/1 "Segoe Print", "Comic Sans MS", cursive;
       letter-spacing: .08em;
       white-space: nowrap;
     }

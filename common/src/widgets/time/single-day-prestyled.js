@@ -16,11 +16,15 @@ const ensureStyles = () => {
       background: var(--webskin-calendar-background);
       border: 1px solid var(--webskin-calendar-border);
       border-radius: .75rem;
+      box-sizing: border-box;
       box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       color: var(--webskin-calendar-color);
       display: inline-flex;
       gap: .25rem;
-      min-width: 9rem;
+      width: var(--webskin-calendar-width, 14rem);
+      height: var(--webskin-calendar-height, 10rem);
+      min-width: 0;
+      min-height: 0;
       padding: 1rem 1.25rem;
       text-align: center;
     }

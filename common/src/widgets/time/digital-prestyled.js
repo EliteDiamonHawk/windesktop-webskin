@@ -14,14 +14,20 @@ const ensureStyles = () => {
       background: var(--webskin-clock-background);
       border: 1px solid var(--webskin-clock-background);
       border-radius: .75rem;
+      box-sizing: border-box;
       box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       color: var(--webskin-clock-color);
       display: inline-flex;
-      font: 600 clamp(1.5rem, 5vw, 3rem)/1 "Segoe Print", "Comic Sans MS", cursive;
+      font: 600 var(--webskin-clock-font-size, clamp(1.5rem, 5vw, 3rem))/1 "Segoe Print", "Comic Sans MS", cursive;
+      font-variant-numeric: tabular-nums;
       gap: .35rem;
       letter-spacing: .08em;
       padding: .75rem 1rem;
       white-space: nowrap;
+      width: var(--webskin-clock-width, 18ch);
+      height: var(--webskin-clock-height, 2.5em);
+      min-width: 0;
+      min-height: 0;
     }
     .webskin-clock--digital-prestyled [data-webskin-clock-part="separator"] { opacity: .55; }
     .webskin-clock--digital-prestyled [data-webskin-clock-part="seconds"] { font-size: .62em; opacity: .72; }

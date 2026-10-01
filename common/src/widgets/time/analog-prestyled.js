@@ -22,6 +22,8 @@ const ensureStyles = () => {
       border-radius: .75rem;
       box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       display: inline-block;
+      width: var(--webskin-clock-width, 10rem);
+      height: var(--webskin-clock-height, 10rem);
       padding: .75rem;
     }
     .webskin-clock--analog-prestyled [data-webskin-clock-part="face"] { stroke-width: 2; }

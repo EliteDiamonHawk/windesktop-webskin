@@ -25,6 +25,13 @@ const ensureStyles = () => {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
+    .webskin-calendar--week-plain {
+      box-sizing: border-box;
+      width: var(--webskin-calendar-width, 28rem);
+      height: var(--webskin-calendar-height, 7rem);
+      min-width: 0;
+      min-height: 0;
+    }
     .webskin-calendar--week-plain [data-webskin-calendar-part="week"] {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));

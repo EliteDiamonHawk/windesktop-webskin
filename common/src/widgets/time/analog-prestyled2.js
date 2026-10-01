@@ -20,6 +20,8 @@ const ensureStyles = () => {
         0 0 0 .2rem #5b4841,
         0 .9rem 2rem var(--webskin-analog2-shadow),
         inset 0 0 0 .35rem rgb(91 72 65 / .3);
+      width: var(--webskin-clock-width, 10rem);
+      height: var(--webskin-clock-height, 10rem);
       padding: .55rem;
     }
     svg.webskin-clock--analog-prestyled2 [data-webskin-clock-part="face"] {

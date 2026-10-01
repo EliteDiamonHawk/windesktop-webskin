@@ -1,5 +1,24 @@
 import { Widget } from "../widgets.js";
 
+const STYLE_ID = "webskin-clock-digital-plain-styles";
+
+const ensureStyles = () => {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `
+    .webskin-clock--digital-plain {
+      box-sizing: border-box;
+      width: var(--webskin-clock-width, 18ch);
+      height: var(--webskin-clock-height, 2.5em);
+      min-width: 0;
+      min-height: 0;
+      font-variant-numeric: tabular-nums;
+    }
+  `;
+  document.head.append(style);
+};
+
 const pad = (value) => String(value).padStart(2, "0");
 
 const createPart = (part, text = "") => {
@@ -47,6 +66,7 @@ const tokenValue = (token, now) => {
 
 class PlainDigitalClock extends Widget {
   constructor(options = {}) {
+    ensureStyles();
     const {
       format = "12h",
       seconds = true,

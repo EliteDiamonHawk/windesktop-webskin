@@ -22,8 +22,13 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-calendar--formatted-date-plain {
-      display: inline-flex;
       align-items: baseline;
+      box-sizing: border-box;
+      display: inline-flex;
+      width: var(--webskin-calendar-width, 20rem);
+      height: var(--webskin-calendar-height, 3.5rem);
+      min-width: 0;
+      min-height: 0;
     }
   `;
   document.head.append(style);

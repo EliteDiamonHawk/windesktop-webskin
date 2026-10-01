@@ -18,11 +18,20 @@ const ensureStyles = () => {
       background: var(--webskin-calendar-background);
       border: 1px solid var(--webskin-calendar-border);
       border-radius: .75rem;
+      box-sizing: border-box;
       box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       color: var(--webskin-calendar-color);
-      display: inline-block;
-      min-width: 18rem;
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: center;
+      width: var(--webskin-calendar-width, 22rem);
+      height: var(--webskin-calendar-height, 20rem);
+      min-width: 0;
+      min-height: 0;
       padding: .85rem;
+    }
+    .webskin-calendar--month-prestyled[data-webskin-calendar-max-weeks="5"] {
+      height: var(--webskin-calendar-height, 18rem);
     }
     .webskin-calendar--month-prestyled [data-webskin-calendar-part="month-heading"] {
       display: flex;

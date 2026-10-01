@@ -159,3 +159,4 @@ logs/
 /localdata/themes/dev/
 /.uv-cache/
 /.uv-cache-local/
+/stop-slop/

@@ -26,7 +26,18 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-calendar--month-plain {
-      display: inline-block;
+      align-items: stretch;
+      box-sizing: border-box;
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: center;
+      width: var(--webskin-calendar-width, 22rem);
+      height: var(--webskin-calendar-height, 20rem);
+      min-width: 0;
+      min-height: 0;
+    }
+    .webskin-calendar--month-plain[data-webskin-calendar-max-weeks="5"] {
+      height: var(--webskin-calendar-height, 18rem);
     }
     .webskin-calendar--month-plain [data-webskin-calendar-part="weekday-headings"],
     .webskin-calendar--month-plain [data-webskin-calendar-part="month-grid"] {

@@ -21,16 +21,19 @@ const ensureStyles = () => {
       color: var(--webskin-calendar-color);
       display: inline-flex;
       gap: .25rem;
-      width: var(--webskin-calendar-width, 14rem);
+      justify-content: center;
+      width: var(--webskin-calendar-width, 10rem);
       height: var(--webskin-calendar-height, 10rem);
       min-width: 0;
       min-height: 0;
-      padding: 1rem 1.25rem;
       text-align: center;
+    }
+    :where(.webskin-calendar--single-day-prestyled) {
+      padding: var(--webskin-calendar-padding, 1rem 1.25rem);
     }
     .webskin-calendar--single-day-prestyled [data-webskin-calendar-part="weekday"] {
       color: var(--webskin-calendar-color);
-      font-size: .72em;
+      font-size: 1em;
       font-weight: 700;
       letter-spacing: .12em;
       opacity: .72;
@@ -43,7 +46,7 @@ const ensureStyles = () => {
     }
     .webskin-calendar--single-day-prestyled [data-webskin-calendar-part="month"],
     .webskin-calendar--single-day-prestyled [data-webskin-calendar-part="year"] {
-      font-size: .82em;
+      font-size: 1.1em;
       opacity: .78;
     }
   `;

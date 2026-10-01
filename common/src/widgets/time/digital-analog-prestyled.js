@@ -21,8 +21,12 @@ const ensureStyles = () => {
       box-sizing: border-box;
       box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       display: inline-flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
       gap: 1rem;
-      width: var(--webskin-clock-width, 30rem);
+      justify-content: center;
+      overflow: hidden;
+      width: var(--webskin-clock-width, 22rem);
       height: var(--webskin-clock-height, 10rem);
       min-width: 0;
       min-height: 0;
@@ -32,10 +36,17 @@ const ensureStyles = () => {
     .webskin-clock--digital-analog-prestyled > .webskin-clock--digital-plain {
       flex: 0 0 auto;
     }
+    .webskin-clock--digital-analog-prestyled > .webskin-clock--analog-plain { order: 1; }
+    .webskin-clock--digital-analog-prestyled > .webskin-clock--digital-plain { order: 2; }
     .webskin-clock--digital-analog-prestyled > .webskin-clock--digital-plain {
+      align-items: center;
       color: var(--webskin-combination-color);
+      display: inline-flex;
       font: 600 var(--webskin-clock-font-size, clamp(1.5rem, 5vw, 3rem))/1 "Segoe Print", "Comic Sans MS", cursive;
+      justify-content: center;
       letter-spacing: .08em;
+      width: auto;
+      height: auto;
       white-space: nowrap;
     }
     .webskin-clock--digital-analog-prestyled > .webskin-clock--analog-plain {
@@ -49,7 +60,7 @@ const ensureStyles = () => {
       box-shadow: none;
       width: 8rem;
       height: 8rem;
-      padding: .55rem;
+      padding: .65rem;
     }
     .webskin-clock--digital-analog-prestyled > .webskin-clock--analog-plain [data-webskin-clock-part="face"] { stroke-width: 1.5; }
     .webskin-clock--digital-analog-prestyled > .webskin-clock--analog-plain [data-webskin-clock-part="hour-hand"] { stroke-width: 5; }

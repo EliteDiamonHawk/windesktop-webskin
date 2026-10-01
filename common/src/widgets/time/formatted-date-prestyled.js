@@ -12,7 +12,7 @@ const ensureStyles = () => {
       --webskin-calendar-color: #cfb5ab;
       --webskin-calendar-background: #5b4841;
       --webskin-calendar-border: var(--webskin-calendar-background);
-      align-items: baseline;
+      align-items: center;
       background: var(--webskin-calendar-background);
       border: 1px solid var(--webskin-calendar-border);
       border-radius: .75rem;
@@ -22,10 +22,11 @@ const ensureStyles = () => {
       display: inline-flex;
       font: 600 var(--webskin-calendar-font-size, clamp(1rem, 4vw, 2rem))/1 "Segoe Print", "Comic Sans MS", cursive;
       gap: .35rem;
+      justify-content: center;
       padding: .75rem 1rem;
       white-space: nowrap;
-      width: var(--webskin-calendar-width, 20rem);
-      height: var(--webskin-calendar-height, 3.5rem);
+      width: var(--webskin-calendar-width, 24rem);
+      height: var(--webskin-calendar-height, 3.8rem);
       min-width: 0;
       min-height: 0;
     }

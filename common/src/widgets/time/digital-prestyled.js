@@ -21,11 +21,12 @@ const ensureStyles = () => {
       font: 600 var(--webskin-clock-font-size, clamp(1.5rem, 5vw, 3rem))/1 "Segoe Print", "Comic Sans MS", cursive;
       font-variant-numeric: tabular-nums;
       gap: .35rem;
+      justify-content: center;
       letter-spacing: .08em;
       padding: .75rem 1rem;
       white-space: nowrap;
-      width: var(--webskin-clock-width, 18ch);
-      height: var(--webskin-clock-height, 2.5em);
+      width: var(--webskin-clock-width, 12ch);
+      height: var(--webskin-clock-height, 1.8em);
       min-width: 0;
       min-height: 0;
     }

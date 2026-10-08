@@ -10,6 +10,20 @@ the same paths to port `8000`.
 | `GET` | `/api/health` | `{ "status": "ok", "service": "backend" }` |
 | `GET` | `/api/status` | Frontend/backend connection message |
 
+## System telemetry
+
+| Method | Path | Result |
+| --- | --- | --- |
+| `GET` | `/api/system/metrics` | Privacy-filtered local CPU, memory, disk, aggregate network, and sensor snapshot |
+
+The response contains `timestamp`, `cpu`, `memory`, `disks`, `network`, and
+`sensors` objects. Metric groups include an `available` boolean and use
+`null` for values unsupported by the operating system. Disk usage is returned
+only for backend-reported local mount points; remote/UNC mounts are omitted.
+Network data contains aggregate byte,
+drop, and error counters only; it does not contain addresses, interface
+identifiers, hostnames, or other network identity data.
+
 ## Theme routes
 
 | Method | Path | Body or result |

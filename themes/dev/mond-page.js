@@ -1,4 +1,4 @@
-import { createClock as createMondClock } from "/common/widgets/time/rainmeter-mond-clock-copy.js";
+import { createClock as createMondClock } from "/common/widgets/time/rainmeter-mond-clock-remake.js";
 
 const stage = document.querySelector("#mond-clock");
 let mondClock;

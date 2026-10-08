@@ -24,7 +24,7 @@ clock.destroy?.();
 | Analog pre-styled | `/common/widgets/time/analog-prestyled.js` | `createClock(options)` |
 | Analog pre-styled 2 | `/common/widgets/time/analog-prestyled2.js` | `createClock(options)` |
 | Digital and analog | `/common/widgets/time/digital-analog-prestyled.js` | `createClock(options)` |
-| Rainmeter Mond clock copy | `/common/widgets/time/rainmeter-mond-clock-copy.js` | `createClock(options)` |
+| Rainmeter Mond clock remake | `/common/widgets/time/rainmeter-mond-clock-remake.js` | `createClock(options)` |
 
 Digital clocks accept `format` (`12h` or `24h`), `seconds`, `showPeriod`,
 `syntax`, `offsetMinutes`, and `className`. Analog clocks accept
@@ -34,7 +34,7 @@ and `backgroundColor` where the module defines them.
 Use `data-webskin-clock-part` to style `hours`, `minutes`, `seconds`, `period`,
 `face`, `tick`, `hour-hand`, `minute-hand`, `second-hand`, and `pin` parts.
 
-The Rainmeter Mond clock copy is self-styled and loads its required fonts from
+The Rainmeter Mond clock remake is self-styled and loads its required fonts from
 `/common/fonts/Anurati.otf` and `/common/fonts/Quicksand.otf`. Place the source
 font files in `common/src/fonts/` before building. Its root supports the
 `--webskin-mond-color`, `--webskin-mond-width`,
@@ -45,10 +45,10 @@ font files in `common/src/fonts/` before building. Its root supports the
 
 | Module | Import | Function |
 | --- | --- | --- |
-| Formatted date | `/common/widgets/time/formatted-date-plain.js` | `createDate(options)` |
-| Formatted date pre-styled | `/common/widgets/time/formatted-date-prestyled.js` | `createDate(options)` |
-| Single day | `/common/widgets/time/single-day-plain.js` | `createDay(options)` |
-| Single day pre-styled | `/common/widgets/time/single-day-prestyled.js` | `createDay(options)` |
+| Formatted day | `/common/widgets/time/day-plain.js` | `createDay(options)` |
+| Formatted day pre-styled | `/common/widgets/time/day-prestyled.js` | `createDay(options)` |
+| Single day | `/common/widgets/time/day-plain.js` | `createDay({ variant: "single-day", ...options })` |
+| Single day pre-styled | `/common/widgets/time/day-prestyled2.js` | `createDay(options)` |
 | Week | `/common/widgets/time/week-plain.js` | `createWeek(options)` |
 | Week pre-styled | `/common/widgets/time/week-prestyled.js` | `createWeek(options)` |
 | Month | `/common/widgets/time/month-plain.js` | `createMonth(options)` |
@@ -97,13 +97,13 @@ Default outer sizes:
 | Digital clock | `18ch` | `2.5em` |
 | Digital and analog clock | `30rem` | `10rem` |
 | Pre-styled analog clock | `10rem` | `10rem` |
-| Formatted date | `20rem` | `3.5rem` |
+| Formatted day | `20rem` | `3.5rem` |
 | Single day | `14rem` | `10rem` |
 | Week | `28rem` | `7rem` |
 | Month | `22rem` | `20rem`, or `18rem` with `maxWeeks: 5` |
 
 Set width or height to `auto` for content-driven sizing. Pre-styled digital
-clocks use `--webskin-clock-font-size`. Pre-styled formatted dates use
+clocks use `--webskin-clock-font-size`. Pre-styled formatted days use
 `--webskin-calendar-font-size`.
 
 Calendar pre-styled widgets use these variables:
@@ -116,3 +116,54 @@ Calendar pre-styled widgets use these variables:
 --webskin-calendar-today-color
 --webskin-calendar-adjacent-opacity
 ```
+
+## System telemetry
+
+Plain system widgets live under `/common/widgets/system/` and use the backend
+snapshot at `/api/system/metrics`. Every system widget accepts `className`,
+`endpoint`, `interval`, and `format` options. The default polling interval is five
+seconds. Destroying the returned element aborts its request and stops its
+polling timer.
+
+System rows default to `format: "{label} {value} {unit}"`. Use `{label}`,
+`{value}`, and `{unit}` placeholders to customize the text while retaining
+the label, value, and unit DOM parts:
+
+```js
+createMemory({ format: "{label}: {value} {unit}" });
+```
+
+Unitless values omit the unused unit spacing.
+
+```js
+import { createMemory, createCpuUtilization } from "/common/widgets/system/index.js";
+
+document.querySelector("#memory").append(createMemory());
+document.querySelector("#cpu").append(createCpuUtilization({ interval: 2000 }));
+```
+
+Available plain constructors:
+
+| Module | Function |
+| --- | --- |
+| `system/cpu-utilization-plain.js` | `createCpuUtilization(options)` |
+| `system/cpu-core-counts-plain.js` | `createCpuCoreCounts(options)` |
+| `system/cpu-frequencies-plain.js` | `createCpuFrequencies(options)` |
+| `system/cpu-telemetry-plain.js` | `createCpuTelemetry(options)` |
+| `system/cpu-load-average-plain.js` | `createCpuLoadAverage(options)` |
+| `system/memory-plain.js` | `createMemory(options)` |
+| `system/swap-plain.js` | `createSwap(options)` |
+| `system/disk-partitions-plain.js` | `createDiskPartitions(options)` |
+| `system/disk-usage-plain.js` | `createDiskUsage(options)` |
+| `system/disk-io-plain.js` | `createDiskIo(options)` |
+| `system/network-telemetry-plain.js` | `createNetworkTelemetry(options)` |
+| `system/hardware-sensors-plain.js` | `createHardwareSensors(options)` |
+
+Plain system widgets expose `data-webskin-system-part` hooks and keep colors,
+surfaces, borders, and layout decisions available to the theme. Unsupported
+platform metrics render as `Unavailable`; widgets do not fabricate values.
+Hardware sensor support depends on what the operating system exposes.
+
+Network telemetry is aggregate-only. It does not expose IP addresses, MAC
+addresses, hostnames, interface identifiers, process data, usernames, serial
+numbers, or other identifying metadata.

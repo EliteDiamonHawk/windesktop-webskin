@@ -1,14 +1,14 @@
-// Pre-styled calendar view in the shared time widget category.
-import { createDate as createPlainDate } from "./formatted-date-plain.js?v=calendar-date-5";
+// Pre-styled calendar day view in the shared time widget category.
+import { createDay as createPlainDay } from "./day-plain.js?v=calendar-date-5";
 
-const STYLE_ID = "webskin-calendar-formatted-date-prestyled-styles";
+const STYLE_ID = "webskin-calendar-day-prestyled-styles";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .webskin-calendar--formatted-date-prestyled {
+    .webskin-calendar--day-prestyled {
       --webskin-calendar-color: #cfb5ab;
       --webskin-calendar-background: #5b4841;
       --webskin-calendar-border: var(--webskin-calendar-background);
@@ -30,16 +30,16 @@ const ensureStyles = () => {
       min-width: 0;
       min-height: 0;
     }
-    .webskin-calendar--formatted-date-prestyled [data-webskin-calendar-part="separator"] { opacity: .55; }
+    .webskin-calendar--day-prestyled [data-webskin-calendar-part="separator"] { opacity: .55; }
   `;
   document.head.append(style);
 };
 
-/** Create the WebSkin-provided pre-styled formatted date. */
-export function createDate(options = {}) {
+/** Create the WebSkin-provided pre-styled formatted calendar day. */
+export function createDay(options = {}) {
   ensureStyles();
-  const element = createPlainDate(options);
-  element.classList.add("webskin-calendar--formatted-date-prestyled");
+  const element = createPlainDay({ ...options, variant: "formatted" });
+  element.classList.add("webskin-calendar--day-prestyled");
   if (options.color) element.style.setProperty("--webskin-calendar-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-calendar-background", options.backgroundColor);
   return element;

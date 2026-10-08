@@ -4,12 +4,11 @@ import { createClock as createDigitalClock } from "/common/widgets/time/digital-
 import { createClock as createAnalogClock } from "/common/widgets/time/analog-prestyled.js";
 import { createClock as createAnalogClock2 } from "/common/widgets/time/analog-prestyled2.js";
 import { createClock as createDigitalAnalogClock } from "/common/widgets/time/digital-analog-prestyled.js";
-import { createDate } from "/common/widgets/time/formatted-date-plain.js?v=calendar-date-5";
-import { createDay } from "/common/widgets/time/single-day-plain.js?v=calendar-date-5";
+import { createDay } from "/common/widgets/time/day-plain.js?v=calendar-date-5";
 import { createWeek } from "/common/widgets/time/week-plain.js?v=calendar-date-5";
 import { createMonth } from "/common/widgets/time/month-plain.js?v=calendar-date-5";
-import { createDate as createPrestyledDate } from "/common/widgets/time/formatted-date-prestyled.js?v=calendar-date-5";
-import { createDay as createPrestyledDay } from "/common/widgets/time/single-day-prestyled.js?v=calendar-date-5";
+import { createDay as createPrestyledDay } from "/common/widgets/time/day-prestyled.js?v=calendar-date-5";
+import { createDay as createPrestyledDay2 } from "/common/widgets/time/day-prestyled2.js?v=calendar-date-5";
 import { createWeek as createPrestyledWeek } from "/common/widgets/time/week-prestyled.js?v=calendar-date-5";
 import { createMonth as createPrestyledMonth } from "/common/widgets/time/month-prestyled.js?v=calendar-date-5";
 
@@ -25,7 +24,7 @@ document.querySelector("#analog-clock-2").append(createAnalogClock2({
 document.querySelector("#combination-clock").append(createDigitalAnalogClock({
 }));
 
-document.querySelector("#formatted-date").append(createDate({
+document.querySelector("#formatted-date").append(createDay({
   format: "dddd, MMMM D, YYYY",
 }));
 document.querySelector("#single-day").append(createDay());
@@ -49,8 +48,8 @@ const shiftCalendarDate = (date, amount) => {
 
 const renderPrestyledCalendars = () => {
   const widgets = [
-    ["#formatted-date-prestyled", createPrestyledDate({ date: prestyledCalendarDate, format: "ddd, MMM D, YYYY" })],
-    ["#single-day-prestyled", createPrestyledDay({ date: prestyledCalendarDate })],
+    ["#formatted-date-prestyled", createPrestyledDay({ date: prestyledCalendarDate, format: "ddd, MMM D, YYYY" })],
+    ["#single-day-prestyled", createPrestyledDay2({ date: prestyledCalendarDate })],
     ["#calendar-week-prestyled-unlocked", createPrestyledWeek({ date: prestyledCalendarDate })],
     ["#calendar-week-prestyled-locked", createPrestyledWeek({ date: prestyledCalendarDate, daysBefore: 3, daysAfter: 3 })],
     // Keep this unlocked month at five weeks; it intentionally never uses the six-week default.

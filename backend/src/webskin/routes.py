@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from .persistence import SettingsStorageError
 from .paths import get_theme_paths, safe_asset_path
 from .settings import SettingNotFoundError, SettingsService
+from .system_metrics import collect_system_metrics
 from .themes import ThemeNameConflictError, ThemeStorageError, UserThemeStorage, user_theme_storage
 
 
@@ -173,5 +174,15 @@ def create_theme_assets_router(storage: UserThemeStorage | None = None) -> APIRo
         except ThemeStorageError as exc:
             raise HTTPException(status_code=404, detail="Theme asset was not found") from exc
         return FileResponse(content_path)
+
+    return router
+
+
+def create_system_router(collector=collect_system_metrics) -> APIRouter:
+    router = APIRouter(prefix="/api/system")
+
+    @router.get("/metrics")
+    def get_metrics() -> dict[str, Any]:
+        return collector()
 
     return router

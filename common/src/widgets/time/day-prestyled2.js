@@ -1,14 +1,14 @@
-// Pre-styled calendar view in the shared time widget category.
-import { createDay as createPlainDay } from "./single-day-plain.js?v=calendar-date-5";
+// Pre-styled single-day calendar view in the shared time widget category.
+import { createDay as createPlainDay } from "./day-plain.js?v=calendar-date-5";
 
-const STYLE_ID = "webskin-calendar-single-day-prestyled-styles";
+const STYLE_ID = "webskin-calendar-day-prestyled2-styles";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .webskin-calendar--single-day-prestyled {
+    .webskin-calendar--day-prestyled2 {
       --webskin-calendar-color: #cfb5ab;
       --webskin-calendar-background: #5b4841;
       --webskin-calendar-border: var(--webskin-calendar-background);
@@ -28,10 +28,10 @@ const ensureStyles = () => {
       min-height: 0;
       text-align: center;
     }
-    :where(.webskin-calendar--single-day-prestyled) {
+    :where(.webskin-calendar--day-prestyled2) {
       padding: var(--webskin-calendar-padding, 1rem 1.25rem);
     }
-    .webskin-calendar--single-day-prestyled [data-webskin-calendar-part="weekday"] {
+    .webskin-calendar--day-prestyled2 [data-webskin-calendar-part="weekday"] {
       color: var(--webskin-calendar-color);
       font-size: 1em;
       font-weight: 700;
@@ -39,13 +39,13 @@ const ensureStyles = () => {
       opacity: .72;
       text-transform: uppercase;
     }
-    .webskin-calendar--single-day-prestyled [data-webskin-calendar-part="day"] {
+    .webskin-calendar--day-prestyled2 [data-webskin-calendar-part="day"] {
       font-size: 3.5em;
       font-weight: 700;
       line-height: .9;
     }
-    .webskin-calendar--single-day-prestyled [data-webskin-calendar-part="month"],
-    .webskin-calendar--single-day-prestyled [data-webskin-calendar-part="year"] {
+    .webskin-calendar--day-prestyled2 [data-webskin-calendar-part="month"],
+    .webskin-calendar--day-prestyled2 [data-webskin-calendar-part="year"] {
       font-size: 1.1em;
       opacity: .78;
     }
@@ -56,8 +56,8 @@ const ensureStyles = () => {
 /** Create the WebSkin-provided pre-styled single-day calendar. */
 export function createDay(options = {}) {
   ensureStyles();
-  const element = createPlainDay(options);
-  element.classList.add("webskin-calendar--single-day-prestyled");
+  const element = createPlainDay({ ...options, variant: "single-day" });
+  element.classList.add("webskin-calendar--day-prestyled2");
   if (options.color) element.style.setProperty("--webskin-calendar-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-calendar-background", options.backgroundColor);
   return element;

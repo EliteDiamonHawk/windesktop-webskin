@@ -1,8 +1,8 @@
 import { Widget } from "../widgets.js";
-import { createDate } from "./formatted-date-plain.js";
+import { createDay } from "./day-plain.js";
 import { createClock as createDigitalClock } from "./digital-plain.js";
 
-const STYLE_ID = "webskin-clock-rainmeter-mond-clock-copy-styles";
+const STYLE_ID = "webskin-clock-rainmeter-mond-clock-remake-styles";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -25,7 +25,7 @@ const ensureStyles = () => {
       font-weight: 700;
       font-display: block;
     }
-    .webskin-clock--rainmeter-mond-clock-copy {
+    .webskin-clock--rainmeter-mond-clock-remake {
       --webskin-mond-color: #000;
       --webskin-mond-width: 53.25rem;
       --webskin-mond-weekday-size: clamp(1.25rem, 9.2vw, 5rem);
@@ -45,13 +45,13 @@ const ensureStyles = () => {
       text-align: center;
       width: min(100%, var(--webskin-mond-width));
     }
-    .webskin-clock--rainmeter-mond-clock-copy [data-webskin-mond-part] {
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part] {
       display: block;
       margin: 0;
       max-width: 100%;
       min-width: 0;
     }
-    .webskin-clock--rainmeter-mond-clock-copy [data-webskin-mond-part="weekday"] {
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part="weekday"] {
       font-family: "WebSkin Mond Anurati", Anurati, sans-serif;
       font-size: clamp(1.25rem, 9.2vw, 5rem);
       font-size: var(--webskin-mond-weekday-size);
@@ -61,8 +61,8 @@ const ensureStyles = () => {
       text-transform: uppercase;
       white-space: nowrap;
     }
-    .webskin-clock--rainmeter-mond-clock-copy [data-webskin-mond-part="date"],
-    .webskin-clock--rainmeter-mond-clock-copy [data-webskin-mond-part="time"] {
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part="date"],
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part="time"] {
       font-family: "WebSkin Mond Quicksand", Quicksand, sans-serif;
       font-size: clamp(.85rem, 2.7vw, 1.55rem);
       font-size: var(--webskin-mond-detail-size);
@@ -72,8 +72,8 @@ const ensureStyles = () => {
       text-transform: uppercase;
       white-space: nowrap;
     }
-    .webskin-clock--rainmeter-mond-clock-copy .webskin-calendar,
-    .webskin-clock--rainmeter-mond-clock-copy .webskin-clock {
+    .webskin-clock--rainmeter-mond-clock-remake .webskin-calendar,
+    .webskin-clock--rainmeter-mond-clock-remake .webskin-clock {
       color: inherit;
       font: inherit;
       height: auto;
@@ -81,17 +81,17 @@ const ensureStyles = () => {
       min-width: 0;
       width: auto;
     }
-    .webskin-clock--rainmeter-mond-clock-copy [data-webskin-calendar-part],
-    .webskin-clock--rainmeter-mond-clock-copy [data-webskin-clock-part] {
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-calendar-part],
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-clock-part] {
       color: inherit;
       font: inherit;
     }
-    .webskin-clock--rainmeter-mond-clock-copy [data-webskin-calendar-part="separator"],
-    .webskin-clock--rainmeter-mond-clock-copy [data-webskin-clock-part="separator"] {
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-calendar-part="separator"],
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-clock-part="separator"] {
       white-space: pre;
     }
     @supports (font-size: 1cqw) {
-      .webskin-clock--rainmeter-mond-clock-copy {
+      .webskin-clock--rainmeter-mond-clock-remake {
         --webskin-mond-weekday-size: clamp(1.25rem, 9.2cqw, 5rem);
         --webskin-mond-detail-size: clamp(.85rem, 2.7cqw, 1.55rem);
         --webskin-mond-gap: clamp(.8rem, 3cqw, 1.75rem);
@@ -107,7 +107,7 @@ const createPart = (part) => {
   return element;
 };
 
-class RainmeterMondClockCopy extends Widget {
+class RainmeterMondClockRemake extends Widget {
   constructor(options = {}) {
     ensureStyles();
     const {
@@ -126,7 +126,7 @@ class RainmeterMondClockCopy extends Widget {
     super(element, { type: "clock" });
     element.className = [
       "webskin-clock",
-      "webskin-clock--rainmeter-mond-clock-copy",
+      "webskin-clock--rainmeter-mond-clock-remake",
       className,
     ].filter(Boolean).join(" ");
     element.setAttribute("aria-label", "Current date and time");
@@ -137,7 +137,7 @@ class RainmeterMondClockCopy extends Widget {
     if (gap) element.style.setProperty("--webskin-mond-gap", gap);
 
     const weekday = createPart("weekday");
-    const calendarDate = createDate({
+    const calendarDate = createDay({
       date,
       locale,
       format: "dddd",
@@ -146,7 +146,7 @@ class RainmeterMondClockCopy extends Widget {
     weekday.append(calendarDate);
 
     const formattedDate = createPart("date");
-    const dateWidget = createDate({
+    const dateWidget = createDay({
       date,
       locale,
       format: "DD MMMM, YYYY.",
@@ -174,5 +174,5 @@ class RainmeterMondClockCopy extends Widget {
 
 /** Create the Rainmeter Mond-style composite clock. */
 export function createClock(options = {}) {
-  return new RainmeterMondClockCopy(options).element;
+  return new RainmeterMondClockRemake(options).element;
 }

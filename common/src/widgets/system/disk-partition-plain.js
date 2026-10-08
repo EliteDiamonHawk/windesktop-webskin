@@ -1,6 +1,6 @@
 import { createVariantSystemWidget, findRecord, formatText, requireNonEmptyString } from "./client.js";
 
-export function createDiskPartitionMetric(variantOrOptions, options) {
+export function createDiskPartition(variantOrOptions, options) {
   const parsedOptions = variantOrOptions && typeof variantOrOptions === "object" && !Array.isArray(variantOrOptions)
     ? variantOrOptions
     : options ?? {};

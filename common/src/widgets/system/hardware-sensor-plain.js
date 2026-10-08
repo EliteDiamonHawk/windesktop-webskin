@@ -1,6 +1,6 @@
 import { createVariantSystemWidget, findRecord, formatNumber, formatText, requireNonEmptyString } from "./client.js";
 
-export function createHardwareSensorMetric(variantOrOptions, options) {
+export function createHardwareSensor(variantOrOptions, options) {
   const parsedOptions = variantOrOptions && typeof variantOrOptions === "object" && !Array.isArray(variantOrOptions)
     ? variantOrOptions
     : options ?? {};

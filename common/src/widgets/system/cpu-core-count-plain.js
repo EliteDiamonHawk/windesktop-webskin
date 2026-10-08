@@ -1,6 +1,6 @@
 import { createVariantSystemWidget, formatNumber } from "./client.js";
 
-export function createCpuCoreCountMetric(variantOrOptions, options) {
+export function createCpuCoreCount(variantOrOptions, options) {
   return createVariantSystemWidget({
     variantOrOptions,
     options,

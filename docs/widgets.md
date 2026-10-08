@@ -137,17 +137,17 @@ System rows default to `format: "{label} {value} {unit}"`. Use `{label}`,
 the label, value, and unit DOM parts:
 
 ```js
-createMemoryMetric({ format: "{label}: {value} {unit}" });
+createMemory({ format: "{label}: {value} {unit}" });
 ```
 
 Unitless values omit the unused unit spacing.
 
 ```js
-import { createCpuFrequency, createDiskIo, createMemoryMetric, createMemoryList } from "/common/widgets/system/index.js";
+import { createCpuFrequency, createDiskIo, createMemory, createMemoryList } from "/common/widgets/system/index.js";
 
 document.querySelector("#cpu").append(createCpuFrequency({ core: 0, interval: 2000 }));
 document.querySelector("#disk").append(createDiskIo("read", "bytes", { format: "{label}: {value} {unit}" }));
-document.querySelector("#memory").append(createMemoryMetric("used"));
+document.querySelector("#memory").append(createMemory("used"));
 document.querySelector("#legacy-memory").append(createMemoryList());
 ```
 
@@ -155,18 +155,18 @@ Scalar family constructors:
 
 | Category | Constructors |
 | --- | --- |
-| CPU utilization | `createCpuUtilizationMetric(variant)` — `overall`, `core` |
-| CPU counts | `createCpuCoreCountMetric(variant)` — `physical`, `logical` |
+| CPU utilization | `createCpuUtilization(variant)` — `overall`, `core` |
+| CPU counts | `createCpuCoreCount(variant)` — `physical`, `logical` |
 | CPU frequency | `createCpuFrequency(variant)` — `core`, `current`, `max`, `min` |
-| CPU telemetry | `createCpuTelemetryMetric(variant)` — `interrupts`, `system-calls`, `context-switches` |
-| Load average | `createCpuLoadAverageMetric(variant)` — `one-minute`, `five-minutes`, `fifteen-minutes` |
-| Memory | `createMemoryMetric(variant)` — `total`, `available`, `used`, `free`, `percent` |
-| Swap | `createSwapMetric(variant)` — `total`, `used`, `free`, `percent` |
+| CPU telemetry | `createCpuTelemetry(variant)` — `interrupts`, `system-calls`, `context-switches` |
+| Load average | `createCpuLoadAverage(variant)` — `one-minute`, `five-minutes`, `fifteen-minutes` |
+| Memory | `createMemory(variant)` — `total`, `available`, `used`, `free`, `percent` |
+| Swap | `createSwap(variant)` — `total`, `used`, `free`, `percent` |
 | Disk I/O | `createDiskIo(direction, metric)` — `read/write × count/bytes/time`, or `busy, time` |
-| Network | `createNetworkTelemetryMetric(variant)` — `bytes-sent`, `bytes-received`, `packets-dropped`, `transmission-errors` |
-| Partitions | `createDiskPartitionMetric(variant)` — `mount-point`, `filesystem`, `mount-options` |
-| Disk usage | `createDiskUsageMetric(variant)` — `mount-point`, `total`, `used`, `free`, `percent` |
-| Hardware sensors | `createHardwareSensorMetric(variant)` — `name`, `value`, `minimum`, `maximum`, `critical` |
+| Network | `createNetworkTelemetry(variant)` — `bytes-sent`, `bytes-received`, `packets-dropped`, `transmission-errors` |
+| Partitions | `createDiskPartition(variant)` — `mount-point`, `filesystem`, `mount-options` |
+| Disk usage | `createDiskUsage(variant)` — `mount-point`, `total`, `used`, `free`, `percent` |
+| Hardware sensors | `createHardwareSensor(variant)` — `name`, `value`, `minimum`, `maximum`, `critical` |
 
 The first argument may be omitted and replaced with the options object. Defaults
 are overall utilization, physical core count, per-core frequency, interrupts,
@@ -181,7 +181,7 @@ existing `className`, `endpoint`, `interval`, and `format` options. For example:
 
 ```js
 createCpuFrequency("current", { format: "{label}: {value} {unit}" });
-createMemoryMetric({ format: "{label}: {value} {unit}" });
+createMemory({ format: "{label}: {value} {unit}" });
 ```
 
 Canonical list constructors retain the previous multi-value presentations:
@@ -192,10 +192,9 @@ Canonical list constructors retain the previous multi-value presentations:
 `createDiskPartitionsList`, `createDiskUsageList`, `createDiskIoList`,
 `createNetworkTelemetryList`, and `createHardwareSensorsList`.
 
-The old unsuffixed module paths and constructor names remain deprecated
-compatibility wrappers for existing themes and continue to render the list
-presentation. New themes should use the scalar family factories or `-list`
-constructors above.
+Scalar widgets use the unsuffixed family constructors above. Multi-value
+widgets always use the explicit `-list` constructors; they are separate
+widgets rather than compatibility aliases.
 
 Plain system widgets expose `data-webskin-system-part` hooks and keep colors,
 surfaces, borders, and layout decisions available to the theme. Unsupported

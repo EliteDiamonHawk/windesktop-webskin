@@ -100,18 +100,18 @@ test.before(async () => {
 });
 
 const scalarCases = [
-  ["createCpuUtilizationMetric", [], {}], ["createCpuUtilizationMetric", ["core", { core: 0 }], {}],
-  ["createCpuCoreCountMetric", [], {}], ["createCpuCoreCountMetric", ["logical"], {}],
+  ["createCpuUtilization", [], {}], ["createCpuUtilization", ["core", { core: 0 }], {}],
+  ["createCpuCoreCount", [], {}], ["createCpuCoreCount", ["logical"], {}],
   ["createCpuFrequency", [{ core: 0 }], {}], ["createCpuFrequency", ["current"], {}], ["createCpuFrequency", ["max"], {}], ["createCpuFrequency", ["min"], {}],
-  ["createCpuTelemetryMetric", [], {}], ["createCpuTelemetryMetric", ["system-calls"], {}], ["createCpuTelemetryMetric", ["context-switches"], {}],
-  ["createCpuLoadAverageMetric", [], {}], ["createCpuLoadAverageMetric", ["five-minutes"], {}], ["createCpuLoadAverageMetric", ["fifteen-minutes"], {}],
-  ["createMemoryMetric", [], {}], ["createMemoryMetric", ["total"], {}], ["createMemoryMetric", ["available"], {}], ["createMemoryMetric", ["free"], {}], ["createMemoryMetric", ["percent"], {}],
-  ["createSwapMetric", [], {}], ["createSwapMetric", ["total"], {}], ["createSwapMetric", ["free"], {}], ["createSwapMetric", ["percent"], {}],
+  ["createCpuTelemetry", [], {}], ["createCpuTelemetry", ["system-calls"], {}], ["createCpuTelemetry", ["context-switches"], {}],
+  ["createCpuLoadAverage", [], {}], ["createCpuLoadAverage", ["five-minutes"], {}], ["createCpuLoadAverage", ["fifteen-minutes"], {}],
+  ["createMemory", [], {}], ["createMemory", ["total"], {}], ["createMemory", ["available"], {}], ["createMemory", ["free"], {}], ["createMemory", ["percent"], {}],
+  ["createSwap", [], {}], ["createSwap", ["total"], {}], ["createSwap", ["free"], {}], ["createSwap", ["percent"], {}],
   ["createDiskIo", [], {}], ["createDiskIo", ["read", "count"], {}], ["createDiskIo", ["write", "bytes"], {}], ["createDiskIo", ["write", "time"], {}], ["createDiskIo", ["busy", "time"], {}],
-  ["createNetworkTelemetryMetric", [], {}], ["createNetworkTelemetryMetric", ["bytes-received"], {}], ["createNetworkTelemetryMetric", ["packets-dropped"], {}], ["createNetworkTelemetryMetric", ["transmission-errors"], {}],
-  ["createDiskPartitionMetric", [{ mountPoint: "C:\\" }], {}], ["createDiskPartitionMetric", ["filesystem", { mountPoint: "C:\\" }], {}], ["createDiskPartitionMetric", ["mount-options", { mountPoint: "C:\\" }], {}],
-  ["createDiskUsageMetric", [{ mountPoint: "C:\\" }], {}], ["createDiskUsageMetric", ["mount-point", { mountPoint: "C:\\" }], {}], ["createDiskUsageMetric", ["total", { mountPoint: "C:\\" }], {}], ["createDiskUsageMetric", ["used", { mountPoint: "C:\\" }], {}], ["createDiskUsageMetric", ["free", { mountPoint: "C:\\" }], {}],
-  ["createHardwareSensorMetric", [{ sensorId: "sensor-1" }], {}], ["createHardwareSensorMetric", ["name", { sensorId: "sensor-1" }], {}], ["createHardwareSensorMetric", ["minimum", { sensorId: "sensor-1" }], {}], ["createHardwareSensorMetric", ["maximum", { sensorId: "sensor-1" }], {}], ["createHardwareSensorMetric", ["critical", { sensorId: "sensor-1" }], {}],
+  ["createNetworkTelemetry", [], {}], ["createNetworkTelemetry", ["bytes-received"], {}], ["createNetworkTelemetry", ["packets-dropped"], {}], ["createNetworkTelemetry", ["transmission-errors"], {}],
+  ["createDiskPartition", [{ mountPoint: "C:\\" }], {}], ["createDiskPartition", ["filesystem", { mountPoint: "C:\\" }], {}], ["createDiskPartition", ["mount-options", { mountPoint: "C:\\" }], {}],
+  ["createDiskUsage", [{ mountPoint: "C:\\" }], {}], ["createDiskUsage", ["mount-point", { mountPoint: "C:\\" }], {}], ["createDiskUsage", ["total", { mountPoint: "C:\\" }], {}], ["createDiskUsage", ["used", { mountPoint: "C:\\" }], {}], ["createDiskUsage", ["free", { mountPoint: "C:\\" }], {}],
+  ["createHardwareSensor", [{ sensorId: "sensor-1" }], {}], ["createHardwareSensor", ["name", { sensorId: "sensor-1" }], {}], ["createHardwareSensor", ["minimum", { sensorId: "sensor-1" }], {}], ["createHardwareSensor", ["maximum", { sensorId: "sensor-1" }], {}], ["createHardwareSensor", ["critical", { sensorId: "sensor-1" }], {}],
 ];
 
 test("every family variant renders exactly one metric row", async () => {
@@ -124,7 +124,7 @@ test("every family variant renders exactly one metric row", async () => {
 
 test("variant factories preserve formatting and options-object defaults", async () => {
   const frequency = widgets.createCpuFrequency({ core: 0, format: "{label}: {value}{unit}" });
-  const memory = widgets.createMemoryMetric("used", { format: "{label}: {value} {unit}" });
+  const memory = widgets.createMemory("used", { format: "{label}: {value} {unit}" });
   await new Promise((resolve) => setImmediate(resolve));
   assert.match(rowText(metricRows(frequency)[0]), /Core 1: 2,300MHz/);
   assert.match(rowText(metricRows(memory)[0]), /Used: 40 B/);
@@ -140,21 +140,21 @@ test("disk I/O validates its two selectors", () => {
 test("required selectors and variants are validated", () => {
   assert.throws(() => widgets.createCpuFrequency(), /core/);
   assert.throws(() => widgets.createCpuFrequency("unknown", { core: 0 }), /Unsupported/);
-  assert.throws(() => widgets.createCpuUtilizationMetric("core"), /core/);
-  assert.throws(() => widgets.createDiskUsageMetric(), /mountPoint/);
-  assert.throws(() => widgets.createHardwareSensorMetric({ sensorId: "" }), /sensorId/);
+  assert.throws(() => widgets.createCpuUtilization("core"), /core/);
+  assert.throws(() => widgets.createDiskUsage(), /mountPoint/);
+  assert.throws(() => widgets.createHardwareSensor({ sensorId: "" }), /sensorId/);
 });
 
 test("missing selected records render Unavailable without creating a list", async () => {
-  const element = widgets.createDiskUsageMetric({ mountPoint: "D:\\" });
+  const element = widgets.createDiskUsage({ mountPoint: "D:\\" });
   await new Promise((resolve) => setImmediate(resolve));
   assert.match(rowText(metricRows(element)[0]), /Unavailable/);
   assert.equal(element.querySelectorAll('[data-webskin-system-part="usage"]').length, 0);
 });
 
-test("canonical list widgets and legacy aliases retain multi-value rendering", async () => {
+test("explicit list widgets retain multi-value rendering", async () => {
   const canonical = widgets.createCpuUtilizationList();
-  const legacy = widgets.createMemory();
+  const legacy = widgets.createMemoryList();
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(canonical.querySelectorAll('[data-webskin-system-part="core-0-row"]').length, 1);

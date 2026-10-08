@@ -11,14 +11,16 @@ const ensureStyles = () => {
   style.textContent = `
     @font-face {
       font-family: "WebSkin Mond Anurati";
-      src: url("/common/fonts/Anurati.otf") format("opentype");
+      src: local("Anurati"),
+        url("/common/fonts/Anurati.otf") format("opentype");
       font-style: normal;
       font-weight: 400;
       font-display: block;
     }
     @font-face {
       font-family: "WebSkin Mond Quicksand";
-      src: url("/common/fonts/Quicksand.otf") format("opentype");
+      src: local("Quicksand"),
+        url("/common/fonts/Quicksand.otf") format("opentype");
       font-style: normal;
       font-weight: 700;
       font-display: block;

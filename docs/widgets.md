@@ -18,12 +18,12 @@ clock.destroy?.();
 
 | Module | Import | Function |
 | --- | --- | --- |
-| Digital plain | `/common/widgets/time/digital-plain.js` | `createClock(options)` |
-| Digital pre-styled | `/common/widgets/time/digital-prestyled.js` | `createClock(options)` |
-| Analog plain | `/common/widgets/time/analog-plain.js` | `createClock(options)` |
-| Analog pre-styled | `/common/widgets/time/analog-prestyled.js` | `createClock(options)` |
-| Analog pre-styled 2 | `/common/widgets/time/analog-prestyled2.js` | `createClock(options)` |
-| Digital and analog | `/common/widgets/time/digital-analog-prestyled.js` | `createClock(options)` |
+| Digital plain | `/common/widgets/time/clock-digital-plain.js` | `createClock(options)` |
+| Digital pre-styled | `/common/widgets/time/clock-digital-prestyled.js` | `createClock(options)` |
+| Analog plain | `/common/widgets/time/clock-analog-plain.js` | `createClock(options)` |
+| Analog pre-styled | `/common/widgets/time/clock-analog-prestyled.js` | `createClock(options)` |
+| Analog pre-styled 2 | `/common/widgets/time/clock-analog-prestyled2.js` | `createClock(options)` |
+| Digital and analog | `/common/widgets/time/clock-digital-analog-prestyled.js` | `createClock(options)` |
 | Rainmeter Mond clock remake | `/common/widgets/time/rainmeter-mond-clock-remake.js` | `createClock(options)` |
 
 Digital clocks accept `format` (`12h` or `24h`), `seconds`, `showPeriod`,

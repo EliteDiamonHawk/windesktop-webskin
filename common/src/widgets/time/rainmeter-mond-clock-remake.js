@@ -1,6 +1,6 @@
 import { Widget } from "../widgets.js";
 import { createDay } from "./day-plain.js";
-import { createClock as createDigitalClock } from "./digital-plain.js";
+import { createClock as createDigitalClock } from "./clock-digital-plain.js";
 
 const STYLE_ID = "webskin-clock-rainmeter-mond-clock-remake-styles";
 

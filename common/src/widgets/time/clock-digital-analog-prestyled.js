@@ -1,5 +1,5 @@
-import { createClock as createDigitalPlain } from "./digital-plain.js";
-import { createClock as createAnalogPlain } from "./analog-plain.js";
+import { createClock as createDigitalPlain } from "./clock-digital-plain.js";
+import { createClock as createAnalogPlain } from "./clock-analog-plain.js";
 import { Widget } from "../widgets.js";
 
 const STYLE_ID = "webskin-clock-digital-analog-prestyled-styles";

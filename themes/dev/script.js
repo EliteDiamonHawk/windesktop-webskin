@@ -1,9 +1,10 @@
-import { createClock as createPlainClock } from "/common/widgets/time/digital-plain.js";
-import { createClock as createPlainAnalogClock } from "/common/widgets/time/analog-plain.js";
-import { createClock as createDigitalClock } from "/common/widgets/time/digital-prestyled.js";
-import { createClock as createAnalogClock } from "/common/widgets/time/analog-prestyled.js";
-import { createClock as createAnalogClock2 } from "/common/widgets/time/analog-prestyled2.js";
-import { createClock as createDigitalAnalogClock } from "/common/widgets/time/digital-analog-prestyled.js";
+import { createClock as createPlainClock } from "/common/widgets/time/clock-digital-plain.js";
+import { createClock as createPlainAnalogClock } from "/common/widgets/time/clock-analog-plain.js";
+import { createClock as createDigitalClock } from "/common/widgets/time/clock-digital-prestyled.js";
+import { createClock as createDigitalDayClock } from "/common/widgets/time/clock-digital-day.js";
+import { createClock as createAnalogClock } from "/common/widgets/time/clock-analog-prestyled.js";
+import { createClock as createAnalogClock2 } from "/common/widgets/time/clock-analog-prestyled2.js";
+import { createClock as createDigitalAnalogClock } from "/common/widgets/time/clock-digital-analog-prestyled.js";
 import { createDay } from "/common/widgets/time/day-plain.js?v=calendar-date-5";
 import { createWeek } from "/common/widgets/time/week-plain.js?v=calendar-date-5";
 import { createMonth } from "/common/widgets/time/month-plain.js?v=calendar-date-5";
@@ -16,6 +17,7 @@ import { createMonth as createPrestyledMonth } from "/common/widgets/time/month-
 document.querySelector("#clock").append(createPlainClock());
 document.querySelector("#analog-plain-clock").append(createPlainAnalogClock());
 document.querySelector("#digital-clock").append(createDigitalClock());
+document.querySelector("#digital-day-clock").append(createDigitalDayClock());
 document.querySelector("#analog-clock").append(createAnalogClock());
 document.querySelector("#analog-clock-2").append(createAnalogClock2({
   size: "9rem",

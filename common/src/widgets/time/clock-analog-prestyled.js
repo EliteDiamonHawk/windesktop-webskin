@@ -1,4 +1,4 @@
-import { createClock as createPlainAnalogClock } from "./analog-plain.js";
+import { createClock as createPlainAnalogClock } from "./clock-analog-plain.js";
 
 const STYLE_ID = "webskin-clock-analog-prestyled-styles";
 

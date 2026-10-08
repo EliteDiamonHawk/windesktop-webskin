@@ -1,4 +1,4 @@
-import { createClock as createPlainClock } from "./digital-plain.js";
+import { createClock as createPlainClock } from "./clock-digital-plain.js";
 
 const STYLE_ID = "webskin-clock-digital-prestyled-styles";
 

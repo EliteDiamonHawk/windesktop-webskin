@@ -11,90 +11,91 @@ import { createMemory } from "/common/widgets/system/memory-plain.js";
 import { createNetworkTelemetry } from "/common/widgets/system/network-telemetry-plain.js";
 import { createSwap } from "/common/widgets/system/swap-plain.js";
 
-const content = document.querySelector("#system-showcase-content");
-let mountedWidgets = [];
+const gallery = document.querySelector("#system-gallery");
+let mounted = [];
 
 const groups = [
   {
     title: "CPU",
-    description: "Utilization, capacity, clock speed, hardware counters, and load averages.",
     widgets: [
-      ["CPU utilization", "Overall and per-core percentages.", createCpuUtilization],
-      ["CPU core counts", "Physical and logical processor counts.", createCpuCoreCounts],
-      ["CPU frequencies", "Current, minimum, and maximum clock speeds.", createCpuFrequencies],
-      ["CPU hardware telemetry", "Interrupts, system calls, and context switches.", createCpuTelemetry],
-      ["CPU load averages", "One, five, and fifteen-minute averages.", createCpuLoadAverage],
+      ["CPU utilization", createCpuUtilization],
+      ["CPU core counts", createCpuCoreCounts],
+      ["CPU frequencies", createCpuFrequencies],
+      ["CPU telemetry", createCpuTelemetry],
+      ["CPU load average", createCpuLoadAverage],
     ],
   },
   {
     title: "Memory",
-    description: "Physical memory and swap/pagefile capacity.",
     widgets: [
-      ["Virtual memory / RAM", "Total, available, used, free, and usage percentage.", createMemory],
-      ["Swap memory", "Total, used, free, and paging usage percentage.", createSwap],
+      ["Memory", createMemory],
+      ["Swap", createSwap],
     ],
   },
   {
     title: "Storage",
-    description: "Local partitions, capacity, and aggregate disk I/O.",
     widgets: [
-      ["Disk partitions", "Local mount points, filesystem types, and mount options.", createDiskPartitions],
-      ["Disk usage and space", "Total, used, free, and capacity percentage per mount point.", createDiskUsage],
-      ["Disk I/O performance", "Read/write counts, bytes transferred, and wait times.", createDiskIo],
+      ["Disk partitions", createDiskPartitions],
+      ["Disk usage", createDiskUsage],
+      ["Disk I/O", createDiskIo],
     ],
   },
   {
     title: "Network and hardware",
-    description: "Aggregate network counters and best-effort hardware sensors.",
     widgets: [
-      ["Network bandwidth telemetry", "Aggregate bytes, packet drops, and transmission errors.", createNetworkTelemetry],
-      ["Hardware sensors", "Live temperatures and fan speeds when exposed by the OS.", createHardwareSensors],
+      ["Network telemetry", createNetworkTelemetry],
+      ["Hardware sensors", createHardwareSensors],
     ],
   },
 ];
 
-const createCard = ([title, description, createWidget]) => {
-  const card = document.createElement("article");
-  card.className = "system-card";
-  const heading = document.createElement("h4");
-  heading.textContent = title;
-  const note = document.createElement("p");
-  note.className = "system-card__note";
-  note.textContent = description;
+const createExample = ([label, createWidget]) => {
+  const example = document.createElement("section");
+  example.className = "widget-example";
+
+  const heading = document.createElement("h3");
+  heading.textContent = label;
+
   const stage = document.createElement("div");
-  stage.className = "system-card__stage";
-  const widget = createWidget({ interval: 5000, format: "{label}: {value} {unit}" });
+  stage.className = "widget-example__stage";
+  stage.style.setProperty("--widget-scale", "1");
+
+  const widget = createWidget();
   stage.append(widget);
-  card.append(heading, note, stage);
-  mountedWidgets.push(widget);
-  return card;
+  example.append(heading, stage);
+  return { example, widget };
 };
 
 const mount = () => {
-  if (!content || mountedWidgets.length) return;
+  if (!gallery || mounted.length) return;
   const fragment = document.createDocumentFragment();
-  groups.forEach(({ title, description, widgets }) => {
+  const widgets = [];
+
+  for (const { title, widgets: definitions } of groups) {
     const group = document.createElement("section");
     group.className = "system-group";
-    const heading = document.createElement("div");
-    heading.className = "system-group__heading";
-    const titleElement = document.createElement("h3");
-    titleElement.textContent = title;
-    const descriptionElement = document.createElement("p");
-    descriptionElement.textContent = description;
-    heading.append(titleElement, descriptionElement);
-    const grid = document.createElement("div");
-    grid.className = "system-grid";
-    widgets.forEach((definition) => grid.append(createCard(definition)));
-    group.append(heading, grid);
+
+    const heading = document.createElement("h2");
+    heading.textContent = title;
+
+    const list = document.createElement("div");
+    list.className = "widget-list";
+    for (const definition of definitions) {
+      const { example, widget } = createExample(definition);
+      list.append(example);
+      widgets.push(widget);
+    }
+    group.append(heading, list);
     fragment.append(group);
-  });
-  content.replaceChildren(fragment);
+  }
+
+  gallery.replaceChildren(fragment);
+  mounted = widgets;
 };
 
 const unmount = () => {
-  mountedWidgets.splice(0).forEach((widget) => widget.destroy?.());
-  content?.replaceChildren();
+  mounted.splice(0).forEach((widget) => widget.destroy?.());
+  gallery?.replaceChildren();
 };
 
 document.addEventListener("webskin:showcase-page-change", (event) => {
@@ -102,3 +103,4 @@ document.addEventListener("webskin:showcase-page-change", (event) => {
   else unmount();
 });
 
+if (!document.querySelector('[data-showcase-panel="system"]')?.hidden) mount();

@@ -7,7 +7,9 @@ The settings file uses version `1` and three namespaces:
 ```json
 {
   "version": 1,
-  "app": {},
+  "app": {
+    "hardware_monitor_enabled": true
+  },
   "themes": {},
   "widgets": {}
 }
@@ -15,6 +17,19 @@ The settings file uses version `1` and three namespaces:
 
 `app` stores application keys. `themes` and `widgets` store objects under an
 identifier such as a theme ID or widget ID.
+
+Set `app.hardware_monitor_enabled` to `false` to disable LibreHardwareMonitor
+initialization and hardware sensor fallback:
+
+```json
+"app": {
+  "hardware_monitor_enabled": false
+}
+```
+
+The setting defaults to enabled when omitted. It is read once when the
+backend starts, so restart FastAPI after editing `settings.json`. `psutil`
+metrics continue to work while HardwareMonitor is disabled.
 
 ## Routes
 

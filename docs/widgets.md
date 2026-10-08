@@ -125,39 +125,77 @@ snapshot at `/api/system/metrics`. Every system widget accepts `className`,
 seconds. Destroying the returned element aborts its request and stops its
 polling timer.
 
+Hardware readings preserve the existing temperature and fan fields while the
+snapshot also exposes normalized `sensors.readings` records. Records include
+their provider source and a generic sensor type, so future widgets can render
+voltage, power, current, clock, load, battery, storage, or other hardware
+values without depending on LibreHardwareMonitor objects. Hardware sensor
+availability remains machine- and permissions-dependent.
+
 System rows default to `format: "{label} {value} {unit}"`. Use `{label}`,
 `{value}`, and `{unit}` placeholders to customize the text while retaining
 the label, value, and unit DOM parts:
 
 ```js
-createMemory({ format: "{label}: {value} {unit}" });
+createMemoryMetric({ format: "{label}: {value} {unit}" });
 ```
 
 Unitless values omit the unused unit spacing.
 
 ```js
-import { createMemory, createCpuUtilization } from "/common/widgets/system/index.js";
+import { createCpuFrequency, createDiskIo, createMemoryMetric, createMemoryList } from "/common/widgets/system/index.js";
 
-document.querySelector("#memory").append(createMemory());
-document.querySelector("#cpu").append(createCpuUtilization({ interval: 2000 }));
+document.querySelector("#cpu").append(createCpuFrequency({ core: 0, interval: 2000 }));
+document.querySelector("#disk").append(createDiskIo("read", "bytes", { format: "{label}: {value} {unit}" }));
+document.querySelector("#memory").append(createMemoryMetric("used"));
+document.querySelector("#legacy-memory").append(createMemoryList());
 ```
 
-Available plain constructors:
+Scalar family constructors:
 
-| Module | Function |
+| Category | Constructors |
 | --- | --- |
-| `system/cpu-utilization-plain.js` | `createCpuUtilization(options)` |
-| `system/cpu-core-counts-plain.js` | `createCpuCoreCounts(options)` |
-| `system/cpu-frequencies-plain.js` | `createCpuFrequencies(options)` |
-| `system/cpu-telemetry-plain.js` | `createCpuTelemetry(options)` |
-| `system/cpu-load-average-plain.js` | `createCpuLoadAverage(options)` |
-| `system/memory-plain.js` | `createMemory(options)` |
-| `system/swap-plain.js` | `createSwap(options)` |
-| `system/disk-partitions-plain.js` | `createDiskPartitions(options)` |
-| `system/disk-usage-plain.js` | `createDiskUsage(options)` |
-| `system/disk-io-plain.js` | `createDiskIo(options)` |
-| `system/network-telemetry-plain.js` | `createNetworkTelemetry(options)` |
-| `system/hardware-sensors-plain.js` | `createHardwareSensors(options)` |
+| CPU utilization | `createCpuUtilizationMetric(variant)` — `overall`, `core` |
+| CPU counts | `createCpuCoreCountMetric(variant)` — `physical`, `logical` |
+| CPU frequency | `createCpuFrequency(variant)` — `core`, `current`, `max`, `min` |
+| CPU telemetry | `createCpuTelemetryMetric(variant)` — `interrupts`, `system-calls`, `context-switches` |
+| Load average | `createCpuLoadAverageMetric(variant)` — `one-minute`, `five-minutes`, `fifteen-minutes` |
+| Memory | `createMemoryMetric(variant)` — `total`, `available`, `used`, `free`, `percent` |
+| Swap | `createSwapMetric(variant)` — `total`, `used`, `free`, `percent` |
+| Disk I/O | `createDiskIo(direction, metric)` — `read/write × count/bytes/time`, or `busy, time` |
+| Network | `createNetworkTelemetryMetric(variant)` — `bytes-sent`, `bytes-received`, `packets-dropped`, `transmission-errors` |
+| Partitions | `createDiskPartitionMetric(variant)` — `mount-point`, `filesystem`, `mount-options` |
+| Disk usage | `createDiskUsageMetric(variant)` — `mount-point`, `total`, `used`, `free`, `percent` |
+| Hardware sensors | `createHardwareSensorMetric(variant)` — `name`, `value`, `minimum`, `maximum`, `critical` |
+
+The first argument may be omitted and replaced with the options object. Defaults
+are overall utilization, physical core count, per-core frequency, interrupts,
+one-minute load, used memory, used swap, read bytes, sent bytes, disk capacity,
+and sensor value. The per-core frequency and utilization variants require a
+zero-based `core` option. Partition and disk-usage variants require a
+`mountPoint` string. Hardware sensor variants require a stable `sensorId` from
+`snapshot.sensors.readings`.
+
+Every scalar factory renders one formatted metric row. All factories accept the
+existing `className`, `endpoint`, `interval`, and `format` options. For example:
+
+```js
+createCpuFrequency("current", { format: "{label}: {value} {unit}" });
+createMemoryMetric({ format: "{label}: {value} {unit}" });
+```
+
+Canonical list constructors retain the previous multi-value presentations:
+
+`createCpuUtilizationList`, `createCpuCoreCountsList`,
+`createCpuFrequenciesList`, `createCpuTelemetryList`,
+`createCpuLoadAverageList`, `createMemoryList`, `createSwapList`,
+`createDiskPartitionsList`, `createDiskUsageList`, `createDiskIoList`,
+`createNetworkTelemetryList`, and `createHardwareSensorsList`.
+
+The old unsuffixed module paths and constructor names remain deprecated
+compatibility wrappers for existing themes and continue to render the list
+presentation. New themes should use the scalar family factories or `-list`
+constructors above.
 
 Plain system widgets expose `data-webskin-system-part` hooks and keep colors,
 surfaces, borders, and layout decisions available to the theme. Unsupported

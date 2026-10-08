@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "HardwareMonitor>=1.2.1; sys_platform == 'win32'",
     "fastapi>=0.135.1",
     "psutil>=7.0.0",
     "uvicorn[standard]>=0.54.0",

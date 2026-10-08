@@ -5,170 +5,91 @@ import { createClock as createDigitalDayClock } from "/common/widgets/time/clock
 import { createClock as createAnalogClock } from "/common/widgets/time/clock-analog-prestyled.js";
 import { createClock as createAnalogClock2 } from "/common/widgets/time/clock-analog-prestyled2.js";
 import { createClock as createDigitalAnalogClock } from "/common/widgets/time/clock-digital-analog-prestyled.js";
-import { createDay } from "/common/widgets/time/day-plain.js?v=calendar-date-5";
-import { createWeek } from "/common/widgets/time/week-plain.js?v=calendar-date-5";
-import { createMonth } from "/common/widgets/time/month-plain.js?v=calendar-date-5";
-import { createDay as createPrestyledDay } from "/common/widgets/time/day-prestyled.js?v=calendar-date-5";
-import { createDay as createPrestyledDay2 } from "/common/widgets/time/day-prestyled2.js?v=calendar-date-5";
-import { createWeek as createPrestyledWeek } from "/common/widgets/time/week-prestyled.js?v=calendar-date-5";
-import { createMonth as createPrestyledMonth } from "/common/widgets/time/month-prestyled.js?v=calendar-date-5";
+import { createDay } from "/common/widgets/time/day-plain.js";
+import { createWeek } from "/common/widgets/time/week-plain.js";
+import { createMonth } from "/common/widgets/time/month-plain.js";
+import { createDay as createPrestyledDay } from "/common/widgets/time/day-prestyled.js";
+import { createDay as createPrestyledDay2 } from "/common/widgets/time/day-prestyled2.js";
+import { createWeek as createPrestyledWeek } from "/common/widgets/time/week-prestyled.js";
+import { createMonth as createPrestyledMonth } from "/common/widgets/time/month-prestyled.js";
 
+const clockGallery = document.querySelector("#clock-gallery");
+const calendarGallery = document.querySelector("#calendar-gallery");
+let mounted = [];
 
-document.querySelector("#clock").append(createPlainClock());
-document.querySelector("#analog-plain-clock").append(createPlainAnalogClock());
-document.querySelector("#digital-clock").append(createDigitalClock());
-document.querySelector("#digital-day-clock").append(createDigitalDayClock());
-document.querySelector("#analog-clock").append(createAnalogClock());
-document.querySelector("#analog-clock-2").append(createAnalogClock2({
-  size: "9rem",
-}));
+const clockExamples = [
+  ["Digital plain", createPlainClock, {}, 1.5],
+  ["Digital pre-styled", createDigitalClock, {}, 1.25],
+  ["Digital day", createDigitalDayClock, {}, 1],
+  ["Analog plain", createPlainAnalogClock, {}, 1.1],
+  ["Analog pre-styled", createAnalogClock, {}, 1],
+  ["Analog pre-styled 2", createAnalogClock2, {}, 1],
+  ["Digital and analog pre-styled", createDigitalAnalogClock, {}, 1],
+];
 
-document.querySelector("#combination-clock").append(createDigitalAnalogClock({
-}));
+const calendarExamples = [
+  ["Formatted day, plain", createDay, {}, 1.25],
+  ["Single day, plain", createDay, { variant: "single-day" }, 1.1],
+  ["Formatted day, pre-styled", createPrestyledDay, {}, 1],
+  ["Single day, pre-styled", createPrestyledDay2, {}, 1],
+  ["Week, plain, natural", createWeek, {}, 1],
+  ["Week, plain, rolling 3/3", createWeek, { daysBefore: 3, daysAfter: 3 }, 1],
+  ["Week, pre-styled, natural", createPrestyledWeek, {}, 1],
+  ["Week, pre-styled, rolling 3/3", createPrestyledWeek, { daysBefore: 3, daysAfter: 3 }, 1],
+];
 
-document.querySelector("#formatted-date").append(createDay({
-  format: "dddd, MMMM D, YYYY",
-}));
-document.querySelector("#single-day").append(createDay());
-document.querySelector("#calendar-week").append(createWeek({ daysBefore: 1, daysAfter: 5 }));
-document.querySelector("#calendar-month").append(createMonth({ maxWeeks: 5 }));
-const calendarDateOutput = document.querySelector("[data-calendar-current-date]");
-const calendarShiftButtons = document.querySelectorAll("[data-calendar-shift]");
-const calendarTodayButton = document.querySelector("[data-calendar-today]");
-let prestyledCalendarDate = new Date();
+for (const [maxWeeks, weekLabel] of [[5, "5 weeks"], [6, "6 weeks"]]) {
+  calendarExamples.push(
+    [`Month, plain, unlocked, ${weekLabel}`, createMonth, { maxWeeks }, 1],
+    [`Month, plain, row locked, ${weekLabel}`, createMonth, { maxWeeks, lockDay: { y: 2 } }, 1],
+    [`Month, plain, cell locked, ${weekLabel}`, createMonth, { maxWeeks, lockDay: { x: 3, y: 2 } }, 1],
+    [`Month, pre-styled, unlocked, ${weekLabel}`, createPrestyledMonth, { maxWeeks }, 1],
+    [`Month, pre-styled, row locked, ${weekLabel}`, createPrestyledMonth, { maxWeeks, lockDay: { y: 2 } }, 1],
+    [`Month, pre-styled, cell locked, ${weekLabel}`, createPrestyledMonth, { maxWeeks, lockDay: { x: 3, y: 2 } }, 1],
+  );
+}
 
-const dateInputValue = (date) => (
-  `${String(date.getFullYear()).padStart(4, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
-);
+const createExample = ([label, createWidget, options = {}, scale = 1]) => {
+  const example = document.createElement("section");
+  example.className = "widget-example";
 
-const shiftCalendarDate = (date, amount) => {
-  const next = new Date(date);
-  next.setDate(next.getDate() + amount);
-  next.setHours(12, 0, 0, 0);
-  return next;
+  const heading = document.createElement("h3");
+  heading.textContent = label;
+
+  const stage = document.createElement("div");
+  stage.className = "widget-example__stage";
+  stage.style.setProperty("--widget-scale", String(scale));
+
+  const widget = createWidget(options);
+  stage.append(widget);
+  example.append(heading, stage);
+  return { example, widget };
 };
 
-const renderPrestyledCalendars = () => {
-  const widgets = [
-    ["#formatted-date-prestyled", createPrestyledDay({ date: prestyledCalendarDate, format: "ddd, MMM D, YYYY" })],
-    ["#single-day-prestyled", createPrestyledDay2({ date: prestyledCalendarDate })],
-    ["#calendar-week-prestyled-unlocked", createPrestyledWeek({ date: prestyledCalendarDate })],
-    ["#calendar-week-prestyled-locked", createPrestyledWeek({ date: prestyledCalendarDate, daysBefore: 3, daysAfter: 3 })],
-    // Keep this unlocked month at five weeks; it intentionally never uses the six-week default.
-    ["#calendar-month-prestyled-unlocked", createPrestyledMonth({ date: prestyledCalendarDate, maxWeeks: 5 })],
-    ["#calendar-month-prestyled-row-locked", createPrestyledMonth({ date: prestyledCalendarDate, maxWeeks: 5, lockDay: { y: 2 } })],
-    ["#calendar-month-prestyled-cell-locked", createPrestyledMonth({ date: prestyledCalendarDate, maxWeeks: 5, lockDay: { x: 3, y: 2 } })],
-  ];
-  for (const [selector, widget] of widgets) {
-    document.querySelector(selector)?.replaceChildren(widget);
+const mountExamples = (target, examples) => {
+  const fragment = document.createDocumentFragment();
+  const widgets = [];
+  for (const definition of examples) {
+    const { example, widget } = createExample(definition);
+    fragment.append(example);
+    widgets.push(widget);
   }
-  if (calendarDateOutput) {
-    calendarDateOutput.value = dateInputValue(prestyledCalendarDate);
-    calendarDateOutput.textContent = prestyledCalendarDate.toLocaleDateString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }
+  target.replaceChildren(fragment);
+  mounted = widgets;
 };
 
-calendarShiftButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    prestyledCalendarDate = shiftCalendarDate(prestyledCalendarDate, Number(button.dataset.calendarShift));
-    renderPrestyledCalendars();
-  });
-});
-calendarTodayButton?.addEventListener("click", () => {
-  prestyledCalendarDate = new Date();
-  renderPrestyledCalendars();
-});
-renderPrestyledCalendars();
-
-const editor = document.querySelector("#clock-editor");
-const preview = document.querySelector("#editor-preview");
-const resetButton = document.querySelector("[data-reset-editor]");
-const defaults = {
-  variant: "digital",
-  format: "24h",
-  color: "#d6d6d6",
-  background: "#2e2e2e",
-  frame: "#2e2e2e",
-  size: "2.7",
-  radius: "12",
-  padding: "12",
-  spacing: "8",
-  seconds: true,
-  period: true,
+const unmount = () => {
+  mounted.splice(0).forEach((widget) => widget.destroy?.());
+  clockGallery?.replaceChildren();
+  calendarGallery?.replaceChildren();
 };
 
-const field = (name) => editor?.elements.namedItem(name);
-
-const syncOutputs = () => {
-  if (!editor) return;
-  const size = field("size");
-  const radius = field("radius");
-  const padding = field("padding");
-  const spacing = field("spacing");
-  const output = (name, value) => {
-    const outputElement = editor.querySelector(`[data-output="${name}"]`);
-    if (outputElement) outputElement.textContent = value;
-  };
-  output("size", `${size.value}rem`);
-  output("radius", `${radius.value}px`);
-  output("padding", `${padding.value}px`);
-  output("spacing", `${(Number(spacing.value) / 100).toFixed(2)}em`);
+const showPage = (page) => {
+  unmount();
+  if (page === "clocks" && clockGallery) mountExamples(clockGallery, clockExamples);
+  if (page === "calendars" && calendarGallery) mountExamples(calendarGallery, calendarExamples);
 };
 
-const renderEditorClock = () => {
-  if (!editor || !preview) return;
-  const values = new FormData(editor);
-  const variant = values.get("variant");
-  const format = values.get("format");
-  const size = `${values.get("size")}rem`;
-  const padding = `${values.get("padding")}px`;
-  const clockOptions = {
-    format,
-    seconds: values.get("seconds") === "on",
-    showPeriod: values.get("period") === "on",
-    color: values.get("color"),
-  };
-  const clock = variant === "plain"
-    ? createPlainClock(clockOptions)
-    : variant === "analog"
-      ? createAnalogClock(clockOptions)
-      : createDigitalClock(clockOptions);
-  clock.style.color = values.get("color");
-  clock.style.backgroundColor = values.get("background");
-  clock.style.borderColor = values.get("frame");
-  clock.style.borderRadius = `${values.get("radius")}px`;
-  clock.style.fontSize = size;
-  clock.style.letterSpacing = `${Number(values.get("spacing")) / 100}em`;
-  clock.style.padding = padding;
-  if (variant === "analog") {
-    clock.style.width = size;
-    clock.style.height = size;
-    clock.style.setProperty("--webskin-analog-color", values.get("color"));
-    clock.style.setProperty("--webskin-analog-face", values.get("background"));
-    clock.style.setProperty("--webskin-analog-frame", values.get("frame"));
-    clock.style.setProperty("--webskin-analog-second-hand-display", clockOptions.seconds ? "inline" : "none");
-  }
-  preview.replaceChildren(clock);
-  syncOutputs();
-};
+document.addEventListener("webskin:showcase-page-change", (event) => showPage(event.detail.page));
 
-const setEditorDefaults = () => {
-  if (!editor) return;
-  for (const [name, value] of Object.entries(defaults)) {
-    const input = field(name);
-    if (!input) continue;
-    if (input.type === "checkbox") input.checked = value;
-    else input.value = value;
-  }
-  renderEditorClock();
-};
-
-editor?.addEventListener("input", renderEditorClock);
-editor?.addEventListener("change", renderEditorClock);
-resetButton?.addEventListener("click", setEditorDefaults);
-setEditorDefaults();
+if (!document.querySelector('[data-showcase-panel="clocks"]')?.hidden) showPage("clocks");

@@ -1,6 +1,8 @@
 {
   "version": 1,
-  "app": {},
+  "app": {
+    "hardware_monitor_enabled": true
+  },
   "themes": {},
   "widgets": {}
 }

@@ -75,6 +75,69 @@ export const formatText = (value, unit = "") => ({
   unit,
 });
 
+export const requireNonNegativeInteger = (options, name) => {
+  const value = options?.[name];
+  if (!Number.isInteger(value) || value < 0) {
+    throw new TypeError(`System widget option ${name} must be a non-negative integer`);
+  }
+  return value;
+};
+
+export const requireNonEmptyString = (options, name) => {
+  const value = options?.[name];
+  if (typeof value !== "string" || !value.trim()) {
+    throw new TypeError(`System widget option ${name} must be a non-empty string`);
+  }
+  return value;
+};
+
+export const findRecord = (records, key, value) => (
+  Array.isArray(records) ? records.find((record) => record?.[key] === value) : undefined
+);
+
+export const parseVariantOptions = (variantOrOptions, options, defaultVariant) => {
+  if (variantOrOptions && typeof variantOrOptions === "object" && !Array.isArray(variantOrOptions)) {
+    return { variant: defaultVariant, options: variantOrOptions };
+  }
+  return { variant: variantOrOptions ?? defaultVariant, options: options ?? {} };
+};
+
+export const createVariantSystemWidget = ({
+  variantOrOptions,
+  options,
+  defaultVariant,
+  family,
+  variants,
+}) => {
+  const parsed = parseVariantOptions(variantOrOptions, options, defaultVariant);
+  const variantFactory = variants[parsed.variant];
+  if (!variantFactory) {
+    throw new TypeError(`Unsupported ${family} variant: ${String(parsed.variant)}`);
+  }
+  const definition = typeof variantFactory === "function" ? variantFactory(parsed.options) : variantFactory;
+  return createScalarSystemWidget({
+    options: parsed.options,
+    type: `${family}-${parsed.variant}`,
+    ...definition,
+  });
+};
+
+export const createScalarSystemWidget = ({
+  options = {},
+  type,
+  part = "value",
+  label,
+  read,
+}) => {
+  const { format } = options;
+  return createSystemWidget({
+    ...options,
+    type,
+    build: (root) => root.append(createRow(part, label, { format })),
+    render: (root, snapshot) => setMetricText(root, part, read(snapshot)),
+  });
+};
+
 export const setPartText = (root, part, text) => {
   const selectorPart = String(part).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   const elements = [...root.querySelectorAll(`[data-webskin-system-part="${selectorPart}"]`)];

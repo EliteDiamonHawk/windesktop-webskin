@@ -20,6 +20,36 @@ The response contains `timestamp`, `cpu`, `memory`, `disks`, `network`, and
 `sensors` objects. Metric groups include an `available` boolean and use
 `null` for values unsupported by the operating system. Disk usage is returned
 only for backend-reported local mount points; remote/UNC mounts are omitted.
+`sensors.temperatures` and `sensors.fans` retain their existing shapes.
+`sensors.readings` contains normalized readings from `psutil` or
+LibreHardwareMonitor:
+
+```json
+{
+  "id": "cpu/0/temperature/0",
+  "hardware_id": "cpu/0",
+  "hardware_name": "CPU",
+  "hardware_type": "cpu",
+  "name": "Package",
+  "type": "temperature",
+  "value": 47.5,
+  "unit": "°C",
+  "minimum": 40.0,
+  "maximum": 80.0,
+  "source": "hardware_monitor"
+}
+```
+
+The normalized `type` can represent temperatures, fans, voltages, power,
+current, clocks/frequencies, loads, battery levels, storage sensors, and
+other sensor types reported by LibreHardwareMonitor. `sensors.battery` is a
+normalized battery summary when available.
+
+HardwareMonitor is optional at runtime. Some Windows motherboard and system
+sensors require the PawnIO driver and appropriate privileges; missing drivers,
+permissions, unsupported sensors, and initialization failures produce an
+unavailable sensor group without preventing the backend from starting.
+
 Network data contains aggregate byte,
 drop, and error counters only; it does not contain addresses, interface
 identifiers, hostnames, or other network identity data.

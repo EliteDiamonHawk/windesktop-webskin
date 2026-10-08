@@ -1,16 +1,2 @@
-import { createRow, createSystemWidget, formatNumber, setMetricText } from "./client.js";
-
-export function createCpuCoreCounts(options = {}) {
-  const { format } = options;
-  return createSystemWidget({
-    ...options,
-    type: "cpu-core-counts",
-    build: (root) => root.append(createRow("physical", "Physical", { format }), createRow("logical", "Logical", { format })),
-    render: (root, snapshot) => {
-      const cores = snapshot.cpu?.cores;
-      setMetricText(root, "physical", formatNumber(cores?.physical, "", 0));
-      setMetricText(root, "logical", formatNumber(cores?.logical, "", 0));
-    },
-  });
-}
-
+/** @deprecated Use createCpuCoreCountsList for the legacy multi-value widget. */
+export { createCpuCoreCountsList as createCpuCoreCounts } from "./cpu-core-counts-list-plain.js";

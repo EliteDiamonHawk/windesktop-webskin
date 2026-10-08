@@ -3,205 +3,46 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>dev</title>
+    <title>dev widget gallery</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main class="dev-theme">
-      <header class="dev-header">
-        <p class="eyebrow">WebSkin development theme</p>
-        <h1>Common widgets, ordinary DOM.</h1>
-        <p>This theme imports the plain clock from <code>/common/</code> and owns its layout, styling, and animation.</p>
-      </header>
+      <h1>dev widget gallery</h1>
 
-      <nav class="showcase-pagination" aria-label="Showcase pages">
-        <button type="button" class="showcase-pagination__arrow" data-showcase-previous aria-label="Show previous showcase page" disabled>Previous</button>
-        <button type="button" class="showcase-pagination__button" data-showcase-page="showcase" aria-controls="showcase-page-showcase" aria-current="page">Current showcase</button>
-        <button type="button" class="showcase-pagination__button" data-showcase-page="system" aria-controls="showcase-page-system">System telemetry</button>
-        <button type="button" class="showcase-pagination__button" data-showcase-page="mond" aria-controls="showcase-page-mond">Rainmeter Mond Clock</button>
-        <span class="showcase-pagination__status" data-showcase-status aria-live="polite">Page 1 of 3</span>
-        <button type="button" class="showcase-pagination__arrow" data-showcase-next aria-label="Show next showcase page">Next</button>
+      <nav class="showcase-pagination" aria-label="Widget gallery pages">
+        <button type="button" data-showcase-previous aria-label="Show previous page" disabled>Previous</button>
+        <button type="button" data-showcase-page="clocks" aria-controls="showcase-page-clocks" aria-current="page">Clocks</button>
+        <button type="button" data-showcase-page="calendars" aria-controls="showcase-page-calendars">Calendars</button>
+        <button type="button" data-showcase-page="system" aria-controls="showcase-page-system">System</button>
+        <button type="button" data-showcase-page="mond" aria-controls="showcase-page-mond">Mond</button>
+        <span data-showcase-status aria-live="polite">Page 1 of 4</span>
+        <button type="button" data-showcase-next aria-label="Show next page">Next</button>
       </nav>
 
-      <div id="showcase-page-showcase" class="showcase-page" data-showcase-panel="showcase" aria-label="Current showcase" aria-hidden="false">
-      <section class="showcase-grid" aria-label="Clock examples">
-        <article class="clock-card clock-card--plain">
-          <p class="card-label">Digital plain</p>
-          <div id="clock" class="clock-stage"></div>
-          <p class="card-note">Unchanged output from the plain clock module.</p>
-        </article>
-        <article class="clock-card clock-card--analog-plain">
-          <p class="card-label">Analog plain</p>
-          <div id="analog-plain-clock" class="clock-stage"></div>
-          <p class="card-note">The analog clock with neutral, theme-owned presentation.</p>
-        </article>
-        <article class="clock-card clock-card--digital">
-          <p class="card-label">Digital pre-styled</p>
-          <div id="digital-clock" class="clock-stage"></div>
-          <p class="card-note">The common module supplies its own prepared digital treatment.</p>
-        </article>
-        <article class="clock-card clock-card--digital-day">
-          <p class="card-label">Digital day</p>
-          <div id="digital-day-clock" class="clock-stage"></div>
-          <p class="card-note">A stacked digital clock composed from plain time and date widgets.</p>
-        </article>
-        <article class="clock-card clock-card--analog">
-          <p class="card-label">Analog pre-styled clock</p>
-          <div id="analog-clock" class="clock-stage"></div>
-          <p class="card-note">The common module supplies its own prepared analog treatment.</p>
-        </article>
-        <article class="clock-card clock-card--analog-2">
-          <p class="card-label">Analog pre-styled 2</p>
-          <div id="analog-clock-2" class="clock-stage"></div>
-          <p class="card-note">A second prepared analog treatment with a night-watch face.</p>
-        </article>
-        <article class="clock-card clock-card--combination">
-          <p class="card-label">Digital + analog pre-styled</p>
-          <div id="combination-clock" class="clock-stage"></div>
-          <p class="card-note">Two pre-styled clocks can be composed by the theme.</p>
-        </article>
-      </section>
-
-      <section class="calendar-showcase" aria-labelledby="calendar-title">
-        <div class="calendar-heading">
-          <div>
-            <p class="eyebrow">Plain calendar widgets</p>
-            <h2 id="calendar-title">Local dates, ordinary DOM.</h2>
-          </div>
-          <p>These examples use browser date and locale data. The theme styles their semantic parts and date states.</p>
-        </div>
-        <div class="calendar-grid">
-          <article class="calendar-card calendar-card--formatted">
-            <p class="card-label">Formatted date</p>
-            <div id="formatted-date" class="calendar-stage"></div>
-            <p class="card-note">A configurable inline date with localized names and token parts.</p>
-          </article>
-          <article class="calendar-card calendar-card--day">
-            <p class="card-label">Single day</p>
-            <div id="single-day" class="calendar-stage"></div>
-            <p class="card-note">A visual representation of the current local date.</p>
-          </article>
-          <article class="calendar-card calendar-card--week">
-            <p class="card-label">Week</p>
-            <div id="calendar-week" class="calendar-stage"></div>
-            <p class="card-note">Seven localized dates with today locked in the second position.</p>
-          </article>
-          <article class="calendar-card calendar-card--month">
-            <p class="card-label">Month calendar</p>
-            <div id="calendar-month" class="calendar-stage"></div>
-            <p class="card-note">A five-week grid that shifts to keep a late-month today visible.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="calendar-showcase calendar-showcase--prestyled" aria-labelledby="prestyled-calendar-title">
-        <div class="calendar-heading">
-          <div>
-            <p class="eyebrow">Pre-styled calendar widgets</p>
-            <h2 id="prestyled-calendar-title">Ready-made surfaces, theme-owned DOM.</h2>
-          </div>
-          <p>These variants add a prepared visual treatment while keeping the same date behavior and semantic hooks.</p>
-        </div>
-        <div class="calendar-controls" aria-label="Change the calendar date">
-          <button type="button" data-calendar-shift="-1">Previous day</button>
-          <output data-calendar-current-date aria-live="polite"></output>
-          <button type="button" data-calendar-shift="1">Next day</button>
-          <button type="button" data-calendar-today>Today</button>
-        </div>
-        <div class="calendar-grid">
-          <article class="calendar-card calendar-card--formatted">
-            <p class="card-label">Formatted date pre-styled</p>
-            <div id="formatted-date-prestyled" class="calendar-stage"></div>
-            <p class="card-note">The plain formatted date with a warm prepared surface.</p>
-          </article>
-          <article class="calendar-card calendar-card--day">
-            <p class="card-label">Single day pre-styled</p>
-            <div id="single-day-prestyled" class="calendar-stage"></div>
-            <p class="card-note">The same single-day representation with ready-made emphasis.</p>
-          </article>
-          <article class="calendar-card calendar-card--week">
-            <p class="card-label">Week pre-styled · not locked</p>
-            <div id="calendar-week-prestyled-unlocked" class="calendar-stage"></div>
-            <p class="card-note">A seven-day view that follows the current week naturally.</p>
-          </article>
-          <article class="calendar-card calendar-card--week">
-            <p class="card-label">Week pre-styled · locked</p>
-            <div id="calendar-week-prestyled-locked" class="calendar-stage"></div>
-            <p class="card-note">A seven-day view with today fixed to the fourth position.</p>
-          </article>
-          <article class="calendar-card calendar-card--month">
-            <p class="card-label">Month pre-styled · not locked</p>
-            <div id="calendar-month-prestyled-unlocked" class="calendar-stage"></div>
-            <p class="card-note">A five-week grid that follows the current month naturally.</p>
-          </article>
-          <article class="calendar-card calendar-card--month">
-            <p class="card-label">Month pre-styled · row locked</p>
-            <div id="calendar-month-prestyled-row-locked" class="calendar-stage"></div>
-            <p class="card-note">Today stays on the third visible row while its weekday column follows the date.</p>
-          </article>
-          <article class="calendar-card calendar-card--month">
-            <p class="card-label">Month pre-styled · cell locked</p>
-            <div id="calendar-month-prestyled-cell-locked" class="calendar-stage"></div>
-            <p class="card-note">Today stays locked to column four, row three.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="editor-card" aria-labelledby="editor-title">
-        <div class="editor-heading">
-          <div>
-            <p class="eyebrow">Live theme editor</p>
-            <h2 id="editor-title">Tune the pre-styled clock</h2>
-          </div>
-          <p>These controls are theme-owned. The widget only supplies working behavior and DOM.</p>
-        </div>
-        <div class="editor-layout">
-          <form id="clock-editor" class="editor-controls">
-            <label>Variant<select name="variant"><option value="digital">Digital pre-styled</option><option value="analog">Analog pre-styled</option><option value="plain">Plain</option></select></label>
-            <label>Format<select name="format"><option value="24h">24-hour</option><option value="12h">12-hour</option></select></label>
-            <label>Text color<input name="color" type="color" value="#d6d6d6" /></label>
-            <label>Background<input name="background" type="color" value="#2e2e2e" /></label>
-            <label>Frame color<input name="frame" type="color" value="#2e2e2e" /></label>
-            <label>Size<input name="size" type="range" min="1" max="5" step=".1" value="2.7" /><output data-output="size">2.7rem</output></label>
-            <label>Corner radius<input name="radius" type="range" min="0" max="32" value="12" /><output data-output="radius">12px</output></label>
-            <label>Padding<input name="padding" type="range" min="4" max="32" value="12" /><output data-output="padding">12px</output></label>
-            <label>Letter spacing<input name="spacing" type="range" min="0" max="20" value="8" /><output data-output="spacing">.08em</output></label>
-            <label class="editor-check"><input name="seconds" type="checkbox" checked /> Show seconds</label>
-            <label class="editor-check"><input name="period" type="checkbox" checked /> Show AM/PM</label>
-            <button type="button" data-reset-editor>Reset editor</button>
-          </form>
-          <div id="editor-preview" class="editor-preview" aria-live="polite"></div>
-        </div>
-      </section>
+      <div id="showcase-page-clocks" class="showcase-page" data-showcase-panel="clocks" aria-label="Clock widgets" aria-hidden="false">
+        <h2>Clocks</h2>
+        <div id="clock-gallery" class="widget-list"></div>
       </div>
 
-      <div id="showcase-page-system" class="showcase-page" data-showcase-panel="system" aria-label="System telemetry" aria-hidden="true" hidden>
-        <section class="system-showcase" aria-labelledby="system-title">
-          <div class="system-heading">
-            <div>
-              <p class="eyebrow">Backend-backed widgets</p>
-              <h2 id="system-title">System telemetry, ordinary DOM.</h2>
-            </div>
-            <p>These plain widgets poll the local backend and leave structure, color, and layout to the theme. Values that the operating system cannot provide remain visibly unavailable.</p>
-          </div>
-          <div id="system-showcase-content" class="system-groups"></div>
-        </section>
+      <div id="showcase-page-calendars" class="showcase-page" data-showcase-panel="calendars" aria-label="Calendar widgets" aria-hidden="true" hidden>
+        <h2>Calendars</h2>
+        <div id="calendar-gallery" class="widget-list"></div>
       </div>
 
-      <div id="showcase-page-mond" class="showcase-page" data-showcase-panel="mond" aria-label="Rainmeter Mond Clock" aria-hidden="true" hidden>
-        <section class="mond-showcase" aria-labelledby="mond-title">
-          <div class="mond-heading">
-            <p class="eyebrow">Shared time widget</p>
-            <h2 id="mond-title">Rainmeter Mond Clock Remake</h2>
-            <p>A theme-ready recreation assembled from the common date and digital clock widgets.</p>
-          </div>
-          <div id="mond-clock" class="mond-stage"></div>
-        </section>
+      <div id="showcase-page-system" class="showcase-page" data-showcase-panel="system" aria-label="System widgets" aria-hidden="true" hidden>
+        <h2>System</h2>
+        <div id="system-gallery"></div>
+      </div>
+
+      <div id="showcase-page-mond" class="showcase-page" data-showcase-panel="mond" aria-label="Mond widget" aria-hidden="true" hidden>
+        <h2>Mond</h2>
+        <div id="mond-gallery"></div>
       </div>
     </main>
     <script type="module" src="./pagination.js"></script>
-    <script type="module" src="./mond-page.js"></script>
+    <script type="module" src="./script.js"></script>
     <script type="module" src="./system-page.js"></script>
-    <script type="module" src="./script.js?v=calendar-date-5"></script>
+    <script type="module" src="./mond-page.js"></script>
   </body>
 </html>

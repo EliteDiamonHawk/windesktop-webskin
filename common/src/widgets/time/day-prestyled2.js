@@ -9,8 +9,8 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-calendar--day-prestyled2 {
-      --webskin-calendar-color: #cfb5ab;
-      --webskin-calendar-background: #5b4841;
+      --webskin-calendar-color: #d6d6d6;
+      --webskin-calendar-background: #2e2e2e;
       --webskin-calendar-border: var(--webskin-calendar-background);
       align-items: center;
       background: var(--webskin-calendar-background);

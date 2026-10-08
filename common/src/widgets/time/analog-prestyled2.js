@@ -8,18 +8,18 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     svg.webskin-clock--analog-prestyled2 {
-      --webskin-analog2-color: #5b4841;
-      --webskin-analog2-accent: #cfb5ab;
-      --webskin-analog2-face: #5b4841;
-      --webskin-analog2-frame: #5b4841;
-      --webskin-analog2-shadow: rgb(91 72 65 / .42);
+      --webskin-analog2-color: #2e2e2e;
+      --webskin-analog2-accent: #d6d6d6;
+      --webskin-analog2-face: #2e2e2e;
+      --webskin-analog2-frame: #2e2e2e;
+      --webskin-analog2-shadow: rgb(46 46 46 / .42);
       background: var(--webskin-analog2-face);
       border: 1px solid var(--webskin-analog2-frame);
       border-radius: .75rem;
       box-shadow:
-        0 0 0 .2rem #5b4841,
+        0 0 0 .2rem #2e2e2e,
         0 .9rem 2rem var(--webskin-analog2-shadow),
-        inset 0 0 0 .35rem rgb(91 72 65 / .3);
+        inset 0 0 0 .35rem rgb(46 46 46 / .3);
       width: var(--webskin-clock-width, 10rem);
       height: var(--webskin-clock-height, 10rem);
       padding: .55rem;

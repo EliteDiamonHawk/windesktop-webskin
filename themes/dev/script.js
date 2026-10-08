@@ -89,9 +89,9 @@ const resetButton = document.querySelector("[data-reset-editor]");
 const defaults = {
   variant: "digital",
   format: "24h",
-  color: "#cfb5ab",
-  background: "#5b4841",
-  frame: "#5b4841",
+  color: "#d6d6d6",
+  background: "#2e2e2e",
+  frame: "#2e2e2e",
   size: "2.7",
   radius: "12",
   padding: "12",

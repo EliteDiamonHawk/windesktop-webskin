@@ -8,8 +8,8 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-clock--analog-prestyled {
-      --webskin-analog-color: #5b4841;
-      --webskin-analog-face: #cfb5ab;
+      --webskin-analog-color: #2e2e2e;
+      --webskin-analog-face: #d6d6d6;
       --webskin-analog-frame: var(--webskin-analog-color);
       --webskin-analog-frame-opacity: 1;
       --webskin-analog-ticks: var(--webskin-analog-color);

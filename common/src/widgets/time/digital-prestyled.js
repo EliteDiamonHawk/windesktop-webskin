@@ -8,8 +8,8 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-clock--digital-prestyled {
-      --webskin-clock-color: #cfb5ab;
-      --webskin-clock-background: #5b4841;
+      --webskin-clock-color: #d6d6d6;
+      --webskin-clock-background: #2e2e2e;
       align-items: baseline;
       background: var(--webskin-clock-background);
       border: 1px solid var(--webskin-clock-background);

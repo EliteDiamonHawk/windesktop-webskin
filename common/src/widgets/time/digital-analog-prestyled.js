@@ -10,10 +10,10 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-clock--digital-analog-prestyled {
-      --webskin-combination-color: #cfb5ab;
-      --webskin-combination-analog-color: #5b4841;
-      --webskin-combination-analog-face: #cfb5ab;
-      --webskin-combination-surface: #5b4841;
+      --webskin-combination-color: #d6d6d6;
+      --webskin-combination-analog-color: #2e2e2e;
+      --webskin-combination-analog-face: #d6d6d6;
+      --webskin-combination-surface: #2e2e2e;
       align-items: center;
       background: var(--webskin-combination-surface);
       border: 1px solid var(--webskin-combination-surface);

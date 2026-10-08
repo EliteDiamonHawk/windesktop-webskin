@@ -1,7 +1,6 @@
 # WinDesktop WebSkin
 
-WinDesktop WebSkin provides a Windows desktop skin with browser-based themes,
-an Astro dashboard, a FastAPI service, and shared time widgets.
+WinDesktop WebSkin provides a browser-based Desktop. 
 
 ## Start developing
 

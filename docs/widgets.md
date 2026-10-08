@@ -24,6 +24,7 @@ clock.destroy?.();
 | Analog pre-styled | `/common/widgets/time/analog-prestyled.js` | `createClock(options)` |
 | Analog pre-styled 2 | `/common/widgets/time/analog-prestyled2.js` | `createClock(options)` |
 | Digital and analog | `/common/widgets/time/digital-analog-prestyled.js` | `createClock(options)` |
+| Rainmeter Mond clock copy | `/common/widgets/time/rainmeter-mond-clock-copy.js` | `createClock(options)` |
 
 Digital clocks accept `format` (`12h` or `24h`), `seconds`, `showPeriod`,
 `syntax`, `offsetMinutes`, and `className`. Analog clocks accept
@@ -32,6 +33,13 @@ and `backgroundColor` where the module defines them.
 
 Use `data-webskin-clock-part` to style `hours`, `minutes`, `seconds`, `period`,
 `face`, `tick`, `hour-hand`, `minute-hand`, `second-hand`, and `pin` parts.
+
+The Rainmeter Mond clock copy is self-styled and loads its required fonts from
+`/common/fonts/Anurati.otf` and `/common/fonts/Quicksand.otf`. Place the source
+font files in `common/src/fonts/` before building. Its root supports the
+`--webskin-mond-color`, `--webskin-mond-width`,
+`--webskin-mond-weekday-size`, `--webskin-mond-detail-size`, and
+`--webskin-mond-gap` custom properties.
 
 ## Calendars
 

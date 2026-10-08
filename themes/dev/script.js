@@ -13,6 +13,7 @@ import { createDay as createPrestyledDay } from "/common/widgets/time/single-day
 import { createWeek as createPrestyledWeek } from "/common/widgets/time/week-prestyled.js?v=calendar-date-5";
 import { createMonth as createPrestyledMonth } from "/common/widgets/time/month-prestyled.js?v=calendar-date-5";
 
+
 document.querySelector("#clock").append(createPlainClock());
 document.querySelector("#analog-plain-clock").append(createPlainAnalogClock());
 document.querySelector("#digital-clock").append(createDigitalClock());

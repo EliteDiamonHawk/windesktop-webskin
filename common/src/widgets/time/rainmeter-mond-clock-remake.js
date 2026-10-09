@@ -12,7 +12,7 @@ const ensureStyles = () => {
     @font-face {
       font-family: "WebSkin Mond Anurati";
       src: local("Anurati"),
-        url("/common/fonts/Anurati.otf") format("opentype");
+        url("/common/assets/fonts/Anurati.otf") format("opentype");
       font-style: normal;
       font-weight: 400;
       font-display: block;
@@ -20,7 +20,7 @@ const ensureStyles = () => {
     @font-face {
       font-family: "WebSkin Mond Quicksand";
       src: local("Quicksand"),
-        url("/common/fonts/Quicksand.otf") format("opentype");
+        url("/common/assets/fonts/Quicksand.otf") format("opentype");
       font-style: normal;
       font-weight: 700;
       font-display: block;

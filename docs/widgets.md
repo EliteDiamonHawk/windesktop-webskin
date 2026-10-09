@@ -35,8 +35,8 @@ Use `data-webskin-clock-part` to style `hours`, `minutes`, `seconds`, `period`,
 `face`, `tick`, `hour-hand`, `minute-hand`, `second-hand`, and `pin` parts.
 
 The Rainmeter Mond clock remake is self-styled and loads its required fonts from
-`/common/fonts/Anurati.otf` and `/common/fonts/Quicksand.otf`. Place the source
-font files in `common/src/fonts/` before building. Its root supports the
+`/common/assets/fonts/Anurati.otf` and `/common/assets/fonts/Quicksand.otf`.
+Place the source font files in `common/src/assets/fonts/` before building. Its root supports the
 `--webskin-mond-color`, `--webskin-mond-width`,
 `--webskin-mond-weekday-size`, `--webskin-mond-detail-size`, and
 `--webskin-mond-gap` custom properties.

@@ -1,5 +1,5 @@
 // Plain calendar view in the shared time widget category.
-import { Widget } from "../widgets.js?v=calendar-date-5";
+import { Widget } from "../widgets.js?v=month-widget-1";
 import {
   calendarDateState,
   createCalendarFormatters,
@@ -10,15 +10,16 @@ import {
   localizedWeekday,
   localeWeekStartsOn,
   normalizeDate,
-  resolveLocale,
   resolveHighlightDate,
+  resolveLocale,
   resolveMonthLock,
   resolveMonthMaxWeeks,
   weekdayOrder,
   watchCurrentDate,
-} from "./calendar-data.js?v=calendar-date-5";
+} from "./calendar-data.js?v=month-widget-1";
 
 const STYLE_ID = "webskin-calendar-month-plain-styles";
+const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -30,7 +31,6 @@ const ensureStyles = () => {
       box-sizing: border-box;
       display: inline-flex;
       flex-direction: column;
-      justify-content: center;
       width: var(--webskin-calendar-width, 22rem);
       height: var(--webskin-calendar-height, 20rem);
       min-width: 0;
@@ -44,6 +44,11 @@ const ensureStyles = () => {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
     }
+    .webskin-calendar--month-plain [data-webskin-calendar-part="month-grid"] {
+      flex: 1 1 auto;
+      grid-template-rows: repeat(var(--webskin-calendar-weeks), minmax(0, 1fr));
+      min-height: 0;
+    }
     .webskin-calendar--month-plain [data-webskin-calendar-part="weekday-heading"],
     .webskin-calendar--month-plain [data-webskin-calendar-part="date-cell"] {
       min-width: 2ch;
@@ -53,6 +58,7 @@ const ensureStyles = () => {
     .webskin-calendar--month-plain [data-webskin-calendar-part="date-cell"] {
       display: flex;
       flex-direction: column;
+      min-height: 0;
     }
   `;
   document.head.append(style);
@@ -65,7 +71,7 @@ const createPart = (part, text = "", tag = "span") => {
   return element;
 };
 
-const applyDateState = (element, date, inMonth, highlightDate) => {
+const updateDateState = (element, date, inMonth, highlightDate) => {
   const state = calendarDateState(date, inMonth, highlightDate);
   element.dataset.webskinCalendarDate = state.date;
   element.dataset.webskinCalendarWeekday = state.weekday;
@@ -75,13 +81,23 @@ const applyDateState = (element, date, inMonth, highlightDate) => {
   element.dateTime = state.date;
 };
 
-const createCell = (date, inMonth, formatters, highlightDate) => {
+const createCell = () => {
   const cell = document.createElement("time");
   cell.dataset.webskinCalendarPart = "date-cell";
-  const day = createPart("day", String(date.getDate()));
+  const day = createPart("day");
   cell.append(day);
-  applyDateState(cell, date, inMonth, highlightDate);
-  return cell;
+  return { cell, day };
+};
+
+const updateCell = (parts, date, inMonth, highlightDate) => {
+  parts.day.textContent = String(date.getDate());
+  updateDateState(parts.cell, date, inMonth, highlightDate);
+};
+
+const setWeekdayState = (element, weekdayIndex, formatters) => {
+  element.textContent = localizedWeekday(weekdayIndex, formatters, "short");
+  element.dataset.webskinCalendarWeekday = DAY_NAMES[weekdayIndex];
+  element.dataset.webskinCalendarWeekdayIndex = String(weekdayIndex);
 };
 
 class PlainMonth extends Widget {
@@ -108,30 +124,32 @@ class PlainMonth extends Widget {
     element.className = ["webskin-calendar", "webskin-calendar--month-plain", className]
       .filter(Boolean)
       .join(" ");
+    element.style.setProperty("--webskin-calendar-weeks", String(maxWeeks));
 
     const heading = createPart("month-heading", "", "header");
     const month = createPart("month");
     const year = createPart("year");
     heading.append(month, year);
-    const weekdayHeadings = createPart("weekday-headings", "", "div");
-    const grid = createPart("month-grid", "", "div");
-    element.append(heading, weekdayHeadings, grid);
 
-    const headingParts = [];
-    for (const weekdayIndex of weekdayOrder(firstDay)) {
-      const weekday = createPart("weekday-heading", localizedWeekday(weekdayIndex, formatters, "short"));
-      weekday.dataset.webskinCalendarWeekday = [
-        "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
-      ][weekdayIndex];
-      weekday.dataset.webskinCalendarWeekdayIndex = String(weekdayIndex);
+    const weekdayHeadings = createPart("weekday-headings", "", "div");
+    const weekdayParts = weekdayOrder(firstDay).map((weekdayIndex) => {
+      const weekday = createPart("weekday-heading");
+      setWeekdayState(weekday, weekdayIndex, formatters);
       weekdayHeadings.append(weekday);
-      headingParts.push(weekday);
-    }
+      return weekday;
+    });
+
+    const grid = createPart("month-grid", "", "div");
+    const cells = Array.from({ length: maxWeeks * 7 }, createCell);
+    grid.append(...cells.map(({ cell }) => cell));
+    element.append(heading, weekdayHeadings, grid);
 
     const render = (nextDate) => {
       const anchor = normalizeDate(nextDate);
       const rollingGrid = monthLock ? getRollingMonthGrid(anchor, firstDay, monthLock, maxWeeks) : null;
-      const cells = rollingGrid?.cells ?? getMonthGrid(anchor, firstDay, maxWeeks);
+      const monthGrid = rollingGrid?.cells ?? getMonthGrid(anchor, firstDay, maxWeeks);
+      const headingStart = rollingGrid?.start ?? monthGrid[0].date;
+
       element.dataset.webskinCalendarDate = dateKey(anchor);
       element.dataset.webskinCalendarMonth = `${String(anchor.getFullYear()).padStart(4, "0")}-${String(anchor.getMonth() + 1).padStart(2, "0")}`;
       element.dataset.webskinCalendarWeekStartsOn = String(firstDay);
@@ -144,20 +162,19 @@ class PlainMonth extends Widget {
         delete element.dataset.webskinCalendarLockX;
         delete element.dataset.webskinCalendarLockY;
       }
-      const headingStart = rollingGrid?.start ?? cells[0].date;
-      for (const [index, headingPart] of headingParts.entries()) {
+
+      for (const [index, weekdayPart] of weekdayParts.entries()) {
         const headingDate = new Date(headingStart);
         headingDate.setDate(headingDate.getDate() + index);
-        const weekdayIndex = headingDate.getDay();
-        headingPart.textContent = localizedWeekday(weekdayIndex, formatters, "short");
-        headingPart.dataset.webskinCalendarWeekday = [
-          "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
-        ][weekdayIndex];
-        headingPart.dataset.webskinCalendarWeekdayIndex = String(weekdayIndex);
+        setWeekdayState(weekdayPart, headingDate.getDay(), formatters);
       }
+
       month.textContent = localizedMonth(anchor, formatters, "long");
       year.textContent = String(anchor.getFullYear());
-      grid.replaceChildren(...cells.map(({ date, inMonth }) => createCell(date, inMonth, formatters, highlightDate)));
+      for (const [index, cellParts] of cells.entries()) {
+        const cell = monthGrid[index];
+        updateCell(cellParts, cell.date, cell.inMonth, highlightDate);
+      }
     };
 
     render(suppliedDate);

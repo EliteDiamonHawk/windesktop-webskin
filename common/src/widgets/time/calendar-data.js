@@ -136,7 +136,9 @@ export const getMonthGrid = (date, weekStartsOn, maxWeeks = 6) => {
   const gridStart = startOfWeek(monthStart, weekStartsOn);
   const leadingDays = (monthStart.getDay() - weekStartsOn + 7) % 7;
   const naturalWeeks = Math.ceil((monthEnd.getDate() + leadingDays) / 7);
-  const visibleWeeks = Math.min(naturalWeeks, maxWeeks);
+  // maxWeeks is the requested rendered height, not only an upper bound. This
+  // keeps five- and six-row month widgets stable as the displayed month changes.
+  const visibleWeeks = maxWeeks;
   const anchorWeek = Math.floor((leadingDays + date.getDate() - 1) / 7);
   const firstWeek = naturalWeeks > visibleWeeks && anchorWeek >= visibleWeeks - 1
     ? Math.min(naturalWeeks - visibleWeeks, anchorWeek)

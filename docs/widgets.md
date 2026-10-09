@@ -64,7 +64,8 @@ Calendar options:
 - `weekStartsOn`: an explicit week-start index.
 - `daysBefore` and `daysAfter`: a seven-day window. Their sum must equal six.
 - `lockDay`: a month anchor `{ y, x? }`. `y` is required; `x` is optional.
-- `maxWeeks`: a month height from 1 through 6. The default is 6.
+- `maxWeeks`: the exact month-grid height in rows, from 1 through 6. The
+  default is 6; a five-row month still renders six rows when `maxWeeks: 6`.
 - `format`: date tokens such as `YYYY`, `MMMM`, `ddd`, `MM`, and `DD`.
 
 Calendar elements expose `data-webskin-calendar-part`,

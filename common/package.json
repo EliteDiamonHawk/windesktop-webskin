@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "test": "node --experimental-test-isolation=none --test tests/system-widgets.test.js",
+    "test": "node --experimental-test-isolation=none --test tests/system-widgets.test.js && node --experimental-test-isolation=none --test tests/calendar-data.test.js && node --experimental-test-isolation=none --test tests/month-widgets.test.js",
     "dev": "vite build --watch"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 // Pre-styled calendar view in the shared time widget category.
-import { createMonth as createPlainMonth } from "./month-plain.js?v=calendar-date-5";
+import { createMonth as createPlainMonth } from "./month-plain.js?v=month-widget-1";
 
 const STYLE_ID = "webskin-calendar-month-prestyled-styles";
 

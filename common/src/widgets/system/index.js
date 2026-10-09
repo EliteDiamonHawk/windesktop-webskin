@@ -1,4 +1,5 @@
 // Scalar widgets: each constructor renders one value.
+export { createBattery } from "./battery-plain.js";
 export { createCpuUtilization } from "./cpu-utilization-plain.js";
 export { createCpuCoreCount } from "./cpu-core-count-plain.js";
 export { createCpuFrequency } from "./cpu-frequency-plain.js";

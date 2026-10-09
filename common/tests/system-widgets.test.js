@@ -62,11 +62,14 @@ const snapshot = {
   },
   network: { bytes_sent: 1, bytes_received: 2, packets_dropped: 3, transmission_errors: 4 },
   sensors: {
+    battery: { available: true, percent: 87.5, seconds_left: 3600, power_plugged: false, source: "psutil" },
     readings: [{ id: "sensor-1", name: "CPU Package", value: 47.5, unit: "°C", minimum: 40, maximum: 80, critical: 95 }],
     temperatures: [],
     fans: [],
   },
 };
+
+let responseSnapshot = snapshot;
 
 const installDom = () => {
   globalThis.document = {
@@ -74,7 +77,7 @@ const installDom = () => {
     createTextNode: (text) => ({ textContent: String(text) }),
   };
   globalThis.window = { setInterval: () => 1, clearInterval: () => {} };
-  globalThis.fetch = async () => ({ ok: true, json: async () => snapshot });
+  globalThis.fetch = async () => ({ ok: true, json: async () => responseSnapshot });
 };
 
 const metricRows = (element) => {
@@ -100,6 +103,7 @@ test.before(async () => {
 });
 
 const scalarCases = [
+  ["createBattery", [], {}],
   ["createCpuUtilization", [], {}], ["createCpuUtilization", ["core", { core: 0 }], {}],
   ["createCpuCoreCount", [], {}], ["createCpuCoreCount", ["logical"], {}],
   ["createCpuFrequency", [{ core: 0 }], {}], ["createCpuFrequency", ["current"], {}], ["createCpuFrequency", ["max"], {}], ["createCpuFrequency", ["min"], {}],
@@ -128,6 +132,36 @@ test("variant factories preserve formatting and options-object defaults", async 
   await new Promise((resolve) => setImmediate(resolve));
   assert.match(rowText(metricRows(frequency)[0]), /Core 1: 2,300MHz/);
   assert.match(rowText(metricRows(memory)[0]), /Used: 40 B/);
+});
+
+test("battery supports its default and extended angle-tag formats", async () => {
+  const defaultBattery = widgets.createBattery();
+  const extendedBattery = widgets.createBattery({
+    format: "<label>: <battery-percent><unit> plugged=<power-plugged> left=<secs-left>",
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(rowText(metricRows(defaultBattery)[0]), "Battery 87.5 %");
+  assert.equal(rowText(metricRows(extendedBattery)[0]), "Battery: 87.5% plugged=false left=3,600");
+});
+
+test("battery renders unavailable values without treating false as unavailable", async () => {
+  responseSnapshot = {
+    ...snapshot,
+    sensors: {
+      ...snapshot.sensors,
+      battery: { available: false, percent: null, seconds_left: -1, power_plugged: false, source: "psutil" },
+    },
+  };
+  const battery = widgets.createBattery({ format: "<battery-percent>|<unit>|<power-plugged>|<secs-left>" });
+  await new Promise((resolve) => setImmediate(resolve));
+  responseSnapshot = snapshot;
+
+  assert.equal(rowText(metricRows(battery)[0]), "Unavailable|%|false|Unavailable");
+});
+
+test("battery rejects non-string formats", () => {
+  assert.throws(() => widgets.createBattery({ format: null }), /System widget format must be a string/);
 });
 
 test("disk I/O validates its two selectors", () => {

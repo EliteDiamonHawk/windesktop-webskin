@@ -143,8 +143,9 @@ createMemory({ format: "{label}: {value} {unit}" });
 Unitless values omit the unused unit spacing.
 
 ```js
-import { createCpuFrequency, createDiskIo, createMemory, createMemoryList } from "/common/widgets/system/index.js";
+import { createBattery, createCpuFrequency, createDiskIo, createMemory, createMemoryList } from "/common/widgets/system/index.js";
 
+document.querySelector("#battery").append(createBattery());
 document.querySelector("#cpu").append(createCpuFrequency({ core: 0, interval: 2000 }));
 document.querySelector("#disk").append(createDiskIo("read", "bytes", { format: "{label}: {value} {unit}" }));
 document.querySelector("#memory").append(createMemory("used"));
@@ -155,6 +156,7 @@ Scalar family constructors:
 
 | Category | Constructors |
 | --- | --- |
+| Battery | `createBattery(options)` — percentage, plugged state, and seconds left |
 | CPU utilization | `createCpuUtilization(variant)` — `overall`, `core` |
 | CPU counts | `createCpuCoreCount(variant)` — `physical`, `logical` |
 | CPU frequency | `createCpuFrequency(variant)` — `core`, `current`, `max`, `min` |
@@ -182,6 +184,18 @@ existing `className`, `endpoint`, `interval`, and `format` options. For example:
 ```js
 createCpuFrequency("current", { format: "{label}: {value} {unit}" });
 createMemory({ format: "{label}: {value} {unit}" });
+```
+
+Battery uses angle-bracket tags and defaults to
+`<label> <battery-percent> <unit>`. It supports `<label>`,
+`<battery-percent>`, `<unit>`, `<power-plugged>`, and `<secs-left>`;
+plugged state renders as `true` or `false`, while unavailable values and
+negative OS time-left sentinels render as `Unavailable`.
+
+```js
+createBattery({
+  format: "<label>: <battery-percent><unit> plugged=<power-plugged> left=<secs-left>",
+});
 ```
 
 Canonical list constructors retain the previous multi-value presentations:

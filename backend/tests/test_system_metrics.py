@@ -134,6 +134,20 @@ class SystemMetricsTests(unittest.TestCase):
         self.assertEqual(sensors["readings"][0]["source"], "psutil")
         self.assertEqual(sensors["readings"][1]["type"], "power")
 
+    def test_psutil_battery_summary_preserves_percentage_power_and_time_left(self) -> None:
+        fake_psutil = SimpleNamespace(
+            sensors_temperatures=lambda fahrenheit=False: {},
+            sensors_fans=lambda: {},
+            sensors_battery=lambda: SimpleNamespace(percent=81.5, secsleft=3600, power_plugged=False),
+        )
+
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            sensors = _sensors(PsutilCapabilityTracker(), self._unavailable_hardware_monitor())
+
+        self.assertEqual(sensors["battery"]["percent"], 81.5)
+        self.assertEqual(sensors["battery"]["seconds_left"], 3600)
+        self.assertFalse(sensors["battery"]["power_plugged"])
+
     def test_psutil_capabilities_disable_after_three_failures_independently(self) -> None:
         tracker = PsutilCapabilityTracker()
         temperature_calls = 0

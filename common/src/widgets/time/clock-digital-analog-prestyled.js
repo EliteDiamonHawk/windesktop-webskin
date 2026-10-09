@@ -58,8 +58,8 @@ const ensureStyles = () => {
       background: var(--webskin-combination-analog-face);
       border-radius: .75rem;
       box-shadow: none;
-      width: 8rem;
-      height: 8rem;
+      width: 7rem;
+      height: 7rem;
       padding: .65rem;
     }
     .webskin-clock--digital-analog-prestyled > .webskin-clock--analog-plain [data-webskin-clock-part="face"] { stroke-width: 1.5; }

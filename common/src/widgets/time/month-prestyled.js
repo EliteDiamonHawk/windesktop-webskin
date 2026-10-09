@@ -51,6 +51,8 @@ const ensureStyles = () => {
     }
     .webskin-calendar--month-prestyled [data-webskin-calendar-part="month-grid"] { gap: .2rem; }
     .webskin-calendar--month-prestyled [data-webskin-calendar-part="date-cell"] {
+      align-items: center;
+      justify-content: center;
       min-height: 2.15rem;
       border-radius: .45rem;
       padding: .35rem .15rem;

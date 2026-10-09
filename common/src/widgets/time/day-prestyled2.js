@@ -8,7 +8,7 @@ const ensureStyles = () => {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .webskin-calendar--day-prestyled2 {
+    .webskin-calendar--day-plain.webskin-calendar--day-prestyled2[data-webskin-calendar-variant="single-day"] {
       --webskin-calendar-color: #d6d6d6;
       --webskin-calendar-background: #2e2e2e;
       --webskin-calendar-border: var(--webskin-calendar-background);
@@ -55,8 +55,10 @@ const ensureStyles = () => {
 
 /** Create the WebSkin-provided pre-styled single-day calendar. */
 export function createDay(options = {}) {
-  ensureStyles();
   const element = createPlainDay({ ...options, variant: "single-day" });
+  // Load this override after day-plain so the matching size rule wins without
+  // changing the element shape returned by the shared day widget.
+  ensureStyles();
   element.classList.add("webskin-calendar--day-prestyled2");
   if (options.color) element.style.setProperty("--webskin-calendar-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-calendar-background", options.backgroundColor);

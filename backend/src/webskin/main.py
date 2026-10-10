@@ -60,7 +60,7 @@ app.add_middleware(
 )
 
 app.include_router(create_settings_router(settings_service))
-app.include_router(create_system_router(lambda: app.state.system_metrics.collect()))
+app.include_router(create_system_router(lambda requested_fields=None: app.state.system_metrics.collect(requested_fields)))
 app.include_router(create_themes_router())
 app.include_router(create_theme_assets_router())
 

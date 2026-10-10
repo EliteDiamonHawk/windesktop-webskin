@@ -96,6 +96,8 @@ def _sensor_record(hardware: Any, sensor: Any, index: int) -> dict[str, Any]:
         "unit": _text(_get(sensor, "Unit"), _UNIT_BY_TYPE.get(sensor_type, "")),
         "minimum": _number(_get(sensor, "Min")),
         "maximum": _number(_get(sensor, "Max")),
+        "warning": _number(_get(sensor, "Warning", _get(sensor, "warning"))),
+        "critical": _number(_get(sensor, "Critical", _get(sensor, "critical"))),
         "source": "hardware_monitor",
     }
 

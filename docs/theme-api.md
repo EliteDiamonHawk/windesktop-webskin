@@ -16,6 +16,12 @@ the same paths to port `8000`.
 | --- | --- | --- |
 | `GET` | `/api/system/metrics` | Privacy-filtered local CPU, memory, disk, aggregate network, and sensor snapshot |
 
+The metrics route accepts an optional comma-separated `fields` query parameter,
+such as `?fields=memory.virtual.used_bytes,memory.virtual.percent`. When it is
+present, the backend skips unrequested capability calls and returns the same
+response groups with unrequested values as `null`. Without `fields`, the route
+returns the complete snapshot.
+
 The response contains `timestamp`, `cpu`, `memory`, `disks`, `network`, and
 `sensors` objects. Metric groups include an `available` boolean and use
 `null` for values unsupported by the operating system. Disk usage is returned
@@ -36,6 +42,8 @@ LibreHardwareMonitor:
   "unit": "°C",
   "minimum": 40.0,
   "maximum": 80.0,
+  "warning": null,
+  "critical": 95.0,
   "source": "hardware_monitor"
 }
 ```
@@ -45,6 +53,12 @@ current, clocks/frequencies, loads, battery levels, storage sensors, and
 other sensor types reported by LibreHardwareMonitor. `sensors.battery` is a
 normalized battery summary when available.
 
+The browser system-metrics manager requests only fields referenced by widget
+formats. Network transfer speeds are derived in the browser from successive
+successful aggregate byte-counter samples; they are not backend response
+fields. Network utilization remains unavailable because no link capacity is
+known.
+
 HardwareMonitor is optional at runtime. Some Windows motherboard and system
 sensors require the PawnIO driver and appropriate privileges; missing drivers,
 permissions, unsupported sensors, and initialization failures produce an
@@ -53,6 +67,15 @@ unavailable sensor group without preventing the backend from starting.
 Network data contains aggregate byte,
 drop, and error counters only; it does not contain addresses, interface
 identifiers, hostnames, or other network identity data.
+
+System widget formats use brace tokens and are polled by one shared browser
+metrics manager. The canonical exports are createBattery,
+createCpuUtilization, createCpuUtilizationList, createCpuCoreCounts,
+createCpuFrequency, createCpuTelemetry, createCpuLoadAverage, createMemory,
+createSwapMemory, createDiskIo, createNetworkTelemetry,
+createDiskPartitions, createGpuThermalFan, and
+createNetworkTelemetryTransfer. Transfer speeds are derived client-side and
+GPU warning thresholds remain unavailable unless the provider exposes them.
 
 ## Theme routes
 

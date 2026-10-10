@@ -181,8 +181,87 @@ def create_theme_assets_router(storage: UserThemeStorage | None = None) -> APIRo
 def create_system_router(collector=collect_system_metrics) -> APIRouter:
     router = APIRouter(prefix="/api/system")
 
+    allowed_fields = {
+        "cpu.utilization",
+        "cpu.utilization.overall",
+        "cpu.utilization.per_core",
+        "cpu.cores",
+        "cpu.cores.physical",
+        "cpu.cores.logical",
+        "cpu.frequencies",
+        "cpu.frequencies.current_mhz",
+        "cpu.frequencies.minimum_mhz",
+        "cpu.frequencies.maximum_mhz",
+        "cpu.frequencies.per_core",
+        "cpu.frequencies.per_core.current_mhz",
+        "cpu.frequencies.per_core.minimum_mhz",
+        "cpu.frequencies.per_core.maximum_mhz",
+        "cpu.telemetry",
+        "cpu.telemetry.interrupts",
+        "cpu.telemetry.system_calls",
+        "cpu.telemetry.context_switches",
+        "cpu.load_average",
+        "cpu.load_average.one_minute",
+        "cpu.load_average.five_minutes",
+        "cpu.load_average.fifteen_minutes",
+        "memory.virtual",
+        "memory.virtual.total_bytes",
+        "memory.virtual.available_bytes",
+        "memory.virtual.used_bytes",
+        "memory.virtual.free_bytes",
+        "memory.virtual.percent",
+        "memory.swap",
+        "memory.swap.total_bytes",
+        "memory.swap.used_bytes",
+        "memory.swap.free_bytes",
+        "memory.swap.percent",
+        "disks.partitions",
+        "disks.partitions.mount_point",
+        "disks.partitions.filesystem",
+        "disks.partitions.mount_options",
+        "disks.usage",
+        "disks.usage.mount_point",
+        "disks.usage.total_bytes",
+        "disks.usage.used_bytes",
+        "disks.usage.free_bytes",
+        "disks.usage.percent",
+        "disks.io",
+        "disks.io.read_count",
+        "disks.io.write_count",
+        "disks.io.read_bytes",
+        "disks.io.write_bytes",
+        "disks.io.read_time_ms",
+        "disks.io.write_time_ms",
+        "disks.io.busy_time_ms",
+        "network",
+        "network.bytes_sent",
+        "network.bytes_received",
+        "network.packets_dropped",
+        "network.transmission_errors",
+        "sensors.temperatures",
+        "sensors.fans",
+        "sensors.battery",
+        "sensors.battery.percent",
+        "sensors.battery.seconds_left",
+        "sensors.battery.power_plugged",
+        "sensors.readings",
+    }
+
+    def parse_fields(raw_fields: str | None) -> set[str] | None:
+        if raw_fields is None:
+            return None
+        fields = {field.strip() for field in raw_fields.split(",") if field.strip()}
+        invalid = [
+            field for field in fields
+            if field not in allowed_fields
+        ]
+        if invalid:
+            raise HTTPException(status_code=422, detail=f"Unsupported system metric field: {invalid[0]}")
+        return fields
+
     @router.get("/metrics")
-    def get_metrics() -> dict[str, Any]:
-        return collector()
+    def get_metrics(fields: str | None = None) -> dict[str, Any]:
+        requested_fields = parse_fields(fields)
+        return collector() if requested_fields is None else collector(requested_fields=requested_fields)
 
     return router

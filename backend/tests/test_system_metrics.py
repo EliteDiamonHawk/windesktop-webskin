@@ -5,6 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from fastapi import HTTPException
+
 from webskin.hardware_monitor import HardwareMonitorProvider
 from webskin.routes import create_system_router
 from webskin.system_metrics import PsutilCapabilityTracker, _UNAVAILABLE, _sensors, collect_system_metrics
@@ -21,6 +23,55 @@ class SystemMetricsTests(unittest.TestCase):
 
         self.assertEqual(route.path, "/api/system/metrics")
         self.assertEqual(route.endpoint(), {"timestamp": "test", "network": {"available": True}})
+
+    def test_metrics_route_validates_and_passes_field_selection(self) -> None:
+        router = create_system_router(lambda requested_fields: {"fields": requested_fields})
+        route = router.routes[0]
+
+        self.assertEqual(
+            route.endpoint(fields="memory.virtual.used_bytes,memory.virtual.percent"),
+            {"fields": {"memory.virtual.used_bytes", "memory.virtual.percent"}},
+        )
+        with self.assertRaises(HTTPException):
+            route.endpoint(fields="memory.private.secret")
+
+    def test_selected_metrics_skip_unrequested_capability_calls(self) -> None:
+        calls: list[str] = []
+
+        def virtual_memory():
+            calls.append("virtual_memory")
+            return SimpleNamespace(total=100, available=60, used=40, free=50, percent=40)
+
+        def unexpected(*args, **kwargs):
+            raise AssertionError("unrequested psutil capability was called")
+
+        fake_psutil = SimpleNamespace(
+            virtual_memory=virtual_memory,
+            swap_memory=unexpected,
+            cpu_percent=unexpected,
+            cpu_count=unexpected,
+            cpu_freq=unexpected,
+            cpu_stats=unexpected,
+            getloadavg=unexpected,
+            disk_partitions=unexpected,
+            disk_usage=unexpected,
+            disk_io_counters=unexpected,
+            net_io_counters=unexpected,
+            sensors_temperatures=unexpected,
+            sensors_fans=unexpected,
+            sensors_battery=unexpected,
+        )
+
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            snapshot = collect_system_metrics(
+                self._unavailable_hardware_monitor(),
+                requested_fields={"memory.virtual.used_bytes"},
+            )
+
+        self.assertEqual(calls, ["virtual_memory"])
+        self.assertEqual(snapshot["memory"]["virtual"]["used_bytes"], 40)
+        self.assertIsNone(snapshot["memory"]["virtual"]["total_bytes"])
+        self.assertFalse(snapshot["memory"]["swap"]["available"])
 
     def test_snapshot_contains_requested_aggregate_groups_without_network_identity(self) -> None:
         fake_psutil = SimpleNamespace(
@@ -174,13 +225,15 @@ class SystemMetricsTests(unittest.TestCase):
 
     def test_hardware_monitor_normalizes_types_and_caches_updates(self) -> None:
         class FakeSensor:
-            def __init__(self, identifier, name, sensor_type, value, minimum=None, maximum=None):
+            def __init__(self, identifier, name, sensor_type, value, minimum=None, maximum=None, warning=None, critical=None):
                 self.Identifier = identifier
                 self.Name = name
                 self.SensorType = sensor_type
                 self.Value = value
                 self.Min = minimum
                 self.Max = maximum
+                self.Warning = warning
+                self.Critical = critical
 
         class FakeHardware:
             Identifier = "cpu/0"
@@ -188,7 +241,7 @@ class SystemMetricsTests(unittest.TestCase):
             HardwareType = "Cpu"
             SubHardware = []
             Sensors = [
-                FakeSensor("cpu/temp/0", "Package", "Temperature", 47.5, 40, 80),
+                FakeSensor("cpu/temp/0", "Package", "Temperature", 47.5, 40, 80, 90, 95),
                 FakeSensor("cpu/power/0", "Package Power", "Power", 25, None, None),
                 FakeSensor("cpu/clock/0", "Core Clock", "Clock", None, None, None),
             ]
@@ -220,6 +273,8 @@ class SystemMetricsTests(unittest.TestCase):
         self.assertEqual(computer.update_calls, 2)
         self.assertEqual(computer.close_calls, 1)
         self.assertEqual(first["readings"][0]["type"], "temperature")
+        self.assertEqual(first["readings"][0]["warning"], 90)
+        self.assertEqual(first["readings"][0]["critical"], 95)
         self.assertEqual(first["readings"][1]["unit"], "W")
         self.assertIsNone(first["readings"][2]["value"])
         self.assertEqual(second, first)

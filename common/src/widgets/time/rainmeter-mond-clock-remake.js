@@ -27,10 +27,11 @@ const ensureStyles = () => {
     }
     .webskin-clock--rainmeter-mond-clock-remake {
       --webskin-mond-color: #000;
-      --webskin-mond-width: 53.25rem;
-      --webskin-mond-weekday-size: clamp(1.25rem, 9.2vw, 5rem);
-      --webskin-mond-detail-size: clamp(.85rem, 2.7vw, 1.55rem);
-      --webskin-mond-gap: clamp(.8rem, 3vw, 1.75rem);
+      --webskin-mond-width: max-content;
+      --webskin-mond-weekday-size: 5rem;
+      --webskin-mond-weekday-letter-spacing: .4em;
+      --webskin-mond-detail-size: 1.5rem;
+      --webskin-mond-gap: 1.75rem;
       align-items: center;
       box-sizing: border-box;
       color: var(--webskin-mond-color);
@@ -44,19 +45,21 @@ const ensureStyles = () => {
       min-width: 0;
       text-align: center;
       width: min(100%, var(--webskin-mond-width));
+      zoom: 1.2;
     }
     .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part] {
+      box-sizing: border-box;
       display: block;
       margin: 0;
-      max-width: 100%;
       min-width: 0;
+      text-align: center;
+      width: 100%;
     }
     .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part="weekday"] {
       font-family: "WebSkin Mond Anurati", Anurati, sans-serif;
-      font-size: clamp(1.25rem, 9.2vw, 5rem);
       font-size: var(--webskin-mond-weekday-size);
       font-weight: 400;
-      letter-spacing: .08em;
+      letter-spacing: var(--webskin-mond-weekday-letter-spacing);
       line-height: .82;
       text-transform: uppercase;
       white-space: nowrap;
@@ -64,7 +67,6 @@ const ensureStyles = () => {
     .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part="date"],
     .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part="time"] {
       font-family: "WebSkin Mond Quicksand", Quicksand, sans-serif;
-      font-size: clamp(.85rem, 2.7vw, 1.55rem);
       font-size: var(--webskin-mond-detail-size);
       font-weight: 700;
       letter-spacing: .08em;
@@ -72,14 +74,20 @@ const ensureStyles = () => {
       text-transform: uppercase;
       white-space: nowrap;
     }
-    .webskin-clock--rainmeter-mond-clock-remake .webskin-calendar,
-    .webskin-clock--rainmeter-mond-clock-remake .webskin-clock {
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part] > .webskin-calendar,
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part] > .webskin-clock {
       color: inherit;
+      display: block;
       font: inherit;
       height: auto;
+      justify-content: center;
       min-height: 0;
       min-width: 0;
-      width: auto;
+      margin-inline: auto;
+      padding: 0;
+      text-align: center;
+      text-indent: 0;
+      width: 100%;
     }
     .webskin-clock--rainmeter-mond-clock-remake [data-webskin-calendar-part],
     .webskin-clock--rainmeter-mond-clock-remake [data-webskin-clock-part] {
@@ -90,12 +98,11 @@ const ensureStyles = () => {
     .webskin-clock--rainmeter-mond-clock-remake [data-webskin-clock-part="separator"] {
       white-space: pre;
     }
-    @supports (font-size: 1cqw) {
-      .webskin-clock--rainmeter-mond-clock-remake {
-        --webskin-mond-weekday-size: clamp(1.25rem, 9.2cqw, 5rem);
-        --webskin-mond-detail-size: clamp(.85rem, 2.7cqw, 1.55rem);
-        --webskin-mond-gap: clamp(.8rem, 3cqw, 1.75rem);
-      }
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part="time"] [data-webskin-clock-part="separator"]:first-child {
+      margin-inline-end: .3em;
+    }
+    .webskin-clock--rainmeter-mond-clock-remake [data-webskin-mond-part="time"] [data-webskin-clock-part="separator"]:last-child {
+      margin-inline-start: .3em;
     }
   `;
   document.head.append(style);
@@ -118,6 +125,7 @@ class RainmeterMondClockRemake extends Widget {
       color,
       width,
       weekdaySize,
+      weekdayLetterSpacing,
       detailSize,
       gap,
     } = options;
@@ -133,6 +141,7 @@ class RainmeterMondClockRemake extends Widget {
     if (color) element.style.setProperty("--webskin-mond-color", color);
     if (width) element.style.setProperty("--webskin-mond-width", width);
     if (weekdaySize) element.style.setProperty("--webskin-mond-weekday-size", weekdaySize);
+    if (weekdayLetterSpacing) element.style.setProperty("--webskin-mond-weekday-letter-spacing", weekdayLetterSpacing);
     if (detailSize) element.style.setProperty("--webskin-mond-detail-size", detailSize);
     if (gap) element.style.setProperty("--webskin-mond-gap", gap);
 
@@ -149,7 +158,7 @@ class RainmeterMondClockRemake extends Widget {
     const dateWidget = createDay({
       date,
       locale,
-      format: "DD MMMM, YYYY.",
+      format: "DD MMMM, YYYY.     ",  //whitespace for centering
       className: "webskin-mond-clock__date",
     });
     formattedDate.append(dateWidget);
@@ -159,7 +168,7 @@ class RainmeterMondClockRemake extends Widget {
       format: "12h",
       seconds: false,
       showPeriod: true,
-      syntax: "- h:mm A -",
+      syntax: "-h:mm A-     ",  //whitespace for centering
       offsetMinutes,
       className: "webskin-mond-clock__time",
     });

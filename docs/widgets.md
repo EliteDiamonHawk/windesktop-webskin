@@ -120,102 +120,63 @@ Calendar pre-styled widgets use these variables:
 
 ## System telemetry
 
-Plain system widgets live under `/common/widgets/system/` and use the backend
-snapshot at `/api/system/metrics`. Every system widget accepts `className`,
-`endpoint`, `interval`, and `format` options. The default polling interval is five
-seconds. Destroying the returned element aborts its request and stops its
-polling timer.
+Plain system widgets live under /common/widgets/system/ and read the
+privacy-filtered snapshot at /api/system/metrics. All constructors accept
+className, endpoint, and interval; format-capable widgets also accept format.
+The default interval is five seconds.
 
-Hardware readings preserve the existing temperature and fan fields while the
-snapshot also exposes normalized `sensors.readings` records. Records include
-their provider source and a generic sensor type, so future widgets can render
-voltage, power, current, clock, load, battery, storage, or other hardware
-values without depending on LibreHardwareMonitor objects. Hardware sensor
-availability remains machine- and permissions-dependent.
+Polling is managed centrally. Widgets sharing an endpoint and interval share a
+request, and the request asks for the union of their required fields. Destroy a
+widget with element.destroy?.() to unsubscribe it and stop its polling.
 
-System rows default to `format: "{label} {value} {unit}"`. Use `{label}`,
-`{value}`, and `{unit}` placeholders to customize the text while retaining
-the label, value, and unit DOM parts:
+Formats use named brace tokens. Literal labels, punctuation, whitespace, units,
+and percent signs remain literal. The escapes \n, \r, \t, and \\ are supported.
+Dynamic tokens become elements with data-webskin-system-format-part; literals
+remain ordinary text nodes.
 
-```js
-createMemory({ format: "{label}: {value} {unit}" });
-```
+Before the first successful poll, tokens render as -. Missing, unsupported, or
+unavailable values render as n/a. Boolean values render as true or false,
+including false.
 
-Unitless values omit the unused unit spacing.
-
-```js
-import { createBattery, createCpuFrequency, createDiskIo, createMemory, createMemoryList } from "/common/widgets/system/index.js";
+~~~js
+import {
+  createBattery,
+  createMemory,
+  createNetworkTelemetryTransfer,
+} from "/common/widgets/system/index.js";
 
 document.querySelector("#battery").append(createBattery());
-document.querySelector("#cpu").append(createCpuFrequency({ core: 0, interval: 2000 }));
-document.querySelector("#disk").append(createDiskIo("read", "bytes", { format: "{label}: {value} {unit}" }));
-document.querySelector("#memory").append(createMemory("used"));
-document.querySelector("#legacy-memory").append(createMemoryList());
-```
+document.querySelector("#memory").append(
+  createMemory({ format: "Used: {used} {used-unit}\\nUsage: {usage} %" }),
+);
+document.querySelector("#network").append(createNetworkTelemetryTransfer());
+~~~
 
-Scalar family constructors:
+The canonical constructors are:
 
-| Category | Constructors |
-| --- | --- |
-| Battery | `createBattery(options)` — percentage, plugged state, and seconds left |
-| CPU utilization | `createCpuUtilization(variant)` — `overall`, `core` |
-| CPU counts | `createCpuCoreCount(variant)` — `physical`, `logical` |
-| CPU frequency | `createCpuFrequency(variant)` — `core`, `current`, `max`, `min` |
-| CPU telemetry | `createCpuTelemetry(variant)` — `interrupts`, `system-calls`, `context-switches` |
-| Load average | `createCpuLoadAverage(variant)` — `one-minute`, `five-minutes`, `fifteen-minutes` |
-| Memory | `createMemory(variant)` — `total`, `available`, `used`, `free`, `percent` |
-| Swap | `createSwap(variant)` — `total`, `used`, `free`, `percent` |
-| Disk I/O | `createDiskIo(direction, metric)` — `read/write × count/bytes/time`, or `busy, time` |
-| Network | `createNetworkTelemetry(variant)` — `bytes-sent`, `bytes-received`, `packets-dropped`, `transmission-errors` |
-| Partitions | `createDiskPartition(variant)` — `mount-point`, `filesystem`, `mount-options` |
-| Disk usage | `createDiskUsage(variant)` — `mount-point`, `total`, `used`, `free`, `percent` |
-| Hardware sensors | `createHardwareSensor(variant)` — `name`, `value`, `minimum`, `maximum`, `critical` |
+createBattery, createCpuUtilization, createCpuUtilizationList,
+createCpuCoreCounts, createCpuFrequency, createCpuTelemetry,
+createCpuLoadAverage, createMemory, createSwapMemory, createDiskIo,
+createNetworkTelemetry, createDiskPartitions, createGpuThermalFan, and
+createNetworkTelemetryTransfer.
 
-The first argument may be omitted and replaced with the options object. Defaults
-are overall utilization, physical core count, per-core frequency, interrupts,
-one-minute load, used memory, used swap, read bytes, sent bytes, disk capacity,
-and sensor value. The per-core frequency and utilization variants require a
-zero-based `core` option. Partition and disk-usage variants require a
-`mountPoint` string. Hardware sensor variants require a stable `sensorId` from
-`snapshot.sensors.readings`.
+The CPU utilization list repeats one format line for the overall value and
+each core. Its limit ignores non-positive values, and zeroIndex: true labels
+cores from Core 0; otherwise labels start at Core 1.
 
-Every scalar factory renders one formatted metric row. All factories accept the
-existing `className`, `endpoint`, `interval`, and `format` options. For example:
+Byte values have separate value and unit tokens, such as {used} and
+{used-unit}. The unit is scaled automatically with binary units. Fixed units
+such as MHz, ms, %, °C, and RPM should be written directly in the format.
 
-```js
-createCpuFrequency("current", { format: "{label}: {value} {unit}" });
-createMemory({ format: "{label}: {value} {unit}" });
-```
+createSwapMemory({ metric: "total" | "used" | "free" | "usage" }) selects a
+scalar value; without metric, it renders the complete swap summary.
+createDiskPartitions accepts an optional mountPoint and chooses the first local
+partition when omitted. createGpuThermalFan accepts sensorId and gpuId;
+sensorId takes precedence.
 
-Battery uses angle-bracket tags and defaults to
-`<label> <battery-percent> <unit>`. It supports `<label>`,
-`<battery-percent>`, `<unit>`, `<power-plugged>`, and `<secs-left>`;
-plugged state renders as `true` or `false`, while unavailable values and
-negative OS time-left sentinels render as `Unavailable`.
-
-```js
-createBattery({
-  format: "<label>: <battery-percent><unit> plugged=<power-plugged> left=<secs-left>",
-});
-```
-
-Canonical list constructors retain the previous multi-value presentations:
-
-`createCpuUtilizationList`, `createCpuCoreCountsList`,
-`createCpuFrequenciesList`, `createCpuTelemetryList`,
-`createCpuLoadAverageList`, `createMemoryList`, `createSwapList`,
-`createDiskPartitionsList`, `createDiskUsageList`, `createDiskIoList`,
-`createNetworkTelemetryList`, and `createHardwareSensorsList`.
-
-Scalar widgets use the unsuffixed family constructors above. Multi-value
-widgets always use the explicit `-list` constructors; they are separate
-widgets rather than compatibility aliases.
-
-Plain system widgets expose `data-webskin-system-part` hooks and keep colors,
-surfaces, borders, and layout decisions available to the theme. Unsupported
-platform metrics render as `Unavailable`; widgets do not fabricate values.
-Hardware sensor support depends on what the operating system exposes.
-
-Network telemetry is aggregate-only. It does not expose IP addresses, MAC
-addresses, hostnames, interface identifiers, process data, usernames, serial
-numbers, or other identifying metadata.
+GPU-specific readings depend on HardwareMonitor and available drivers.
+Warning-temperature is n/a unless the provider exposes a distinct warning
+threshold. Network widgets expose aggregate counters only; they do not expose
+addresses, interface identifiers, hostnames, usernames, process data, or other
+identifying metadata. Transfer speeds are calculated from successful aggregate
+counter samples, while utilization is n/a because link capacity is unknown.

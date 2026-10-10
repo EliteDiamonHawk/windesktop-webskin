@@ -1,172 +1,218 @@
 import { Widget } from "../widgets.js";
 
 export const DEFAULT_INTERVAL = 5000;
-export const DEFAULT_FORMAT = "{label} {value} {unit}";
+const TOKEN_PATTERN = /\{([a-z][a-z0-9-]*)\}/g;
+const LEGACY_TOKEN_PATTERN = /\<[^<>]*\>/;
+const ESCAPES = { n: "\n", r: "\r", t: "\t", "\\": "\\" };
+const POLL_GROUPS = new Map();
 
-export const createPart = (part, text = "—", tag = "span") => {
+export const createPart = (part, text = "n/a", tag = "span") => {
   const element = document.createElement(tag);
   element.dataset.webskinSystemPart = part;
   element.textContent = text;
   return element;
 };
 
-export const createRow = (part, label, options = {}) => {
-  return createFormattedRow(part, label, options);
+export const decodeFormat = (format) => format.replace(/\\([nrt\\])/g, (match, value) => ESCAPES[value] ?? match);
+
+export const resolveFormat = (format, defaultFormat, tokens, family) => {
+  const resolved = format === undefined ? defaultFormat : format;
+  if (typeof resolved !== "string") throw new TypeError(family + " format must be a string");
+  if (LEGACY_TOKEN_PATTERN.test(resolved)) {
+    throw new TypeError(family + " format must use brace tokens");
+  }
+  const decoded = decodeFormat(resolved);
+  const supported = new Set(tokens);
+  for (const match of decoded.matchAll(TOKEN_PATTERN)) {
+    if (!supported.has(match[1])) {
+      throw new TypeError("Unsupported " + family + " format token: {" + match[1] + "}");
+    }
+  }
+  return decoded;
 };
 
-const formatTemplate = (format, unit) => {
-  const template = format ?? DEFAULT_FORMAT;
-  if (typeof template !== "string") throw new TypeError("System widget format must be a string");
-  return unit ? template : template.replace(/\s*\{unit\}/g, "");
+export const fieldsForFormat = (format, tokenFields) => {
+  const fields = new Set();
+  for (const match of format.matchAll(TOKEN_PATTERN)) {
+    const field = tokenFields[match[1]];
+    if (Array.isArray(field)) field.forEach((item) => fields.add(item));
+    else if (field) fields.add(field);
+  }
+  return [...fields];
 };
 
-const createFormattedPart = (part, text, formatPart) => {
-  const element = createPart(part, text);
-  element.dataset.webskinSystemFormatPart = formatPart;
-  return element;
+const displayValue = (value, fallback) => {
+  if (value === undefined || value === null) return fallback;
+  return String(value);
 };
 
-const renderFormattedRow = (row, part, label, value, unit, format) => {
-  row.replaceChildren();
-  const template = formatTemplate(format, unit);
+export const renderTokenLine = (row, line, values, fallback = "n/a", partPrefix = "") => {
   let cursor = 0;
-  for (const match of template.matchAll(/\{(label|value|unit)\}/g)) {
-    if (match.index > cursor) row.append(document.createTextNode(template.slice(cursor, match.index)));
+  for (const match of line.matchAll(TOKEN_PATTERN)) {
+    if (match.index > cursor) row.append(document.createTextNode(line.slice(cursor, match.index)));
     const token = match[1];
-    const tokenPart = token === "label" ? `${part}-label` : token === "unit" ? `${part}-unit` : part;
-    row.append(createFormattedPart(tokenPart, token === "label" ? label : token === "unit" ? unit : value, token));
+    const element = createPart(partPrefix + token, displayValue(values[token], fallback));
+    element.dataset.webskinSystemFormatPart = token;
+    row.append(element);
     cursor = match.index + match[0].length;
   }
-  if (cursor < template.length) row.append(document.createTextNode(template.slice(cursor)));
+  if (cursor < line.length) row.append(document.createTextNode(line.slice(cursor)));
 };
 
-export const createFormattedRow = (part, label, { format = DEFAULT_FORMAT, value = "—", unit = "" } = {}) => {
-  const row = document.createElement("div");
-  row.dataset.webskinSystemPart = `${part}-row`;
-  row.webskinSystemFormat = { part, label, format };
-  renderFormattedRow(row, part, label, value, unit, format);
-  return row;
-};
-
-export const readPath = (value, path) => String(path).split(".").reduce((current, key) => current?.[key], value);
-
-export const isAvailable = (value) => value !== null && value !== undefined;
-
-export const formatNumber = (value, unit = "", digits = 1) => {
-  if (!isAvailable(value) || typeof value !== "number" || Number.isNaN(value)) return { value: "Unavailable", unit: "" };
-  return { value: new Intl.NumberFormat(undefined, { maximumFractionDigits: digits }).format(value), unit };
-};
-
-export const formatBytes = (value) => {
-  if (!isAvailable(value) || typeof value !== "number" || Number.isNaN(value)) return { value: "Unavailable", unit: "" };
-  if (value < 1024) return { value: String(value), unit: "B" };
-  const units = ["KiB", "MiB", "GiB", "TiB", "PiB"];
-  let scaled = value;
-  let index = -1;
-  while (scaled >= 1024 && index < units.length - 1) {
-    scaled /= 1024;
-    index += 1;
-  }
-  return { value: new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(scaled), unit: units[index] };
-};
-
-export const formatText = (value, unit = "") => ({
-  value: isAvailable(value) ? String(value) : "Unavailable",
-  unit,
-});
-
-export const requireNonNegativeInteger = (options, name) => {
-  const value = options?.[name];
-  if (!Number.isInteger(value) || value < 0) {
-    throw new TypeError(`System widget option ${name} must be a non-negative integer`);
-  }
-  return value;
-};
-
-export const requireNonEmptyString = (options, name) => {
-  const value = options?.[name];
-  if (typeof value !== "string" || !value.trim()) {
-    throw new TypeError(`System widget option ${name} must be a non-empty string`);
-  }
-  return value;
-};
-
-export const findRecord = (records, key, value) => (
-  Array.isArray(records) ? records.find((record) => record?.[key] === value) : undefined
-);
-
-export const parseVariantOptions = (variantOrOptions, options, defaultVariant) => {
-  if (variantOrOptions && typeof variantOrOptions === "object" && !Array.isArray(variantOrOptions)) {
-    return { variant: defaultVariant, options: variantOrOptions };
-  }
-  return { variant: variantOrOptions ?? defaultVariant, options: options ?? {} };
-};
-
-export const createVariantSystemWidget = ({
-  variantOrOptions,
-  options,
-  defaultVariant,
-  family,
-  variants,
-}) => {
-  const parsed = parseVariantOptions(variantOrOptions, options, defaultVariant);
-  const variantFactory = variants[parsed.variant];
-  if (!variantFactory) {
-    throw new TypeError(`Unsupported ${family} variant: ${String(parsed.variant)}`);
-  }
-  const definition = typeof variantFactory === "function" ? variantFactory(parsed.options) : variantFactory;
-  return createScalarSystemWidget({
-    options: parsed.options,
-    type: `${family}-${parsed.variant}`,
-    ...definition,
+export const renderTokenFormat = (root, format, values, {
+  fallback = "n/a",
+  partPrefix = "",
+  rowParts = [],
+} = {}) => {
+  root.replaceChildren();
+  format.split(/\r\n|\n|\r/).forEach((line, index) => {
+    const row = document.createElement("div");
+    row.dataset.webskinSystemPart = rowParts[index] ?? partPrefix + "row-" + index;
+    renderTokenLine(row, line, values, fallback, partPrefix);
+    root.append(row);
   });
 };
 
-export const createScalarSystemWidget = ({
-  options = {},
-  type,
-  part = "value",
-  label,
-  read,
-}) => {
-  const { format } = options;
-  return createSystemWidget({
-    ...options,
-    type,
-    build: (root) => root.append(createRow(part, label, { format })),
-    render: (root, snapshot) => setMetricText(root, part, read(snapshot)),
+export const renderRepeatedFormat = (root, format, rows, {
+  fallback = "n/a",
+  partPrefix = "",
+} = {}) => {
+  root.replaceChildren();
+  rows.forEach((values, index) => {
+    const row = document.createElement("div");
+    row.dataset.webskinSystemPart = partPrefix + "row-" + index;
+    renderTokenLine(row, format, values, fallback, partPrefix + index + "-");
+    root.append(row);
   });
 };
 
-export const setPartText = (root, part, text) => {
-  const selectorPart = String(part).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  const elements = [...root.querySelectorAll(`[data-webskin-system-part="${selectorPart}"]`)];
-  elements.forEach((element) => { element.textContent = text; });
-  return elements[0];
+const endpointWithFields = (endpoint, fields) => {
+  const separator = endpoint.includes("?") ? "&" : "?";
+  return endpoint + separator + "fields=" + encodeURIComponent(fields.join(","));
 };
 
-export const setMetricText = (root, part, metric) => {
-  const selectorPart = String(part).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  const rowSelector = `[data-webskin-system-part="${selectorPart}-row"]`;
-  const rows = [
-    ...(root.matches?.(rowSelector) ? [root] : []),
-    ...root.querySelectorAll(rowSelector),
-  ];
-  if (!rows.length) {
-    setPartText(root, part, metric?.value ?? "Unavailable");
-    setPartText(root, `${part}-unit`, metric?.unit ?? "");
-    return;
+const intervalValue = (interval) => {
+  const value = Number(interval);
+  return Number.isFinite(value) && value > 0 ? value : DEFAULT_INTERVAL;
+};
+
+const numberValue = (value) => typeof value === "number" && Number.isFinite(value) ? value : null;
+
+const transferSnapshot = (snapshot, previous) => {
+  const network = snapshot?.network ?? {};
+  const sent = numberValue(network.bytes_sent);
+  const received = numberValue(network.bytes_received);
+  const now = Date.now();
+  const elapsed = previous ? (now - previous.at) / 1000 : 0;
+  const rate = (current, prior) => (
+    current !== null && prior !== null && elapsed > 0 && current >= prior
+      ? (current - prior) / elapsed
+      : null
+  );
+  const transfer = {
+    uploaded: sent,
+    downloaded: received,
+    upload_speed: rate(sent, previous?.sent ?? null),
+    download_speed: rate(received, previous?.received ?? null),
+    utilization: null,
+  };
+  const next = {
+    ...snapshot,
+    network: { ...network, transfer },
+  };
+  const nextPrevious = sent !== null || received !== null ? { sent, received, at: now } : previous;
+  return { snapshot: next, previous: nextPrevious };
+};
+
+class MetricsPollGroup {
+  constructor(endpoint, interval, key) {
+    this.endpoint = endpoint;
+    this.interval = interval;
+    this.key = key;
+    this.subscribers = new Set();
+    this.inFlight = false;
+    this.needsRefresh = false;
+    this.pendingStart = false;
+    this.controller = null;
+    this.timer = null;
+    this.previousNetwork = null;
   }
-  rows.forEach((row) => {
-    const settings = row.webskinSystemFormat;
-    renderFormattedRow(row, settings.part, settings.label, metric?.value ?? "Unavailable", metric?.unit ?? "", settings.format);
-  });
-};
 
-export const setStatus = (root, state, message) => {
-  root.dataset.webskinSystemState = state;
-  const status = root.querySelector('[data-webskin-system-part="status"]');
-  if (status) status.textContent = message;
+  fields() {
+    return [...new Set([...this.subscribers].flatMap((subscriber) => subscriber.fields))].sort();
+  }
+
+  subscribe(subscriber) {
+    this.subscribers.add(subscriber);
+    if (!this.timer) this.timer = window.setInterval(() => this.refresh(), this.interval);
+    if (!this.pendingStart) {
+      this.pendingStart = true;
+      queueMicrotask(() => {
+        this.pendingStart = false;
+        this.refresh();
+      });
+    }
+    return () => this.unsubscribe(subscriber);
+  }
+
+  unsubscribe(subscriber) {
+    this.subscribers.delete(subscriber);
+    if (this.subscribers.size) return;
+    if (this.timer !== null) window.clearInterval(this.timer);
+    if (this.controller) this.controller.abort();
+    this.timer = null;
+    this.controller = null;
+    POLL_GROUPS.delete(this.key);
+  }
+
+  notifyError(error) {
+    [...this.subscribers].forEach((subscriber) => subscriber.onError?.(error));
+  }
+
+  async refresh() {
+    if (!this.subscribers.size) return;
+    if (this.inFlight) {
+      this.needsRefresh = true;
+      return;
+    }
+    this.inFlight = true;
+    this.needsRefresh = false;
+    const fields = this.fields();
+    const requestFields = fields.join(",");
+    this.controller = new AbortController();
+    try {
+      const response = await fetch(endpointWithFields(this.endpoint, fields), { signal: this.controller.signal });
+      if (!response.ok) throw new Error("System metrics request failed: " + response.status);
+      const rawSnapshot = await response.json();
+      const transferred = transferSnapshot(rawSnapshot, this.previousNetwork);
+      this.previousNetwork = transferred.previous;
+      [...this.subscribers].forEach((subscriber) => subscriber.onSnapshot(transferred.snapshot));
+      if (requestFields !== this.fields().join(",")) this.needsRefresh = true;
+    } catch (error) {
+      if (error?.name !== "AbortError") this.notifyError(error);
+    } finally {
+      this.controller = null;
+      this.inFlight = false;
+      if (this.needsRefresh && this.subscribers.size) this.refresh();
+    }
+  }
+}
+
+export const systemMetricsManager = {
+  subscribe({ endpoint = "/api/system/metrics", interval = DEFAULT_INTERVAL, fields = [], onSnapshot, onError }) {
+    const normalizedInterval = intervalValue(interval);
+    const key = endpoint + "::" + normalizedInterval;
+    let group = POLL_GROUPS.get(key);
+    if (!group) {
+      group = new MetricsPollGroup(endpoint, normalizedInterval, key);
+      POLL_GROUPS.set(key, group);
+    }
+    return group.subscribe({
+      fields: [...new Set(fields)].sort(),
+      onSnapshot,
+      onError,
+    });
+  },
 };
 
 export function createSystemWidget({
@@ -174,6 +220,7 @@ export function createSystemWidget({
   className = "",
   endpoint = "/api/system/metrics",
   interval = DEFAULT_INTERVAL,
+  fields = [],
   build,
   render,
 } = {}) {
@@ -183,49 +230,30 @@ export function createSystemWidget({
 
   const element = document.createElement("section");
   const widget = new Widget(element, { type: "system" });
-  element.className = [
-    "webskin-system-widget",
-    `webskin-system-widget--${type}`,
-    className,
-  ].filter(Boolean).join(" ");
+  element.className = ["webskin-system-widget", "webskin-system-widget--" + type, className]
+    .filter(Boolean)
+    .join(" ");
   element.dataset.webskinSystemType = type;
   element.setAttribute("aria-live", "polite");
   build(element);
-  const status = createPart("status", "Loading…", "output");
-  status.setAttribute("aria-live", "polite");
-  element.append(status);
+  element.append(createPart("status", "", "output"));
+  render(element, null, { phase: "initial" });
 
-  let inFlight = false;
-  let hasLoaded = false;
-  let destroyed = false;
-  const controller = new AbortController();
-  const refresh = async () => {
-    if (destroyed || inFlight) return;
-    inFlight = true;
-    if (!hasLoaded) setStatus(element, "loading", "Loading…");
-    try {
-      const response = await fetch(endpoint, { signal: controller.signal });
-      if (!response.ok) throw new Error(`System metrics request failed: ${response.status}`);
-      const snapshot = await response.json();
-      if (destroyed) return;
-      render(element, snapshot);
-      hasLoaded = true;
-      setStatus(element, "ready", "");
-    } catch (error) {
-      if (error?.name !== "AbortError") setStatus(element, "error", "System metrics unavailable");
-    } finally {
-      inFlight = false;
-    }
-  };
-
-  refresh();
-  const delay = Number(interval);
-  const timer = window.setInterval(refresh, Number.isFinite(delay) && delay > 0 ? delay : DEFAULT_INTERVAL);
-  widget.addCleanup(() => {
-    destroyed = true;
-    controller.abort();
+  let hasSnapshot = false;
+  const unsubscribe = systemMetricsManager.subscribe({
+    endpoint,
+    interval,
+    fields,
+    onSnapshot: (snapshot) => {
+      hasSnapshot = true;
+      element.dataset.webskinSystemState = "ready";
+      render(element, snapshot, { phase: "ready" });
+    },
+    onError: (error) => {
+      element.dataset.webskinSystemState = "error";
+      if (!hasSnapshot) render(element, null, { phase: "error", error });
+    },
   });
-  widget.addCleanup(() => window.clearInterval(timer));
+  widget.addCleanup(unsubscribe);
   return element;
 }
-

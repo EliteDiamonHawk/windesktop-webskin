@@ -1,31 +1,42 @@
-import { createScalarSystemWidget, formatBytes, formatNumber } from "./client.js";
+import { createPart, createSystemWidget, fieldsForFormat, renderTokenFormat, resolveFormat } from "./client.js";
+import { formatBytes, formatInteger } from "./formatters.js";
 
-const variants = {
-  "read-count": { part: "read-count", label: "Read operations", read: (snapshot) => formatNumber(snapshot.disks?.io?.read_count, "", 0) },
-  "read-bytes": { part: "read-bytes", label: "Read bytes", read: (snapshot) => formatBytes(snapshot.disks?.io?.read_bytes) },
-  "read-time": { part: "read-time", label: "Read wait", read: (snapshot) => formatNumber(snapshot.disks?.io?.read_time_ms, "ms") },
-  "write-count": { part: "write-count", label: "Write operations", read: (snapshot) => formatNumber(snapshot.disks?.io?.write_count, "", 0) },
-  "write-bytes": { part: "write-bytes", label: "Write bytes", read: (snapshot) => formatBytes(snapshot.disks?.io?.write_bytes) },
-  "write-time": { part: "write-time", label: "Write wait", read: (snapshot) => formatNumber(snapshot.disks?.io?.write_time_ms, "ms") },
-  "busy-time": { part: "busy-time", label: "Busy time", read: (snapshot) => formatNumber(snapshot.disks?.io?.busy_time_ms, "ms") },
+const DEFAULT_FORMAT = "Read bytes: {read-bytes} {read-unit}\nWrite bytes: {write-bytes} {write-unit}\nRead count: {read-count}\nWrite count: {write-count}\nRead time: {read-time} ms\nWrite time: {write-time} ms\nBusy time: {busy-time} ms";
+const TOKENS = ["read-count", "read-bytes", "read-time", "read-unit", "write-count", "write-bytes", "write-time", "write-unit", "busy-time"];
+const TOKEN_FIELDS = {
+  "read-count": "disks.io.read_count",
+  "read-bytes": "disks.io.read_bytes",
+  "read-unit": "disks.io.read_bytes",
+  "read-time": "disks.io.read_time_ms",
+  "write-count": "disks.io.write_count",
+  "write-bytes": "disks.io.write_bytes",
+  "write-unit": "disks.io.write_bytes",
+  "write-time": "disks.io.write_time_ms",
+  "busy-time": "disks.io.busy_time_ms",
 };
 
-export function createDiskIo(directionOrOptions, metricOrOptions, maybeOptions) {
-  let direction = directionOrOptions;
-  let metric = metricOrOptions;
-  let options = maybeOptions;
-  if (directionOrOptions && typeof directionOrOptions === "object" && !Array.isArray(directionOrOptions)) {
-    direction = "read";
-    metric = "bytes";
-    options = directionOrOptions;
-  } else if (metricOrOptions && typeof metricOrOptions === "object" && !Array.isArray(metricOrOptions)) {
-    metric = "bytes";
-    options = metricOrOptions;
-  }
-  direction ??= "read";
-  metric ??= direction === "busy" ? "time" : "bytes";
-  const key = `${direction}-${metric}`;
-  const definition = variants[key];
-  if (!definition) throw new TypeError(`Unsupported disk I/O selection: ${key}`);
-  return createScalarSystemWidget({ options: options ?? {}, type: `disk-io-${key}`, ...definition });
+export function createDiskIo(options = {}) {
+  const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "disk I/O");
+  return createSystemWidget({
+    ...options,
+    fields: fieldsForFormat(format, TOKEN_FIELDS),
+    type: "disk-io",
+    build: (root) => root.append(createPart("content", "", "div")),
+    render: (root, snapshot, { phase }) => {
+      const io = snapshot?.disks?.io;
+      const read = formatBytes(io?.read_bytes, phase);
+      const write = formatBytes(io?.write_bytes, phase);
+      renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
+        "read-count": formatInteger(io?.read_count, phase),
+        "read-bytes": read.value,
+        "read-unit": read.unit,
+        "read-time": formatInteger(io?.read_time_ms, phase),
+        "write-count": formatInteger(io?.write_count, phase),
+        "write-bytes": write.value,
+        "write-unit": write.unit,
+        "write-time": formatInteger(io?.write_time_ms, phase),
+        "busy-time": formatInteger(io?.busy_time_ms, phase),
+      }, { fallback: phase === "initial" ? "-" : "n/a" });
+    },
+  });
 }

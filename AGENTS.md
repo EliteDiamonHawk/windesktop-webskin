@@ -24,6 +24,8 @@ Use the page that matches your change:
 - [Previews](docs/previews.md)
 - [Contributing](docs/contributing.md)
 
+Use stop-slop if updating docs.
+
 ## Rules
 
 - Keep browser URLs and response keys stable unless you plan a migration.

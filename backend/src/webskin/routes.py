@@ -61,6 +61,13 @@ def create_settings_router(service: SettingsService | None = None) -> APIRouter:
         except SettingsStorageError as exc:
             raise HTTPException(status_code=503, detail="Settings storage is unavailable") from exc
 
+    @router.get("/widgets/system-intervals")
+    def get_system_widget_intervals() -> dict[str, Any]:
+        try:
+            return settings_service.resolve_system_widget_intervals()
+        except SettingsStorageError as exc:
+            raise HTTPException(status_code=503, detail="Settings storage is unavailable") from exc
+
     @router.get("/{namespace}/{identifier}")
     def get_scoped(namespace: str, identifier: str) -> dict[str, Any]:
         if namespace not in ("themes", "widgets"):

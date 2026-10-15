@@ -133,12 +133,22 @@ Calendar pre-styled widgets use:
 
 System widgets live under `/common/widgets/system/` and read the
 privacy-filtered snapshot from `/api/system/metrics`. Each constructor accepts
-`className`, `endpoint`, and `interval`. Format-capable widgets also accept
-`format`. The default interval is five seconds.
+`className`, `endpoint`, and the legacy millisecond `interval`. Format-capable
+widgets also accept `format`. The time-style `updateInterval` option accepts
+positive integer seconds; when both are supplied, `interval` takes precedence.
+Without an explicit interval, system widgets use their configured polling
+family: fast telemetry defaults to five seconds, standard metrics to 30
+seconds, and slow metrics to 60 seconds.
 
 The metrics manager owns polling. Widgets with the same endpoint and interval
 share one request, and the request asks for the union of their fields. Destroy a
 widget with `element.destroy?.()` to unsubscribe it and stop its polling.
+
+The browser resolves family and widget defaults once from
+`/api/settings/widgets/system-intervals`. Backend metric snapshots are cached
+briefly for identical field selections. Disk partition metadata is refreshed at
+most every 60 seconds and disk capacity data at most every 30 seconds; live disk
+I/O counters are not included in those longer caches.
 
 Formats use named brace tokens. Literal labels, punctuation, whitespace, units,
 and percent signs remain literal. The escapes `\\n`, `\\r`, `\\t`, and

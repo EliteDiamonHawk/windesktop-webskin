@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -74,6 +75,62 @@ class PsutilCapabilityTracker:
             return _UNAVAILABLE
         self.failures.pop(capability, None)
         return result
+
+
+class DiskMetricsCache:
+    """Cache disk inventory and capacity data independently from live counters."""
+
+    def __init__(
+        self,
+        *,
+        partition_ttl: float = 60.0,
+        usage_ttl: float = 30.0,
+        clock=time.monotonic,
+    ) -> None:
+        self.partition_ttl = partition_ttl
+        self.usage_ttl = usage_ttl
+        self.clock = clock
+        self.partitions_at: float | None = None
+        self.partitions: list[dict[str, str]] = []
+        self.usage: dict[str, tuple[float, Any]] = {}
+
+    def get_partitions(self, tracker: PsutilCapabilityTracker) -> list[dict[str, str]] | object:
+        now = self.clock()
+        if self.partitions_at is not None and now - self.partitions_at < self.partition_ttl:
+            return self.partitions
+
+        raw_partitions = tracker.call("disk_partitions", lambda: psutil.disk_partitions(all=False))
+        if raw_partitions is _UNAVAILABLE:
+            return _UNAVAILABLE
+
+        self.partitions = [
+            {
+                "mount_point": str(partition.mountpoint),
+                "filesystem": str(partition.fstype),
+                "mount_options": str(partition.opts),
+            }
+            for partition in raw_partitions
+            if _is_local_mountpoint(str(partition.mountpoint))
+        ]
+        self.partitions_at = now
+        active_mounts = {partition["mount_point"] for partition in self.partitions}
+        self.usage = {
+            mount_point: value
+            for mount_point, value in self.usage.items()
+            if mount_point in active_mounts
+        }
+        return self.partitions
+
+    def get_usage(self, mount_point: str, tracker: PsutilCapabilityTracker) -> Any:
+        now = self.clock()
+        cached = self.usage.get(mount_point)
+        if cached is not None and now - cached[0] < self.usage_ttl:
+            return cached[1]
+
+        value = tracker.call("disk_usage", lambda: psutil.disk_usage(mount_point))
+        if value is not _UNAVAILABLE:
+            self.usage[mount_point] = (now, value)
+        return value
 
 
 def _cpu(tracker: PsutilCapabilityTracker, requested_fields: set[str] | None = None) -> dict[str, Any]:
@@ -239,26 +296,20 @@ def _memory(tracker: PsutilCapabilityTracker, requested_fields: set[str] | None 
     return {"available": virtual["available"] or paging["available"], "virtual": virtual, "swap": paging}
 
 
-def _disks(tracker: PsutilCapabilityTracker, requested_fields: set[str] | None = None) -> dict[str, Any]:
+def _disks(
+    tracker: PsutilCapabilityTracker,
+    requested_fields: set[str] | None = None,
+    cache: DiskMetricsCache | None = None,
+) -> dict[str, Any]:
     partitions_requested = _field_requested(requested_fields, "disks.partitions")
     usage_requested = _field_requested(requested_fields, "disks.usage")
+    disk_cache = cache or DiskMetricsCache()
     if partitions_requested or usage_requested:
-        raw_partitions = tracker.call("disk_partitions", lambda: psutil.disk_partitions(all=False))
+        raw_partitions = disk_cache.get_partitions(tracker)
     else:
         raw_partitions = _UNAVAILABLE
 
-    all_partitions: list[dict[str, Any]] = []
-    if raw_partitions is not _UNAVAILABLE:
-        for partition in raw_partitions:
-            mountpoint = str(partition.mountpoint)
-            if _is_local_mountpoint(mountpoint):
-                all_partitions.append(
-                    {
-                        "mount_point": mountpoint,
-                        "filesystem": str(partition.fstype),
-                        "mount_options": str(partition.opts),
-                    }
-                )
+    all_partitions = [] if raw_partitions is _UNAVAILABLE else raw_partitions
 
     partitions = [
         {
@@ -272,7 +323,7 @@ def _disks(tracker: PsutilCapabilityTracker, requested_fields: set[str] | None =
     usage: list[dict[str, Any]] = []
     if usage_requested:
         for partition in all_partitions:
-            value = tracker.call("disk_usage", lambda path=partition["mount_point"]: psutil.disk_usage(path))
+            value = disk_cache.get_usage(partition["mount_point"], tracker)
             if value is _UNAVAILABLE:
                 usage.append(
                     {
@@ -420,8 +471,7 @@ def _sensors(
     temperatures_requested = _field_requested(requested_fields, "sensors.temperatures") or readings_requested
     fans_requested = _field_requested(requested_fields, "sensors.fans") or readings_requested
     battery_requested = _field_requested(requested_fields, "sensors.battery")
-    hardware_requested = readings_requested or temperatures_requested or fans_requested or battery_requested
-    if not hardware_requested:
+    if not temperatures_requested and not fans_requested and not battery_requested:
         return {"available": False, "temperatures": [], "fans": [], "battery": {"available": False, "percent": None, "seconds_left": None, "power_plugged": None, "source": None}, "readings": []}
 
     raw_temperatures = tracker.call("temperatures", lambda: psutil.sensors_temperatures(fahrenheit=False), empty_is_failure=True) if temperatures_requested else _UNAVAILABLE
@@ -432,6 +482,12 @@ def _sensors(
     psutil_fans = [] if raw_fans is _UNAVAILABLE else _psutil_fan_records(raw_fans)
     psutil_battery = None if raw_battery is _UNAVAILABLE else raw_battery
 
+    hardware_requested = (
+        readings_requested
+        or (temperatures_requested and not psutil_temperatures)
+        or (fans_requested and not psutil_fans)
+        or (battery_requested and psutil_battery is None)
+    )
     hardware_snapshot = hardware_monitor.read() if hardware_requested else {"available": False, "readings": []}
     hardware_readings = hardware_snapshot["readings"]
     hardware_temperatures = [record for record in hardware_readings if record["type"] == "temperature"]
@@ -515,9 +571,15 @@ class SystemMetricsService:
         hardware_monitor: HardwareMonitorProvider | None = None,
         *,
         hardware_monitor_enabled: bool = True,
+        cache_ttl: float = 1.0,
+        clock=time.monotonic,
     ) -> None:
         self._lock = threading.RLock()
         self._tracker = PsutilCapabilityTracker()
+        self._cache_ttl = cache_ttl
+        self._clock = clock
+        self._snapshot_cache: dict[frozenset[str] | None, tuple[float, dict[str, Any]]] = {}
+        self._disk_cache = DiskMetricsCache(clock=clock)
         self._hardware_monitor = (
             hardware_monitor
             if hardware_monitor is not None
@@ -526,17 +588,26 @@ class SystemMetricsService:
 
     def collect(self, requested_fields: set[str] | None = None) -> dict[str, Any]:
         with self._lock:
-            return {
+            cache_key = None if requested_fields is None else frozenset(requested_fields)
+            now = self._clock()
+            cached = self._snapshot_cache.get(cache_key)
+            if cached is not None and now - cached[0] < self._cache_ttl:
+                return cached[1]
+
+            snapshot = {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "cpu": _cpu(self._tracker, requested_fields),
                 "memory": _memory(self._tracker, requested_fields),
-                "disks": _disks(self._tracker, requested_fields),
+                "disks": _disks(self._tracker, requested_fields, self._disk_cache),
                 "network": _network(self._tracker, requested_fields),
                 "sensors": _sensors(self._tracker, self._hardware_monitor, requested_fields),
             }
+            self._snapshot_cache[cache_key] = (now, snapshot)
+            return snapshot
 
     def close(self) -> None:
         with self._lock:
+            self._snapshot_cache.clear()
             self._hardware_monitor.close()
 
 

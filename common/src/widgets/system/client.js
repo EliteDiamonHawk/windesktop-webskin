@@ -1,10 +1,58 @@
 import { Widget } from "../widgets.js";
 
 export const DEFAULT_INTERVAL = 5000;
+export const DEFAULT_INTERVALS = Object.freeze({ fast: 5000, standard: 30000, slow: 60000 });
 const TOKEN_PATTERN = /\{([a-z][a-z0-9-]*)\}/g;
 const LEGACY_TOKEN_PATTERN = /\<[^<>]*\>/;
 const ESCAPES = { n: "\n", r: "\r", t: "\t", "\\": "\\" };
 const POLL_GROUPS = new Map();
+let resolvedIntervalsPromise;
+
+const settingsFallback = () => ({
+  fast: DEFAULT_INTERVALS.fast,
+  standard: DEFAULT_INTERVALS.standard,
+  slow: DEFAULT_INTERVALS.slow,
+  widgets: {},
+});
+
+const validSeconds = (value) => Number.isInteger(value) && value > 0;
+
+const settingsFetch = () => {
+  if (typeof window !== "undefined" && typeof window.fetch === "function") return window.fetch.bind(window);
+  if (typeof fetch === "function") return fetch;
+  return null;
+};
+
+const resolvedIntervals = async () => {
+  if (!resolvedIntervalsPromise) {
+    resolvedIntervalsPromise = (async () => {
+      const fallback = settingsFallback();
+      const request = settingsFetch();
+      if (!request) return fallback;
+      try {
+        const response = await request("/api/settings/widgets/system-intervals");
+        if (!response.ok) return fallback;
+        const value = await response.json();
+        const familyInterval = (family) => (
+          validSeconds(value?.[family]) ? value[family] * 1000 : fallback[family]
+        );
+        return {
+          fast: familyInterval("fast"),
+          standard: familyInterval("standard"),
+          slow: familyInterval("slow"),
+          widgets: Object.fromEntries(
+            Object.entries(value?.widgets ?? {})
+              .filter(([, interval]) => validSeconds(interval))
+              .map(([widgetId, interval]) => [widgetId, interval * 1000]),
+          ),
+        };
+      } catch {
+        return fallback;
+      }
+    })();
+  }
+  return resolvedIntervalsPromise;
+};
 
 export const createPart = (part, text = "n/a", tag = "span") => {
   const element = document.createElement(tag);
@@ -96,6 +144,14 @@ const intervalValue = (interval) => {
   return Number.isFinite(value) && value > 0 ? value : DEFAULT_INTERVAL;
 };
 
+const updateIntervalValue = (updateInterval) => {
+  if (updateInterval === undefined) return undefined;
+  if (!validSeconds(updateInterval)) {
+    throw new RangeError("updateInterval must be a positive integer number of seconds");
+  }
+  return updateInterval * 1000;
+};
+
 const numberValue = (value) => typeof value === "number" && Number.isFinite(value) ? value : null;
 
 const transferSnapshot = (snapshot, previous) => {
@@ -142,23 +198,38 @@ class MetricsPollGroup {
     return [...new Set([...this.subscribers].flatMap((subscriber) => subscriber.fields))].sort();
   }
 
-  subscribe(subscriber) {
+  subscribe(subscriber, start = true) {
     this.subscribers.add(subscriber);
-    if (!this.timer) this.timer = window.setInterval(() => this.refresh(), this.interval);
-    if (!this.pendingStart) {
-      this.pendingStart = true;
-      queueMicrotask(() => {
-        this.pendingStart = false;
-        this.refresh();
-      });
-    }
+    if (start) this.requestRefresh();
     return () => this.unsubscribe(subscriber);
+  }
+
+  requestRefresh() {
+    if (this.inFlight) {
+      this.needsRefresh = true;
+      return;
+    }
+    if (this.pendingStart || !this.subscribers.size) return;
+    this.pendingStart = true;
+    queueMicrotask(() => {
+      this.pendingStart = false;
+      if (this.subscribers.size) void this.refresh();
+    });
+  }
+
+  scheduleNext() {
+    if (!this.subscribers.size) return;
+    if (this.timer !== null) window.clearTimeout(this.timer);
+    this.timer = window.setTimeout(() => {
+      this.timer = null;
+      void this.refresh();
+    }, this.interval);
   }
 
   unsubscribe(subscriber) {
     this.subscribers.delete(subscriber);
     if (this.subscribers.size) return;
-    if (this.timer !== null) window.clearInterval(this.timer);
+    if (this.timer !== null) window.clearTimeout(this.timer);
     if (this.controller) this.controller.abort();
     this.timer = null;
     this.controller = null;
@@ -193,33 +264,87 @@ class MetricsPollGroup {
     } finally {
       this.controller = null;
       this.inFlight = false;
-      if (this.needsRefresh && this.subscribers.size) this.refresh();
+      if (this.subscribers.size) this.scheduleNext();
     }
   }
 }
 
 export const systemMetricsManager = {
-  subscribe({ endpoint = "/api/system/metrics", interval = DEFAULT_INTERVAL, fields = [], onSnapshot, onError }) {
-    const normalizedInterval = intervalValue(interval);
-    const key = endpoint + "::" + normalizedInterval;
-    let group = POLL_GROUPS.get(key);
-    if (!group) {
-      group = new MetricsPollGroup(endpoint, normalizedInterval, key);
-      POLL_GROUPS.set(key, group);
-    }
-    return group.subscribe({
+  subscribe({ endpoint = "/api/system/metrics", interval, updateInterval, widgetId, family = "fast", fields = [], onSnapshot, onError }) {
+    const explicitInterval = interval !== undefined
+      ? intervalValue(interval)
+      : updateIntervalValue(updateInterval);
+    const fallbackInterval = DEFAULT_INTERVALS[family] ?? DEFAULT_INTERVAL;
+    const state = {
+      active: true,
+      interval: explicitInterval ?? fallbackInterval,
+      group: null,
+      unsubscribe: null,
+    };
+    const subscriber = {
       fields: [...new Set(fields)].sort(),
       onSnapshot,
       onError,
-    });
+    };
+    const join = (normalizedInterval, start = true) => {
+      const key = endpoint + "::" + normalizedInterval;
+      let group = POLL_GROUPS.get(key);
+      if (!group) {
+        group = new MetricsPollGroup(endpoint, normalizedInterval, key);
+        POLL_GROUPS.set(key, group);
+      }
+      state.interval = normalizedInterval;
+      state.group = group;
+      state.unsubscribe = group.subscribe(subscriber, start);
+    };
+    join(state.interval, explicitInterval !== undefined);
+
+    if (explicitInterval === undefined) {
+      void resolvedIntervals().then((intervals) => {
+        if (!state.active) return;
+        const configured = intervals.widgets?.[widgetId] ?? intervals[family] ?? fallbackInterval;
+        if (configured !== state.interval) {
+          state.unsubscribe?.();
+          join(configured);
+        } else {
+          state.group?.requestRefresh();
+        }
+      });
+    }
+
+    return () => {
+      if (!state.active) return;
+      state.active = false;
+      state.unsubscribe?.();
+    };
   },
 };
+
+const SYSTEM_WIDGET_CONFIG = Object.freeze({
+  "battery": { widgetId: "battery-plain", family: "standard" },
+  "cpu-utilization": { widgetId: "cpu-utilization-plain", family: "fast" },
+  "cpu-utilization-list": { widgetId: "cpu-utilization-list-plain", family: "fast" },
+  "cpu-core-counts": { widgetId: "cpu-core-counts-plain", family: "slow" },
+  "cpu-frequency": { widgetId: "cpu-frequency-plain", family: "standard" },
+  "cpu-telemetry": { widgetId: "cpu-telemetry-plain", family: "standard" },
+  "cpu-load-average": { widgetId: "cpu-load-average-plain", family: "standard" },
+  "memory": { widgetId: "memory-plain", family: "standard" },
+  "swap-memory": { widgetId: "swap-memory-plain", family: "standard" },
+  "disk-io": { widgetId: "disk-io-plain", family: "fast" },
+  "network-telemetry": { widgetId: "network-telemetry-plain", family: "fast" },
+  "disk-partitions": { widgetId: "disk-partitions-plain", family: "slow" },
+  "gpu-thermal-fan": { widgetId: "gpu-thermal-fan-plain", family: "fast" },
+  "network-telemetry-transfer": { widgetId: "network-telemetry-transfer-plain", family: "fast" },
+});
 
 export function createSystemWidget({
   type,
   className = "",
   endpoint = "/api/system/metrics",
-  interval = DEFAULT_INTERVAL,
+  interval,
+  updateInterval,
+  widgetId,
+  family,
   fields = [],
   build,
   render,
@@ -229,6 +354,10 @@ export function createSystemWidget({
   }
 
   const element = document.createElement("section");
+  const defaults = SYSTEM_WIDGET_CONFIG[type] ?? {};
+  const resolvedWidgetId = widgetId ?? defaults.widgetId ?? (typeof type === "string" ? type + "-plain" : undefined);
+  const resolvedFamily = family ?? defaults.family ?? "fast";
+  const explicitInterval = interval !== undefined ? interval : updateIntervalValue(updateInterval);
   const widget = new Widget(element, { type: "system" });
   element.className = ["webskin-system-widget", "webskin-system-widget--" + type, className]
     .filter(Boolean)
@@ -242,7 +371,9 @@ export function createSystemWidget({
   let hasSnapshot = false;
   const unsubscribe = systemMetricsManager.subscribe({
     endpoint,
-    interval,
+    interval: explicitInterval,
+    widgetId: resolvedWidgetId,
+    family: resolvedFamily,
     fields,
     onSnapshot: (snapshot) => {
       hasSnapshot = true;

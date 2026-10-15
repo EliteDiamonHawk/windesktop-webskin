@@ -78,6 +78,8 @@ const snapshot = {
 let responseSnapshot = snapshot;
 let requestUrls = [];
 let timers = [];
+let timerDelays = [];
+let settingsRequests = 0;
 let created = [];
 
 const installDom = () => {
@@ -86,13 +88,21 @@ const installDom = () => {
     createTextNode: (text) => ({ textContent: String(text) }),
   };
   globalThis.window = {
-    setInterval: (callback) => {
+    setTimeout: (callback, delay) => {
       timers.push(callback);
+      timerDelays.push(delay);
       return timers.length;
     },
-    clearInterval: () => {},
+    clearTimeout: () => {},
   };
   globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/api/settings/widgets/system-intervals")) {
+      settingsRequests += 1;
+      return {
+        ok: true,
+        json: async () => ({ fast: 5, standard: 30, slow: 60, widgets: { "memory-plain": 15 } }),
+      };
+    }
     requestUrls.push(String(url));
     return { ok: true, json: async () => responseSnapshot };
   };
@@ -115,6 +125,7 @@ test.beforeEach(() => {
   responseSnapshot = snapshot;
   requestUrls = [];
   timers = [];
+  timerDelays = [];
   created = [];
 });
 
@@ -134,16 +145,35 @@ test("formats dynamic values, preserves literals, and requests only referenced f
   );
   const fields = new URL(requestUrls[0], "http://localhost").searchParams.get("fields").split(",").sort();
   assert.deepEqual(fields, ["memory.virtual.percent", "memory.virtual.used_bytes"]);
+  assert.equal(timerDelays.at(-1), 15000);
+  assert.equal(settingsRequests, 1);
 });
 
 test("coalesces widgets with the same endpoint and interval", async () => {
-  const memory = widgets.createMemory({ format: "{used}" });
-  const network = widgets.createNetworkTelemetry({ format: "{sent}" });
+  const memory = widgets.createMemory({ format: "{used}", interval: 30000 });
+  const network = widgets.createNetworkTelemetry({ format: "{sent}", interval: 30000 });
   created.push(memory, network);
   await waitForPoll();
   assert.equal(requestUrls.length, 1);
   const fields = new URL(requestUrls[0], "http://localhost").searchParams.get("fields").split(",").sort();
   assert.deepEqual(fields, ["memory.virtual.used_bytes", "network.bytes_sent"]);
+});
+
+test("uses independent polling families and supports interval overrides", async () => {
+  const memory = widgets.createMemory({ format: "{used}" });
+  const cpu = widgets.createCpuUtilization({ format: "{value}" });
+  const standard = widgets.createCpuTelemetry();
+  const override = widgets.createBattery({ updateInterval: 2 });
+  const legacy = widgets.createSwapMemory({ interval: 1234 });
+  created.push(memory, cpu, standard, override, legacy);
+  await waitForPoll();
+
+  assert.equal(requestUrls.length, 5);
+  assert.ok(timerDelays.includes(15000));
+  assert.ok(timerDelays.includes(5000));
+  assert.ok(timerDelays.includes(30000));
+  assert.ok(timerDelays.includes(2000));
+  assert.ok(timerDelays.includes(1234));
 });
 
 test("renders CPU variants and limits", async () => {

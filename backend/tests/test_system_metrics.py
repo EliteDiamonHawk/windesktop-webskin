@@ -9,7 +9,14 @@ from fastapi import HTTPException
 
 from webskin.hardware_monitor import HardwareMonitorProvider
 from webskin.routes import create_system_router
-from webskin.system_metrics import PsutilCapabilityTracker, _UNAVAILABLE, _sensors, collect_system_metrics
+from webskin.system_metrics import (
+    DiskMetricsCache,
+    PsutilCapabilityTracker,
+    SystemMetricsService,
+    _UNAVAILABLE,
+    _sensors,
+    collect_system_metrics,
+)
 
 
 class SystemMetricsTests(unittest.TestCase):
@@ -222,6 +229,92 @@ class SystemMetricsTests(unittest.TestCase):
         self.assertEqual(temperature_calls, 3)
         self.assertEqual(tracker.call("cpu_utilization", cpu_success), [10])
         self.assertEqual(cpu_calls, 1)
+
+    def test_system_metric_snapshots_are_cached_by_requested_fields(self) -> None:
+        calls = 0
+        now = 0.0
+
+        def virtual_memory():
+            nonlocal calls
+            calls += 1
+            return SimpleNamespace(total=100, available=60, used=40, free=50, percent=40)
+
+        fake_psutil = SimpleNamespace(virtual_memory=virtual_memory)
+        service = SystemMetricsService(
+            hardware_monitor=self._unavailable_hardware_monitor(),
+            cache_ttl=1.0,
+            clock=lambda: now,
+        )
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            first = service.collect({"memory.virtual.used_bytes"})
+            second = service.collect({"memory.virtual.used_bytes"})
+            self.assertIs(first, second)
+            self.assertEqual(calls, 1)
+            service.collect({"memory.virtual.percent"})
+            self.assertEqual(calls, 2)
+            now = 1.1
+            service.collect({"memory.virtual.used_bytes"})
+
+        self.assertEqual(calls, 3)
+
+    def test_disk_inventory_and_usage_have_independent_ttls(self) -> None:
+        now = 0.0
+        partition_calls = 0
+        usage_calls = 0
+
+        def disk_partitions(all=False):
+            nonlocal partition_calls
+            partition_calls += 1
+            return [SimpleNamespace(mountpoint="C:\\", fstype="NTFS", opts="rw")]
+
+        def disk_usage(path):
+            nonlocal usage_calls
+            usage_calls += 1
+            return SimpleNamespace(total=100, used=40, free=60, percent=40)
+
+        fake_psutil = SimpleNamespace(disk_partitions=disk_partitions, disk_usage=disk_usage)
+        cache = DiskMetricsCache(clock=lambda: now)
+        tracker = PsutilCapabilityTracker()
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            cache.get_partitions(tracker)
+            cache.get_partitions(tracker)
+            cache.get_usage("C:\\", tracker)
+            cache.get_usage("C:\\", tracker)
+            self.assertEqual(partition_calls, 1)
+            self.assertEqual(usage_calls, 1)
+
+            now = 30.1
+            cache.get_usage("C:\\", tracker)
+            self.assertEqual(usage_calls, 2)
+            cache.get_partitions(tracker)
+            self.assertEqual(partition_calls, 1)
+
+            now = 60.1
+            cache.get_partitions(tracker)
+
+        self.assertEqual(partition_calls, 2)
+
+    def test_battery_collection_skips_hardware_monitor_when_psutil_succeeds(self) -> None:
+        hardware_calls = 0
+
+        def read_hardware():
+            nonlocal hardware_calls
+            hardware_calls += 1
+            return {"available": True, "readings": []}
+
+        fake_psutil = SimpleNamespace(
+            sensors_battery=lambda: SimpleNamespace(percent=81.5, secsleft=3600, power_plugged=False),
+        )
+        hardware_monitor = SimpleNamespace(read=read_hardware)
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            sensors = _sensors(
+                PsutilCapabilityTracker(),
+                hardware_monitor,
+                {"sensors.battery.percent"},
+            )
+
+        self.assertEqual(sensors["battery"]["percent"], 81.5)
+        self.assertEqual(hardware_calls, 0)
 
     def test_hardware_monitor_normalizes_types_and_caches_updates(self) -> None:
         class FakeSensor:

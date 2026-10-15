@@ -75,6 +75,34 @@ class TimeWidgetSettingsTests(unittest.TestCase):
         self.assertFalse(SettingsService.is_common_widget("main-clock"))
         self.assertEqual(len(COMMON_WIDGET_IDS), 29)
 
+    def test_system_widget_family_and_widget_overrides(self) -> None:
+        service = SettingsService(MemorySettingsStorage({
+            ("app", "system_fast_update_interval_seconds", None): 5,
+            ("app", "system_standard_update_interval_seconds", None): 30,
+            ("app", "system_slow_update_interval_seconds", None): 60,
+            ("widgets", "updateInterval", "memory-plain"): 15,
+            ("widgets", "updateInterval", "disk-partitions-plain"): 0,
+        }))
+
+        resolved = service.resolve_system_widget_intervals()
+        self.assertEqual(resolved["fast"], 5)
+        self.assertEqual(resolved["standard"], 30)
+        self.assertEqual(resolved["slow"], 60)
+        self.assertEqual(resolved["widgets"]["memory-plain"], 15)
+        self.assertEqual(resolved["widgets"]["disk-partitions-plain"], 60)
+
+    def test_invalid_system_app_values_use_family_defaults(self) -> None:
+        service = SettingsService(MemorySettingsStorage({
+            ("app", "system_fast_update_interval_seconds", None): 0,
+            ("app", "system_standard_update_interval_seconds", None): "slow",
+            ("app", "system_slow_update_interval_seconds", None): 120,
+        }))
+
+        resolved = service.resolve_system_widget_intervals()
+        self.assertEqual(resolved["fast"], 5)
+        self.assertEqual(resolved["standard"], 30)
+        self.assertEqual(resolved["slow"], 120)
+
 
 if __name__ == "__main__":
     unittest.main()

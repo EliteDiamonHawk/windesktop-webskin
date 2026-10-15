@@ -10,7 +10,10 @@ The settings file uses version `1` and three namespaces:
   "app": {
     "hardware_monitor_enabled": true,
     "time_clock_update_interval_seconds": 5,
-    "time_calendar_update_interval_seconds": 60
+    "time_calendar_update_interval_seconds": 60,
+    "system_fast_update_interval_seconds": 5,
+    "system_standard_update_interval_seconds": 30,
+    "system_slow_update_interval_seconds": 60
   },
   "themes": {},
   "widgets": {
@@ -80,6 +83,29 @@ GET /api/settings/widgets/time-intervals
 The response preserves the `clock` and `calendar` app-family values and adds
 resolved values under `widgets` for each common time widget.
 
+System widgets use three app-level polling families. The defaults are 5 seconds
+for fast telemetry (CPU utilization, disk I/O, network, and GPU sensors), 30
+seconds for standard metrics (memory, swap, battery, CPU frequency, CPU
+telemetry, and load average), and 60 seconds for slow metrics (CPU counts and
+disk partitions). The app keys are
+`system_fast_update_interval_seconds`,
+`system_standard_update_interval_seconds`, and
+`system_slow_update_interval_seconds`.
+
+System widget values resolve from:
+
+```text
+GET /api/settings/widgets/system-intervals
+```
+
+The response contains `fast`, `standard`, `slow`, and resolved `widgets`
+values. A widget-level `widgets/{widget-id}/updateInterval` value overrides its
+family default. Invalid or missing values use the family default.
+
+System constructors also accept `updateInterval` in seconds, following the
+time-widget API. The existing `interval` option remains supported in
+milliseconds and takes precedence when both options are supplied.
+
 ## Routes
 
 | Method | Path | Result |
@@ -88,6 +114,8 @@ resolved values under `widgets` for each common time widget.
 | `GET` | `/api/settings/app/{key}` | Read one app value |
 | `PUT` | `/api/settings/app/{key}` | Write one app value from a JSON body |
 | `DELETE` | `/api/settings/app/{key}` | Delete one app value |
+| `GET` | `/api/settings/widgets/time-intervals` | Resolve time-widget intervals |
+| `GET` | `/api/settings/widgets/system-intervals` | Resolve system-widget intervals |
 | `GET` | `/api/settings/{namespace}/{id}` | Read one scoped namespace |
 | `GET` | `/api/settings/{namespace}/{id}/{key}` | Read one scoped value |
 | `PUT` | `/api/settings/{namespace}/{id}/{key}` | Write one scoped value |

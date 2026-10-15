@@ -69,6 +69,38 @@ TIME_WIDGET_INTERVALS = {
     },
 }
 
+SYSTEM_WIDGET_INTERVALS = {
+    **{
+        widget_id: ("fast", "system_fast_update_interval_seconds", 5)
+        for widget_id in (
+            "cpu-utilization-plain",
+            "cpu-utilization-list-plain",
+            "disk-io-plain",
+            "network-telemetry-plain",
+            "network-telemetry-transfer-plain",
+            "gpu-thermal-fan-plain",
+        )
+    },
+    **{
+        widget_id: ("standard", "system_standard_update_interval_seconds", 30)
+        for widget_id in (
+            "memory-plain",
+            "swap-memory-plain",
+            "battery-plain",
+            "cpu-frequency-plain",
+            "cpu-telemetry-plain",
+            "cpu-load-average-plain",
+        )
+    },
+    **{
+        widget_id: ("slow", "system_slow_update_interval_seconds", 60)
+        for widget_id in (
+            "cpu-core-counts-plain",
+            "disk-partitions-plain",
+        )
+    },
+}
+
 
 def _valid_interval(value: Any) -> bool:
     return type(value) is int and value > 0
@@ -114,5 +146,25 @@ class SettingsService:
         return {
             "clock": family_defaults["clock"],
             "calendar": family_defaults["calendar"],
+            "widgets": resolved_widgets,
+        }
+
+    def resolve_system_widget_intervals(self) -> dict[str, Any]:
+        family_defaults: dict[str, int] = {}
+        resolved_widgets: dict[str, int] = {}
+        for widget_id, (family, app_key, fallback) in SYSTEM_WIDGET_INTERVALS.items():
+            if family not in family_defaults:
+                app_value = self.storage.get_value("app", app_key)
+                family_defaults[family] = app_value if _valid_interval(app_value) else fallback
+
+            widget_value = self.storage.get_value("widgets", "updateInterval", widget_id)
+            resolved_widgets[widget_id] = (
+                widget_value if _valid_interval(widget_value) else family_defaults[family]
+            )
+
+        return {
+            "fast": family_defaults["fast"],
+            "standard": family_defaults["standard"],
+            "slow": family_defaults["slow"],
             "widgets": resolved_widgets,
         }

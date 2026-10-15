@@ -1,10 +1,11 @@
 ---
 import Layout from './_components/Layout.astro';
-import settingsIcon from '../../../../../common/assets/icons/settings.svg?url';
-import modeIcon from '../../../../../common/assets/icons/dark-light.svg?url';
-import dotsIcon from '../../../../../common/assets/icons/three-dots-svgrepo-com.svg?url';
 import adjectivesText from '../../../data/theme-adjectives.txt?raw';
 import nounsText from '../../../data/theme-nouns.txt?raw';
+
+const settingsIcon = '/common/assets/icons/settings.svg';
+const modeIcon = '/common/assets/icons/dark-light.svg';
+const dotsIcon = '/common/assets/icons/three-dots-svgrepo-com.svg';
 
 const adjectives = adjectivesText.split(/\r?\n/).map((word) => word.trim()).filter(Boolean);
 const nouns = nounsText.split(/\r?\n/).map((word) => word.trim()).filter(Boolean);

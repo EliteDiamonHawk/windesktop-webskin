@@ -8,7 +8,7 @@ The project began with a simple goal: bring the depth of Linux desktop customiza
 
 ## Pre-styled widgets
 
-Many of the pre-styled widgets draw on designs from [end4-pc](https://github.com/pctrade/end4-pC) and its [presets repository](https://github.com/pctrade/end4-pCpresets/tree/main).
+Many of the pre-styled widgets draw on designs from [end4-pC](https://github.com/pctrade/end4-pC) and its [presets repository](https://github.com/pctrade/end4-pCpresets/tree/main).
 
 ### `rainmeter-mond-clock-remake`
 
@@ -16,9 +16,8 @@ This widget is a remake of the clock from the Rainmeter theme [Mond](https://vis
 
 ## Asset sources
 
-Some interface icons and SVG assets are sourced from [SVG Repo](https://www.svgrepo.com/).
-Check the individual asset license and retain any required attribution when using
-an SVG from the repository.
+- Some interface icons and SVG assets are sourced from [SVG Repo](https://www.svgrepo.com/).
+- Some interface icons and SVG assets are recreated from [end4-pC](https://github.com/pctrade/end4-pC)'s [assets/material-shapes.js](https://github.com/pctrade/end4-pC/blob/main/modules/common/widgets/shapes/material-shapes.js)
 
 ## Future direction
 

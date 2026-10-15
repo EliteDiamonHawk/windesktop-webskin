@@ -42,7 +42,7 @@ Use `data-webskin-clock-part` to style `hours`, `minutes`, `seconds`,
 
 The Rainmeter Mond remake loads its fonts from
 `/common/assets/fonts/Anurati.otf` and `/common/assets/fonts/Quicksand.otf`.
-The source files live in `common/src/assets/fonts/`. Its root supports these
+The files are served from `common/public/assets/fonts/`. Its root supports these
 custom properties:
 
 ```text

@@ -1,4 +1,9 @@
 import { Widget } from "../widgets.js";
+import {
+  subscribeAnimation,
+  subscribeClock,
+  validateUpdateInterval,
+} from "./time-scheduler.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const STYLE_ID = "webskin-clock-analog-plain-styles";
@@ -89,8 +94,10 @@ class PlainAnalogClock extends Widget {
     const {
       offsetMinutes = 0,
       smooth = false,
+      updateInterval,
       className = "",
     } = options;
+    validateUpdateInterval(updateInterval);
 
     const element = svgElement("svg", {
       viewBox: "0 0 100 100",
@@ -128,29 +135,20 @@ class PlainAnalogClock extends Widget {
     pin.dataset.webskinClockPart = "pin";
     element.append(pin);
 
-    const render = () => {
-      const angles = clockAngles(new Date(Date.now() + Number(offsetMinutes) * 60_000), smooth);
+    const offsetMilliseconds = Number(offsetMinutes) * 60_000;
+    const render = (snapshot = new Date()) => {
+      const angles = clockAngles(new Date(snapshot.getTime() + offsetMilliseconds), smooth);
       hourHand.setAttribute("transform", `rotate(${angles.hour} 50 50)`);
       minuteHand.setAttribute("transform", `rotate(${angles.minute} 50 50)`);
       secondHand.setAttribute("transform", `rotate(${angles.second} 50 50)`);
     };
 
     render();
-    let animationFrame;
-    let timer;
     if (smooth) {
-      const animate = () => {
-        render();
-        animationFrame = window.requestAnimationFrame(animate);
-      };
-      animationFrame = window.requestAnimationFrame(animate);
+      this.addCleanup(subscribeAnimation(render));
     } else {
-      timer = window.setInterval(render, 1000);
+      this.addCleanup(subscribeClock(render, updateInterval));
     }
-    this.addCleanup(() => {
-      if (animationFrame !== undefined) window.cancelAnimationFrame(animationFrame);
-      if (timer !== undefined) window.clearInterval(timer);
-    });
   }
 }
 

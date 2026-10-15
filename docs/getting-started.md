@@ -7,10 +7,10 @@
 - `pnpm`
 - `uv`
 
-The Windows host uses .NET and WebView2. Read its
-[`README.md`](../wv2wall/README.md) for those requirements.
+The Windows host also needs .NET and WebView2. Read
+[`wv2wall/README.md`](../wv2wall/README.md) for its requirements.
 
-## Install and run
+## Install and start
 
 Run these commands from the repository root:
 
@@ -19,20 +19,24 @@ pnpm install
 pnpm dev
 ```
 
-The root command builds common and built-in theme assets, then starts the
-frontend, backend, and asset watchers.
+`pnpm dev` builds the shared assets and the built-in theme, then starts Astro,
+FastAPI, and the asset watchers.
 
 Open these URLs:
 
-- Dashboard: `http://localhost:4321`
-- API: `http://127.0.0.1:8000`
-- API docs: `http://127.0.0.1:8000/docs`
-- Health check: `http://127.0.0.1:8000/api/health`
+| Service | URL |
+| --- | --- |
+| Dashboard | `http://localhost:4321` |
+| API | `http://127.0.0.1:8000` |
+| API schema | `http://127.0.0.1:8000/docs` |
+| Health check | `http://127.0.0.1:8000/api/health` |
 
 Astro proxies `/api`, `/common`, and `/themes` to FastAPI. Browser code can
-use those paths without a second origin.
+use those paths from the dashboard origin.
 
-## Run one service
+## Start one service
+
+From the repository root:
 
 ```bash
 pnpm dev:frontend
@@ -41,9 +45,10 @@ pnpm dev:common
 pnpm dev:themes
 ```
 
-From `backend/`, use:
+From `backend/`:
 
 ```bash
 pnpm dev
 pnpm start
 ```
+

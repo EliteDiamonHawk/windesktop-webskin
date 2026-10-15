@@ -42,7 +42,4 @@ Use the page that matches your change:
 
 ## Checks
 
-Run the frontend check and build. Start FastAPI and call `/api/health` plus any
-changed endpoint. Test both development paths and explicit
-`WEBSKIN_THEMES_ROOT` and `WEBSKIN_SETTINGS_PATH` values for path or storage
-changes. Review root and submodule status before handoff.
+Do not run developement, frontend or backend, as there will be insufficient permissions

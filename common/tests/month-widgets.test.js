@@ -54,12 +54,14 @@ class FakeElement {
 
 let activeInterval;
 let clearedIntervals = [];
+let nextTimer = 1;
 let baseDocument;
 let baseWindow;
 
 const installDom = () => {
   activeInterval = undefined;
   clearedIntervals = [];
+  nextTimer = 1;
   const head = new FakeElement("head");
   globalThis.document = {
     head,
@@ -67,11 +69,11 @@ const installDom = () => {
     getElementById: (id) => head.children.find((child) => child.id === id) ?? null,
   };
   globalThis.window = {
-    setInterval: (callback) => {
+    setTimeout: (callback) => {
       activeInterval = callback;
-      return 1;
+      return nextTimer++;
     },
-    clearInterval: (id) => clearedIntervals.push(id),
+    clearTimeout: (id) => clearedIntervals.push(id),
   };
 };
 
@@ -179,7 +181,7 @@ test("date rollover updates existing cells and destroy clears the watcher", () =
       assert.equal(dateCells(month)[0], firstCell);
 
       month.destroy();
-      assert.deepEqual(clearedIntervals, [1]);
+      assert.equal(clearedIntervals.length, 1);
     } finally {
       globalThis.Date = RealDate;
     }

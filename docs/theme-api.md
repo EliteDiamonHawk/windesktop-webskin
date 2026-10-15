@@ -1,7 +1,7 @@
 # Theme and asset API
 
-FastAPI serves these routes under `/api`. The Astro development server proxies
-the same paths to port `8000`.
+FastAPI serves these routes under `/api`. Astro proxies the same paths to
+port `8000` during development.
 
 ## Service checks
 
@@ -14,19 +14,24 @@ the same paths to port `8000`.
 
 | Method | Path | Result |
 | --- | --- | --- |
-| `GET` | `/api/system/metrics` | Privacy-filtered local CPU, memory, disk, aggregate network, and sensor snapshot |
+| `GET` | `/api/system/metrics` | Privacy-filtered CPU, memory, disk, aggregate network, and sensor data |
 
-The metrics route accepts an optional comma-separated `fields` query parameter,
-such as `?fields=memory.virtual.used_bytes,memory.virtual.percent`. When it is
-present, the backend skips unrequested capability calls and returns the same
-response groups with unrequested values as `null`. Without `fields`, the route
-returns the complete snapshot.
+Add a comma-separated `fields` query parameter to request a subset:
 
-The response contains `timestamp`, `cpu`, `memory`, `disks`, `network`, and
-`sensors` objects. Metric groups include an `available` boolean and use
-`null` for values unsupported by the operating system. Disk usage is returned
-only for backend-reported local mount points; remote/UNC mounts are omitted.
-`sensors.temperatures` and `sensors.fans` retain their existing shapes.
+```text
+/api/system/metrics?fields=memory.virtual.used_bytes,memory.virtual.percent
+```
+
+The backend skips unrequested capability calls. It keeps the response groups and
+sets unrequested values to `null`. Without `fields`, it returns the full
+snapshot.
+
+The response contains `timestamp`, `cpu`, `memory`, `disks`, `network`,
+and `sensors`. Each metric group has an `available` boolean. Unsupported
+values use `null`. The backend includes local mount points and omits remote and
+UNC mounts.
+
+`sensors.temperatures` and `sensors.fans` keep their existing shapes.
 `sensors.readings` contains normalized readings from `psutil` or
 LibreHardwareMonitor:
 
@@ -48,34 +53,23 @@ LibreHardwareMonitor:
 }
 ```
 
-The normalized `type` can represent temperatures, fans, voltages, power,
-current, clocks/frequencies, loads, battery levels, storage sensors, and
-other sensor types reported by LibreHardwareMonitor. `sensors.battery` is a
-normalized battery summary when available.
+The normalized `type` supports temperatures, fans, voltages, power, current,
+clocks and frequencies, loads, battery levels, storage sensors, and other
+LibreHardwareMonitor readings. `sensors.battery` contains a normalized battery
+summary when the system provides one.
 
-The browser system-metrics manager requests only fields referenced by widget
-formats. Network transfer speeds are derived in the browser from successive
-successful aggregate byte-counter samples; they are not backend response
-fields. Network utilization remains unavailable because no link capacity is
-known.
+The browser metrics manager requests fields referenced by widget formats. It
+derives network transfer speeds from successive byte-counter samples. The
+backend does not return transfer speeds or network utilization because it has no
+link-capacity value.
 
-HardwareMonitor is optional at runtime. Some Windows motherboard and system
-sensors require the PawnIO driver and appropriate privileges; missing drivers,
-permissions, unsupported sensors, and initialization failures produce an
-unavailable sensor group without preventing the backend from starting.
+HardwareMonitor is optional. Some Windows motherboard and system sensors need
+the PawnIO driver and suitable privileges. Missing drivers, denied access,
+unsupported sensors, and initialization errors mark the sensor group
+unavailable while FastAPI keeps running.
 
-Network data contains aggregate byte,
-drop, and error counters only; it does not contain addresses, interface
-identifiers, hostnames, or other network identity data.
-
-System widget formats use brace tokens and are polled by one shared browser
-metrics manager. The canonical exports are createBattery,
-createCpuUtilization, createCpuUtilizationList, createCpuCoreCounts,
-createCpuFrequency, createCpuTelemetry, createCpuLoadAverage, createMemory,
-createSwapMemory, createDiskIo, createNetworkTelemetry,
-createDiskPartitions, createGpuThermalFan, and
-createNetworkTelemetryTransfer. Transfer speeds are derived client-side and
-GPU warning thresholds remain unavailable unless the provider exposes them.
+Network data contains aggregate byte, drop, and error counters. It does not
+contain addresses, interface IDs, hostnames, or other network identity data.
 
 ## Theme routes
 
@@ -100,9 +94,9 @@ Theme responses use these fields:
 }
 ```
 
-The `preview` value can be `null` when the package has no preview. A generated
+The `preview` field is `null` when the package has no preview. A generated
 PNG uses `/api/themes/{id}/preview`. Encode theme IDs with
-`encodeURIComponent()` before inserting them into browser URLs.
+`encodeURIComponent(themeId)` before putting them in browser URLs.
 
 ## Asset routes
 
@@ -117,10 +111,11 @@ and invalid packages return `404`.
 
 ## Status codes
 
-- `422`: invalid request body or preview data
+- `422`: invalid request body, field list, or preview data
 - `404`: missing theme, preview, or asset
 - `409`: rename conflict
 - `503`: storage unavailable
 
-Route handlers validate HTTP input and map service errors to status codes.
-Service modules handle filesystem and theme logic.
+Route handlers validate HTTP input and translate service errors. Service modules
+handle filesystem and theme logic.
+

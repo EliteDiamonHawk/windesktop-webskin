@@ -1,4 +1,5 @@
 import { Widget } from "../widgets.js";
+import { subscribeClock, validateUpdateInterval } from "./time-scheduler.js";
 
 const STYLE_ID = "webskin-clock-digital-plain-styles";
 
@@ -73,8 +74,10 @@ class PlainDigitalClock extends Widget {
       showPeriod = true,
       syntax,
       offsetMinutes = 0,
+      updateInterval,
       className = "",
     } = options;
+    validateUpdateInterval(updateInterval);
 
     const element = document.createElement("time");
     super(element, { type: "clock" });
@@ -96,15 +99,15 @@ class PlainDigitalClock extends Widget {
     }
     element.append(...parts.map(({ element: part }) => part));
 
-    const render = () => {
-      const now = new Date(Date.now() + Number(offsetMinutes) * 60_000);
+    const offsetMilliseconds = Number(offsetMinutes) * 60_000;
+    const render = (snapshot = new Date()) => {
+      const now = new Date(snapshot.getTime() + offsetMilliseconds);
       for (const part of parts) part.element.textContent = tokenValue(part.token, now);
       element.dateTime = now.toISOString();
     };
 
     render();
-    const timer = window.setInterval(render, 1000);
-    this.addCleanup(() => window.clearInterval(timer));
+    this.addCleanup(subscribeClock(render, updateInterval));
   }
 }
 

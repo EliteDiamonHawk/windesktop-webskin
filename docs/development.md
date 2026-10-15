@@ -1,17 +1,17 @@
 # Development
 
+Run workspace commands from the repository root.
+
 ## Workspace commands
 
-Run these commands from the repository root:
-
-| Command | Use |
+| Command | Result |
 | --- | --- |
-| `pnpm dev` | Build assets and start all webskin services |
+| `pnpm dev` | Build assets, start Astro and FastAPI, and watch assets |
 | `pnpm dev:frontend` | Start Astro |
 | `pnpm dev:backend` | Start FastAPI with reload |
-| `pnpm dev:common` | Watch the common asset build |
+| `pnpm dev:common` | Watch the shared asset build |
 | `pnpm dev:themes` | Watch the built-in theme build |
-| `pnpm build:assets` | Build common and theme files |
+| `pnpm build:assets` | Build shared and theme files |
 | `pnpm build` | Build assets and the frontend site |
 
 Run the frontend checks with:
@@ -23,32 +23,34 @@ pnpm --filter @project/frontend build
 
 ## Asset builds
 
-The `common` Vite config preserves module paths and copies source files to
-`localdata/common/`. The `themes` config copies the `dev` package to
-`localdata/themes/dev/` and leaves `/common/` imports external.
+The `common` Vite config copies source files to `localdata/common/` and keeps
+their module paths. The `themes` config copies the `dev` package to
+`localdata/themes/dev/`. Vite leaves `/common/` imports unresolved.
 
-FastAPI serves those files. The backend does not run Vite or a package manager
+FastAPI serves the generated files. It does not run Vite or a package manager
 when it loads a theme.
 
 ## Backend commands
 
-Run from `backend/`:
+Run these commands from `backend/`:
 
 ```bash
 pnpm dev
 pnpm start
 ```
 
-The reload command runs `uv run uvicorn webskin.main:app --reload --port 8000
---app-dir src`. Open `/docs` for the FastAPI schema.
+The development command runs:
+
+```text
+uv run uvicorn webskin.main:app --reload --port 8000 --app-dir src
+```
+
+FastAPI publishes its schema at `/docs`.
 
 ## Troubleshooting
 
-- A 404 under `/common/` or `/themes/` usually means the asset build has not
-  run. Run `pnpm build:assets`.
-- A dashboard connection error means FastAPI is down or listens on another
-  port. Check `/api/health`.
-- A wrong runtime root points to `WEBSKIN_THEMES_ROOT`, `WEBSKIN_ENV`, or
-  `WEBSKIN_PRODUCTION`.
-- A wrong settings file points to `WEBSKIN_SETTINGS_PATH` or the active
-  environment mode.
+- A 404 under `/common/` or `/themes/` means the asset build has not run. Run `pnpm build:assets`.
+- A dashboard connection error means FastAPI is down or uses another port. Check `/api/health`.
+- An unexpected theme root can come from `WEBSKIN_THEMES_ROOT`, `WEBSKIN_ENV`, or `WEBSKIN_PRODUCTION`.
+- An unexpected settings file can come from `WEBSKIN_SETTINGS_PATH` or the active environment mode.
+

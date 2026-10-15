@@ -1,13 +1,15 @@
 # Backend
 
-The backend runs the FastAPI service. Read the canonical references for
-commands, routes, runtime paths, and storage:
+The backend runs the FastAPI service. The [documentation index](../docs/README.md)
+links to setup, development, architecture, routes, storage, and theme runtime
+details.
 
-- [Getting started](../docs/getting-started.md)
-- [Development](../docs/development.md)
-- [Architecture](../docs/architecture.md)
-- [Theme API](../docs/theme-api.md)
-- [Settings and storage](../docs/settings-and-storage.md)
+Run these commands from `backend/`:
 
-Run `pnpm dev` in this directory. The API listens at
-`http://127.0.0.1:8000`.
+```bash
+pnpm dev
+pnpm start
+```
+
+The API listens at `http://127.0.0.1:8000`.
+

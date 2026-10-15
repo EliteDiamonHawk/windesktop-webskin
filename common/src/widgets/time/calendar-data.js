@@ -1,4 +1,6 @@
 // Shared local calendar data for the time widget category.
+import { subscribeCalendar } from "./time-scheduler.js";
+
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const DATE_TOKEN_PATTERN = /YYYY|MMMM|dddd|MMM|ddd|YY|MM|DD|M|D/g;
 
@@ -276,14 +278,13 @@ export const mediumDateSegments = (date, formatters) => formatters.medium.format
 }));
 
 /** Notify a current-following widget when the local calendar date changes. */
-export const watchCurrentDate = (callback) => {
+export const watchCurrentDate = (callback, updateInterval) => {
   let currentKey = dateKey(today());
-  const timer = window.setInterval(() => {
+  return subscribeCalendar(() => {
     const current = today();
     const nextKey = dateKey(current);
     if (nextKey === currentKey) return;
     currentKey = nextKey;
     callback(current);
-  }, 60_000);
-  return () => window.clearInterval(timer);
+  }, updateInterval);
 };

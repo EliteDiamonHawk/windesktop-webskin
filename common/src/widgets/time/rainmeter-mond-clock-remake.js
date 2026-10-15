@@ -121,6 +121,7 @@ class RainmeterMondClockRemake extends Widget {
       date,
       locale,
       offsetMinutes = 0,
+      updateInterval,
       className = "",
       color,
       width,
@@ -170,6 +171,7 @@ class RainmeterMondClockRemake extends Widget {
       showPeriod: true,
       syntax: "-h:mm A-     ",  //whitespace for centering
       offsetMinutes,
+      updateInterval,
       className: "webskin-mond-clock__time",
     });
     time.append(clockWidget);

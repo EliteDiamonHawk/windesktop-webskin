@@ -2,20 +2,25 @@
 
 ## Project boundaries
 
-Keep frontend, backend, runtime asset, and host changes in their owning
-projects. `wv2wall/` has its own Git history and build process. Do not update
-the root submodule pointer unless the root project should consume a new host
-commit.
+Keep changes in the project that owns them:
 
-Use `apply_patch` for repository edits. Preserve unrelated working-tree
-changes. Keep credentials, local settings, package stores, Python caches, and
-.NET output out of commits.
+- `frontend/` contains the Astro dashboard.
+- `backend/` contains FastAPI, settings, filesystem, and API code.
+- `common/` contains shared browser modules.
+- `themes/` contains built-in theme source.
+- `wv2wall/` contains the Windows host.
+
+`wv2wall/` has its own Git history and build process. Update the root
+submodule pointer only when the root project should consume a new host commit.
+
+Use `apply_patch` for repository edits. Preserve unrelated working-tree changes.
+Keep credentials, local settings, package stores, Python caches, and .NET output
+out of commits.
 
 ## Filesystem rules
 
-- Validate request strings before you build filesystem paths.
-- Use `safe_asset_path()` and `UserThemeStorage.content_path()` for runtime
-  asset resolution.
+- Validate request strings before building filesystem paths.
+- Use `safe_asset_path()` and `UserThemeStorage.content_path()` for runtime asset resolution.
 - Keep assets inside the theme package.
 - Treat `metadata.json` and `index.html` as the package boundary.
 - Preserve atomic replacement for settings, metadata, and previews.
@@ -37,7 +42,7 @@ route. For theme changes, open `/themes/{id}/`, check relative assets and
 For path or storage changes, test the development defaults and temporary
 `WEBSKIN_THEMES_ROOT` and `WEBSKIN_SETTINGS_PATH` values.
 
-For host changes, run from `wv2wall/wv2wall/`:
+For host changes, run these commands from `wv2wall/wv2wall/`:
 
 ```powershell
 dotnet restore
@@ -49,3 +54,4 @@ the desktop context menu.
 
 Review root and submodule status before handoff. Keep generated files and
 unrelated submodule changes out of the final change.
+

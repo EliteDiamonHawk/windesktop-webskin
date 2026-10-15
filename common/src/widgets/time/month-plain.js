@@ -1,5 +1,6 @@
 // Plain calendar view in the shared time widget category.
 import { Widget } from "../widgets.js?v=month-widget-1";
+import { validateUpdateInterval } from "./time-scheduler.js";
 import {
   calendarDateState,
   createCalendarFormatters,
@@ -110,8 +111,10 @@ class PlainMonth extends Widget {
       lockDay,
       maxWeeks: suppliedMaxWeeks,
       highlightDate: suppliedHighlightDate,
+      updateInterval,
       className = "",
     } = options;
+    validateUpdateInterval(updateInterval);
 
     const locale = resolveLocale(suppliedLocale);
     const formatters = createCalendarFormatters(locale);
@@ -178,7 +181,7 @@ class PlainMonth extends Widget {
     };
 
     render(suppliedDate);
-    if (suppliedDate === undefined) this.addCleanup(watchCurrentDate(render));
+    if (suppliedDate === undefined) this.addCleanup(watchCurrentDate(render, updateInterval));
   }
 }
 

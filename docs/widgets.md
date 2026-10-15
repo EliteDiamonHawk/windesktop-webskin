@@ -1,12 +1,12 @@
 # Shared widgets
 
 Shared widgets live under `/common/widgets/`. Each module returns a DOM or SVG
-root element. Your theme chooses the parent element and the CSS.
+root element. A theme chooses the parent element and provides CSS.
 
 ## Lifecycle
 
-The shared `Widget` class owns timers and listeners. A returned element can
-expose `destroy()`. Call it before you remove the element:
+The shared `Widget` class owns timers and listeners. Returned elements can
+expose `destroy()`. Call it before removing an element:
 
 ```js
 const clock = createClock();
@@ -24,22 +24,33 @@ clock.destroy?.();
 | Analog pre-styled | `/common/widgets/time/clock-analog-prestyled.js` | `createClock(options)` |
 | Analog pre-styled 2 | `/common/widgets/time/clock-analog-prestyled2.js` | `createClock(options)` |
 | Digital and analog | `/common/widgets/time/clock-digital-analog-prestyled.js` | `createClock(options)` |
-| Rainmeter Mond clock remake | `/common/widgets/time/rainmeter-mond-clock-remake.js` | `createClock(options)` |
+| Rainmeter Mond remake | `/common/widgets/time/rainmeter-mond-clock-remake.js` | `createClock(options)` |
 
-Digital clocks accept `format` (`12h` or `24h`), `seconds`, `showPeriod`,
-`syntax`, `offsetMinutes`, and `className`. Analog clocks accept
-`offsetMinutes`, `smooth`, and `className`. Pre-styled clocks accept `color`
-and `backgroundColor` where the module defines them.
+Digital clocks accept `format` (`12h` or `24h`), `seconds`,
+`showPeriod`, `syntax`, `offsetMinutes`, `updateInterval`, and `className`.
+Analog clocks accept `offsetMinutes`, `smooth`, `updateInterval`, and
+`className`. Pre-styled clocks accept `color` and `backgroundColor` where
+their module defines them. `updateInterval` is a positive integer number of
+seconds. The clock default is 5 seconds; set it to 1 for per-second updates.
+When omitted, the persisted app setting
+`time_clock_update_interval_seconds` is used when available.
 
-Use `data-webskin-clock-part` to style `hours`, `minutes`, `seconds`, `period`,
-`face`, `tick`, `hour-hand`, `minute-hand`, `second-hand`, and `pin` parts.
+Use `data-webskin-clock-part` to style `hours`, `minutes`, `seconds`,
+`period`, `face`, `tick`, `hour-hand`, `minute-hand`,
+`second-hand`, and `pin`.
 
-The Rainmeter Mond clock remake is self-styled and loads its required fonts from
+The Rainmeter Mond remake loads its fonts from
 `/common/assets/fonts/Anurati.otf` and `/common/assets/fonts/Quicksand.otf`.
-Place the source font files in `common/src/assets/fonts/` before building. Its root supports the
-`--webskin-mond-color`, `--webskin-mond-width`,
-`--webskin-mond-weekday-size`, `--webskin-mond-detail-size`, and
-`--webskin-mond-gap` custom properties.
+The source files live in `common/src/assets/fonts/`. Its root supports these
+custom properties:
+
+```text
+--webskin-mond-color
+--webskin-mond-width
+--webskin-mond-weekday-size
+--webskin-mond-detail-size
+--webskin-mond-gap
+```
 
 ## Calendars
 
@@ -56,22 +67,21 @@ Place the source font files in `common/src/assets/fonts/` before building. Its r
 
 Calendar options:
 
-- `date`: a local `Date` or local `YYYY-MM-DD` string. Omit it to follow the
-  browser's local date.
+- `date`: a local `Date` or local `YYYY-MM-DD` string. Omit it to use the browser's local date.
 - `highlightDate`: the date that receives the today state.
+- `updateInterval`: a positive integer number of seconds between current-date checks. The calendar default is 60 seconds; when omitted, the persisted app setting `time_calendar_update_interval_seconds` is used when available.
 - `locale`: an `Intl` locale. The browser locale supplies the default.
-- `className`: extra classes for your theme.
+- `className`: extra classes for the theme.
 - `weekStartsOn`: an explicit week-start index.
 - `daysBefore` and `daysAfter`: a seven-day window. Their sum must equal six.
 - `lockDay`: a month anchor `{ y, x? }`. `y` is required; `x` is optional.
-- `maxWeeks`: the exact month-grid height in rows, from 1 through 6. The
-  default is 6; a five-row month still renders six rows when `maxWeeks: 6`.
+- `maxWeeks`: the month-grid height in rows, from 1 through 6. The default is 6.
 - `format`: date tokens such as `YYYY`, `MMMM`, `ddd`, `MM`, and `DD`.
 
 Calendar elements expose `data-webskin-calendar-part`,
 `data-webskin-calendar-date`, `data-webskin-calendar-in-month`, and
 `data-webskin-calendar-today` where the module supports each field. The
-widgets use local dates, not UTC conversion.
+widgets use local dates and do not convert them to UTC.
 
 ## CSS hooks
 
@@ -107,7 +117,7 @@ Set width or height to `auto` for content-driven sizing. Pre-styled digital
 clocks use `--webskin-clock-font-size`. Pre-styled formatted days use
 `--webskin-calendar-font-size`.
 
-Calendar pre-styled widgets use these variables:
+Calendar pre-styled widgets use:
 
 ```text
 --webskin-calendar-color
@@ -120,25 +130,25 @@ Calendar pre-styled widgets use these variables:
 
 ## System telemetry
 
-Plain system widgets live under /common/widgets/system/ and read the
-privacy-filtered snapshot at /api/system/metrics. All constructors accept
-className, endpoint, and interval; format-capable widgets also accept format.
-The default interval is five seconds.
+System widgets live under `/common/widgets/system/` and read the
+privacy-filtered snapshot from `/api/system/metrics`. Each constructor accepts
+`className`, `endpoint`, and `interval`. Format-capable widgets also accept
+`format`. The default interval is five seconds.
 
-Polling is managed centrally. Widgets sharing an endpoint and interval share a
-request, and the request asks for the union of their required fields. Destroy a
-widget with element.destroy?.() to unsubscribe it and stop its polling.
+The metrics manager owns polling. Widgets with the same endpoint and interval
+share one request, and the request asks for the union of their fields. Destroy a
+widget with `element.destroy?.()` to unsubscribe it and stop its polling.
 
 Formats use named brace tokens. Literal labels, punctuation, whitespace, units,
-and percent signs remain literal. The escapes \n, \r, \t, and \\ are supported.
-Dynamic tokens become elements with data-webskin-system-format-part; literals
-remain ordinary text nodes.
+and percent signs remain literal. The escapes `\\n`, `\\r`, `\\t`, and
+`\\\\` work in format strings. Dynamic tokens become elements with
+`data-webskin-system-format-part`; literals remain text nodes.
 
-Before the first successful poll, tokens render as -. Missing, unsupported, or
-unavailable values render as n/a. Boolean values render as true or false,
-including false.
+Before the first successful poll, tokens render as `-`. Missing, unsupported,
+or unavailable values render as `n/a`. Boolean values render as `true` or
+`false`.
 
-~~~js
+```js
 import {
   createBattery,
   createMemory,
@@ -150,33 +160,45 @@ document.querySelector("#memory").append(
   createMemory({ format: "Used: {used} {used-unit}\\nUsage: {usage} %" }),
 );
 document.querySelector("#network").append(createNetworkTelemetryTransfer());
-~~~
+```
 
-The canonical constructors are:
+The system constructors are:
 
-createBattery, createCpuUtilization, createCpuUtilizationList,
-createCpuCoreCounts, createCpuFrequency, createCpuTelemetry,
-createCpuLoadAverage, createMemory, createSwapMemory, createDiskIo,
-createNetworkTelemetry, createDiskPartitions, createGpuThermalFan, and
-createNetworkTelemetryTransfer.
+```text
+createBattery
+createCpuUtilization
+createCpuUtilizationList
+createCpuCoreCounts
+createCpuFrequency
+createCpuTelemetry
+createCpuLoadAverage
+createMemory
+createSwapMemory
+createDiskIo
+createNetworkTelemetry
+createDiskPartitions
+createGpuThermalFan
+createNetworkTelemetryTransfer
+```
 
-The CPU utilization list repeats one format line for the overall value and
-each core. Its limit ignores non-positive values, and zeroIndex: true labels
-cores from Core 0; otherwise labels start at Core 1.
+The CPU utilization list repeats one format line for the overall value and each
+core. Its limit ignores non-positive values. Set `zeroIndex: true` to label
+cores from Core 0; labels start at Core 1 by default.
 
-Byte values have separate value and unit tokens, such as {used} and
-{used-unit}. The unit is scaled automatically with binary units. Fixed units
-such as MHz, ms, %, °C, and RPM should be written directly in the format.
+Byte values use separate value and unit tokens such as `{used}` and
+`{used-unit}`. The formatter scales them with binary units. Write fixed units
+such as MHz, ms, %, °C, and RPM in the format.
 
-createSwapMemory({ metric: "total" | "used" | "free" | "usage" }) selects a
-scalar value; without metric, it renders the complete swap summary.
-createDiskPartitions accepts an optional mountPoint and chooses the first local
-partition when omitted. createGpuThermalFan accepts sensorId and gpuId;
-sensorId takes precedence.
+`createSwapMemory({ metric: "total" | "used" | "free" | "usage" })` selects
+one scalar value. Without `metric`, it renders the full swap summary.
+`createDiskPartitions` accepts an optional `mountPoint` and uses the first
+local partition when omitted. `createGpuThermalFan` accepts `sensorId` and
+`gpuId`; `sensorId` wins when both exist.
 
-GPU-specific readings depend on HardwareMonitor and available drivers.
-Warning-temperature is n/a unless the provider exposes a distinct warning
-threshold. Network widgets expose aggregate counters only; they do not expose
-addresses, interface identifiers, hostnames, usernames, process data, or other
-identifying metadata. Transfer speeds are calculated from successful aggregate
-counter samples, while utilization is n/a because link capacity is unknown.
+GPU readings depend on HardwareMonitor and available drivers. The provider must
+expose a distinct warning threshold before a widget can show one. Network
+widgets expose aggregate counters only. They do not expose addresses, interface
+IDs, hostnames, usernames, process data, or other identifying metadata.
+Transfer speeds use successful aggregate counter samples. Utilization uses
+`n/a` because the backend does not know link capacity.
+

@@ -82,6 +82,7 @@ class DigitalAnalogClock extends Widget {
       showPeriod = true,
       syntax,
       offsetMinutes = 0,
+      updateInterval,
       smooth,
       color,
       backgroundColor,
@@ -94,7 +95,7 @@ class DigitalAnalogClock extends Widget {
       .filter(Boolean)
       .join(" ");
 
-    const sharedOptions = { offsetMinutes };
+    const sharedOptions = { offsetMinutes, updateInterval };
     const analog = createAnalogPlain({ ...sharedOptions, smooth: smooth ?? true });
     const digital = createDigitalPlain({
       ...sharedOptions,

@@ -159,6 +159,8 @@ logs/
 /localdata/themes/dev/
 /.uv-cache/
 /.uv-cache-local/
+/.uv-cache-task/
 /stop-slop/
 /themes/dev/
 /temp/
+/reslink.toml

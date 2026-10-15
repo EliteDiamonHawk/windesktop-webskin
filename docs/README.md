@@ -1,26 +1,21 @@
 # WebSkin documentation
 
-Use these pages when you build, run, or change the webskin application.
+Use these pages to run, extend, and debug WinDesktop WebSkin.
 
-The root [README](../README.md) covers the first run. [AGENTS.md](../AGENTS.md)
-lists the rules for code changes.
+## Start
 
-## Start here
-
-- [Getting started](getting-started.md): install dependencies and run the
-  services.
-- [Development](development.md): use workspace scripts, builds, and checks.
-- [Architecture](architecture.md): trace requests from the browser to FastAPI.
+- [Getting started](getting-started.md) installs dependencies and starts the application.
+- [Development](development.md) lists workspace commands and common failures.
+- [Architecture](architecture.md) maps browser requests to FastAPI and the runtime files.
 
 ## Runtime
 
-- [Theme runtime](theme-runtime.md): package files, URLs, paths, and names.
-- [Theme API](theme-api.md): HTTP routes and response fields.
-- [Widgets](widgets.md): clocks, calendars, options, and CSS hooks.
-- [Previews](previews.md): preview discovery and PNG storage.
-- [Settings and storage](settings-and-storage.md): settings routes and files.
+- [Theme runtime](theme-runtime.md) defines package files, URLs, IDs, and runtime roots.
+- [Theme API](theme-api.md) documents HTTP routes and response fields.
+- [Widgets](widgets.md) lists shared clocks, calendars, and system widgets.
+- [Previews](previews.md) explains preview discovery and generated PNGs.
+- [Settings and storage](settings-and-storage.md) defines settings files and routes.
 
-## Contribution
+## Changes
 
-- [Contributing](contributing.md): checks, generated files, and filesystem
-  rules.
+- [Contributing](contributing.md) covers code boundaries, filesystem rules, and checks.

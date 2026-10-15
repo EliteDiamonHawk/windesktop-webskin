@@ -32,8 +32,9 @@ Analog clocks accept `offsetMinutes`, `smooth`, `updateInterval`, and
 `className`. Pre-styled clocks accept `color` and `backgroundColor` where
 their module defines them. `updateInterval` is a positive integer number of
 seconds. The clock default is 5 seconds; set it to 1 for per-second updates.
-When omitted, the persisted app setting
-`time_clock_update_interval_seconds` is used when available.
+When omitted, the backend resolves the common widget setting, then the app
+clock setting, once per page load.
+Themes can override the resolved value by passing `updateInterval` directly.
 
 Use `data-webskin-clock-part` to style `hours`, `minutes`, `seconds`,
 `period`, `face`, `tick`, `hour-hand`, `minute-hand`,
@@ -69,7 +70,7 @@ Calendar options:
 
 - `date`: a local `Date` or local `YYYY-MM-DD` string. Omit it to use the browser's local date.
 - `highlightDate`: the date that receives the today state.
-- `updateInterval`: a positive integer number of seconds between current-date checks. The calendar default is 60 seconds; when omitted, the persisted app setting `time_calendar_update_interval_seconds` is used when available.
+- `updateInterval`: a positive integer number of seconds between current-date checks. The calendar default is 60 seconds; when omitted, the backend resolves the common widget setting, then the app calendar setting, once per page load.
 - `locale`: an `Intl` locale. The browser locale supplies the default.
 - `className`: extra classes for the theme.
 - `weekStartsOn`: an explicit week-start index.

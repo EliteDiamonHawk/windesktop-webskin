@@ -17,6 +17,7 @@ import {
 } from "./calendar-data.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-day-plain-styles";
+const WIDGET_SETTINGS_ID = "day-plain";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -77,6 +78,7 @@ class PlainDay extends Widget {
       format,
       variant: suppliedVariant = "formatted",
       updateInterval,
+      widgetId = WIDGET_SETTINGS_ID,
       className = "",
     } = options;
     validateUpdateInterval(updateInterval);
@@ -137,7 +139,9 @@ class PlainDay extends Widget {
     }
 
     render(suppliedDate);
-    if (suppliedDate === undefined) this.addCleanup(watchCurrentDate(render, updateInterval));
+    if (suppliedDate === undefined) {
+      this.addCleanup(watchCurrentDate(render, { updateInterval, widgetId }));
+    }
   }
 }
 

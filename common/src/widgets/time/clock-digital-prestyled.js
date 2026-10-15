@@ -1,6 +1,7 @@
 import { createClock as createPlainClock } from "./clock-digital-plain.js";
 
 const STYLE_ID = "webskin-clock-digital-prestyled-styles";
+const WIDGET_SETTINGS_ID = "clock-digital-prestyled";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -40,7 +41,7 @@ const ensureStyles = () => {
 /** Create the WebSkin-provided pre-styled digital clock. */
 export function createClock(options = {}) {
   ensureStyles();
-  const element = createPlainClock(options);
+  const element = createPlainClock({ ...options, widgetId: WIDGET_SETTINGS_ID });
   element.classList.remove("webskin-clock--digital-plain");
   element.classList.add("webskin-clock--digital-prestyled");
   if (options.className) element.classList.add(...String(options.className).split(/\s+/).filter(Boolean));

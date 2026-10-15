@@ -1,20 +1,9 @@
 const DEFAULT_CLOCK_UPDATE_INTERVAL = 5;
 const DEFAULT_CALENDAR_UPDATE_INTERVAL = 60;
 
-const APP_SETTINGS = {
-  clock: {
-    key: "time_clock_update_interval_seconds",
-    fallback: DEFAULT_CLOCK_UPDATE_INTERVAL,
-  },
-  calendar: {
-    key: "time_calendar_update_interval_seconds",
-    fallback: DEFAULT_CALENDAR_UPDATE_INTERVAL,
-  },
-};
-
 const clockSubscribers = new Set();
 const calendarSubscribers = new Set();
-const appIntervalPromises = new Map();
+let resolvedIntervalsPromise;
 let clockTimer;
 let calendarTimer;
 let animationFrame;
@@ -28,24 +17,33 @@ export const validateUpdateInterval = (value) => {
   return value;
 };
 
-const getAppInterval = (family) => {
-  const setting = APP_SETTINGS[family];
-  if (!setting) throw new TypeError("Unknown time scheduler family: " + family);
-  if (appIntervalPromises.has(family)) return appIntervalPromises.get(family);
-
-  const promise = (async () => {
-    if (typeof window === "undefined" || typeof window.fetch !== "function") return setting.fallback;
-    try {
-      const response = await window.fetch(`/api/settings/app/${setting.key}`);
-      if (!response.ok) return setting.fallback;
-      const value = await response.json();
-      return isValidInterval(value) ? value : setting.fallback;
-    } catch {
-      return setting.fallback;
-    }
-  })();
-  appIntervalPromises.set(family, promise);
-  return promise;
+const resolvedIntervals = async () => {
+  if (!resolvedIntervalsPromise) {
+    resolvedIntervalsPromise = (async () => {
+      const fallback = {
+        clock: DEFAULT_CLOCK_UPDATE_INTERVAL,
+        calendar: DEFAULT_CALENDAR_UPDATE_INTERVAL,
+        widgets: {},
+      };
+      if (typeof window === "undefined" || typeof window.fetch !== "function") return fallback;
+      try {
+        const response = await window.fetch("/api/settings/widgets/time-intervals");
+        if (!response.ok) return fallback;
+        const value = await response.json();
+        return {
+          clock: isValidInterval(value?.clock) ? value.clock : fallback.clock,
+          calendar: isValidInterval(value?.calendar) ? value.calendar : fallback.calendar,
+          widgets: Object.fromEntries(
+            Object.entries(value?.widgets ?? {})
+              .filter(([, interval]) => isValidInterval(interval)),
+          ),
+        };
+      } catch {
+        return fallback;
+      }
+    })();
+  }
+  return resolvedIntervalsPromise;
 };
 
 const schedule = (kind) => {
@@ -83,21 +81,32 @@ const schedule = (kind) => {
   else calendarTimer = timer;
 };
 
-const subscribe = (family, callback, requestedInterval) => {
-  const explicitInterval = validateUpdateInterval(requestedInterval);
-  const setting = APP_SETTINGS[family];
+const normalizeOptions = (value) => {
+  if (value === undefined || typeof value === "number") return { updateInterval: value };
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("Time scheduler options must be an object");
+  }
+  return value;
+};
+
+const subscribe = (family, callback, requestedOptions) => {
+  const options = normalizeOptions(requestedOptions);
+  const explicitInterval = validateUpdateInterval(options.updateInterval);
+  const widgetId = options.widgetId;
+  const fallback = family === "clock" ? DEFAULT_CLOCK_UPDATE_INTERVAL : DEFAULT_CALENDAR_UPDATE_INTERVAL;
   const subscribers = family === "clock" ? clockSubscribers : calendarSubscribers;
   const subscriber = {
     callback,
-    interval: explicitInterval ?? setting.fallback,
-    nextDue: Date.now() + (explicitInterval ?? setting.fallback) * 1000,
-    usesAppDefault: explicitInterval === undefined,
+    widgetId,
+    interval: explicitInterval ?? fallback,
+    nextDue: Date.now() + (explicitInterval ?? fallback) * 1000,
   };
   subscribers.add(subscriber);
   schedule(family);
 
-  if (subscriber.usesAppDefault) {
-    void getAppInterval(family).then((interval) => {
+  if (explicitInterval === undefined) {
+    void resolvedIntervals().then((intervals) => {
+      const interval = intervals.widgets?.[widgetId] ?? intervals[family];
       if (!subscribers.has(subscriber) || subscriber.interval === interval) return;
       subscriber.interval = interval;
       subscriber.nextDue = Date.now() + interval * 1000;
@@ -111,9 +120,9 @@ const subscribe = (family, callback, requestedInterval) => {
   };
 };
 
-export const subscribeClock = (callback, updateInterval) => subscribe("clock", callback, updateInterval);
+export const subscribeClock = (callback, options) => subscribe("clock", callback, options);
 
-export const subscribeCalendar = (callback, updateInterval) => subscribe("calendar", callback, updateInterval);
+export const subscribeCalendar = (callback, options) => subscribe("calendar", callback, options);
 
 const animate = () => {
   animationFrame = undefined;

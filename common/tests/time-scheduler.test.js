@@ -40,7 +40,21 @@ const installWindow = () => {
     },
     fetch: async (url) => {
       fetchCalls.push(String(url));
-      return { ok: true, json: async () => (url.includes("clock") ? 7 : 11) };
+      if (url.endsWith("/api/settings/widgets/time-intervals")) {
+        return {
+          ok: true,
+          json: async () => ({
+            clock: 7,
+            calendar: 11,
+            widgets: {
+              "clock-digital-plain": 2,
+              "clock-analog-plain": 9,
+              "day-plain": 13,
+            },
+          }),
+        };
+      }
+      return { ok: false, json: async () => ({}) };
     },
   };
   Date.now = () => now;
@@ -95,9 +109,47 @@ test("app defaults are fetched once and widget intervals do not fetch settings",
   const second = scheduler.subscribeClock(() => {});
   await Promise.resolve();
 
-  assert.equal(fetchCalls.filter((url) => url.includes("time_clock_update_interval_seconds")).length, 1);
+  assert.equal(fetchCalls.filter((url) => url.endsWith("/api/settings/widgets/time-intervals")).length, 1);
   first();
   second();
+});
+
+test("backend-resolved defaults apply once and explicit widget options skip the request", async () => {
+  const updates = [];
+  const cleanup = scheduler.subscribeClock(() => updates.push("resolved"));
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  advance(7000);
+  assert.deepEqual(updates, ["resolved"]);
+  assert.equal(fetchCalls.filter((url) => url.endsWith("/api/settings/widgets/time-intervals")).length, 1);
+  cleanup();
+
+  const explicit = scheduler.subscribeClock(() => {}, { updateInterval: 2 });
+  explicit();
+  assert.equal(fetchCalls.filter((url) => url.endsWith("/api/settings/widgets/time-intervals")).length, 1);
+});
+
+test("common widget settings resolve independently within a family", async () => {
+  const updates = [];
+  const digital = scheduler.subscribeClock(() => updates.push("digital"), {
+    widgetId: "clock-digital-plain",
+  });
+  const analog = scheduler.subscribeClock(() => updates.push("analog"), {
+    widgetId: "clock-analog-plain",
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+
+  advance(2000);
+  assert.equal(updates.filter((value) => value === "digital").length, 1);
+  assert.equal(updates.filter((value) => value === "analog").length, 0);
+  advance(7000);
+  assert.equal(updates.filter((value) => value === "digital").length, 2);
+  assert.equal(updates.filter((value) => value === "analog").length, 1);
+
+  digital();
+  analog();
 });
 
 test("calendar subscriptions are independent from clock subscriptions", () => {

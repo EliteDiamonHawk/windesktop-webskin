@@ -1,6 +1,8 @@
 import { Widget } from "../widgets.js";
 import { subscribeClock, validateUpdateInterval } from "./time-scheduler.js";
 
+const WIDGET_SETTINGS_ID = "clock-digital-plain";
+
 const STYLE_ID = "webskin-clock-digital-plain-styles";
 
 const ensureStyles = () => {
@@ -75,6 +77,7 @@ class PlainDigitalClock extends Widget {
       syntax,
       offsetMinutes = 0,
       updateInterval,
+      widgetId = WIDGET_SETTINGS_ID,
       className = "",
     } = options;
     validateUpdateInterval(updateInterval);
@@ -107,7 +110,7 @@ class PlainDigitalClock extends Widget {
     };
 
     render();
-    this.addCleanup(subscribeClock(render, updateInterval));
+    this.addCleanup(subscribeClock(render, { updateInterval, widgetId }));
   }
 }
 

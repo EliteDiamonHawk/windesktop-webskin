@@ -2,6 +2,7 @@
 import { createDay as createPlainDay } from "./day-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-day-prestyled2-styles";
+const WIDGET_SETTINGS_ID = "day-prestyled2";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -55,7 +56,7 @@ const ensureStyles = () => {
 
 /** Create the WebSkin-provided pre-styled single-day calendar. */
 export function createDay(options = {}) {
-  const element = createPlainDay({ ...options, variant: "single-day" });
+  const element = createPlainDay({ ...options, variant: "single-day", widgetId: WIDGET_SETTINGS_ID });
   // Load this override after day-plain so the matching size rule wins without
   // changing the element shape returned by the shared day widget.
   ensureStyles();

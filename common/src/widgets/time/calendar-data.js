@@ -278,7 +278,7 @@ export const mediumDateSegments = (date, formatters) => formatters.medium.format
 }));
 
 /** Notify a current-following widget when the local calendar date changes. */
-export const watchCurrentDate = (callback, updateInterval) => {
+export const watchCurrentDate = (callback, options) => {
   let currentKey = dateKey(today());
   return subscribeCalendar(() => {
     const current = today();
@@ -286,5 +286,5 @@ export const watchCurrentDate = (callback, updateInterval) => {
     if (nextKey === currentKey) return;
     currentKey = nextKey;
     callback(current);
-  }, updateInterval);
+  }, options);
 };

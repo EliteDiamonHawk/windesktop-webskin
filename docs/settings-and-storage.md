@@ -13,12 +13,17 @@ The settings file uses version `1` and three namespaces:
     "time_calendar_update_interval_seconds": 60
   },
   "themes": {},
-  "widgets": {}
+  "widgets": {
+    "clock-digital-plain": {},
+    "month-prestyled": {},
+    "memory-plain": {}
+  }
 }
 ```
 
-`app` stores application keys. `themes` and `widgets` store objects under an
-identifier such as a theme ID or widget ID.
+`app` stores application keys. `themes` stores objects under a theme ID.
+`widgets` stores objects under hardcoded common-widget IDs. Theme-created
+widget IDs are not accepted by the widget settings routes.
 
 Set `app.hardware_monitor_enabled` to `false` to skip LibreHardwareMonitor
 initialization and sensor fallback:
@@ -33,11 +38,47 @@ The backend enables the monitor when the key is absent or invalid. It reads the
 key during startup, so restart FastAPI after editing `settings.json`.
 `psutil` metrics continue to work when the monitor is disabled.
 
-Time widgets use `app.time_clock_update_interval_seconds` and
-`app.time_calendar_update_interval_seconds` as their family defaults. A
-widget-level `updateInterval` option takes precedence. Both values must be
-positive integers in seconds; invalid or missing values fall back to 5 seconds
-for clocks and 60 seconds for calendars.
+Time widgets use one backend-resolved settings request per page load. The
+backend resolves each common time widget using its widget ID before the app
+family default. Invalid or missing values fall back to 5 seconds for clocks
+and 60 seconds for calendars. A theme can override the backend result by
+passing `updateInterval` directly to the widget constructor.
+
+For example, constructor-level time settings use these widget IDs:
+
+```json
+{
+  "themes": {
+    "dev": {}
+  },
+  "widgets": {
+    "clock-digital-plain": {
+      "updateInterval": 2
+    },
+    "month-prestyled": {
+      "updateInterval": 60
+    },
+    "memory-plain": {}
+  }
+}
+```
+
+The existing scoped settings routes can read and change these values, for
+example:
+
+```text
+PUT /api/settings/widgets/clock-digital-plain/updateInterval
+Body: 2
+```
+
+The time widgets query the resolved values from:
+
+```text
+GET /api/settings/widgets/time-intervals
+```
+
+The response preserves the `clock` and `calendar` app-family values and adds
+resolved values under `widgets` for each common time widget.
 
 ## Routes
 
@@ -52,7 +93,8 @@ for clocks and 60 seconds for calendars.
 | `PUT` | `/api/settings/{namespace}/{id}/{key}` | Write one scoped value |
 | `DELETE` | `/api/settings/{namespace}/{id}/{key}` | Delete one scoped value |
 
-Scoped routes accept `themes` and `widgets`. Missing values return `404`.
+Scoped routes accept `themes` and the hardcoded common-widget IDs under
+`widgets`. Unknown widget IDs and missing values return `404`.
 Storage failures return `503`.
 
 ## File locations

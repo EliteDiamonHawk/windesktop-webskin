@@ -20,6 +20,7 @@ import {
 } from "./calendar-data.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-week-plain-styles";
+const WIDGET_SETTINGS_ID = "week-plain";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -95,6 +96,7 @@ class PlainWeek extends Widget {
       daysAfter,
       highlightDate: suppliedHighlightDate,
       updateInterval,
+      widgetId = WIDGET_SETTINGS_ID,
       className = "",
     } = options;
     validateUpdateInterval(updateInterval);
@@ -141,7 +143,9 @@ class PlainWeek extends Widget {
     };
 
     render(suppliedDate);
-    if (suppliedDate === undefined) this.addCleanup(watchCurrentDate(render, updateInterval));
+    if (suppliedDate === undefined) {
+      this.addCleanup(watchCurrentDate(render, { updateInterval, widgetId }));
+    }
   }
 }
 

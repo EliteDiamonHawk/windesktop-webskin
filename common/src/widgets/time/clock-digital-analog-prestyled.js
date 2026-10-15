@@ -3,6 +3,7 @@ import { createClock as createAnalogPlain } from "./clock-analog-plain.js";
 import { Widget } from "../widgets.js";
 
 const STYLE_ID = "webskin-clock-digital-analog-prestyled-styles";
+const WIDGET_SETTINGS_ID = "clock-digital-analog-prestyled";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -95,7 +96,7 @@ class DigitalAnalogClock extends Widget {
       .filter(Boolean)
       .join(" ");
 
-    const sharedOptions = { offsetMinutes, updateInterval };
+    const sharedOptions = { offsetMinutes, updateInterval, widgetId: WIDGET_SETTINGS_ID };
     const analog = createAnalogPlain({ ...sharedOptions, smooth: smooth ?? true });
     const digital = createDigitalPlain({
       ...sharedOptions,

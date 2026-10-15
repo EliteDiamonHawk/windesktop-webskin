@@ -1,8 +1,40 @@
 {
   "version": 1,
   "app": {
-    "hardware_monitor_enabled": true
+    "hardware_monitor_enabled": true,
+    "time_clock_update_interval_seconds": 5,
+    "time_calendar_update_interval_seconds": 60
   },
   "themes": {},
-  "widgets": {}
+  "widgets": {
+    "battery-plain": {},
+    "cpu-utilization-plain": {},
+    "cpu-utilization-list-plain": {},
+    "cpu-core-counts-plain": {},
+    "cpu-frequency-plain": {},
+    "cpu-telemetry-plain": {},
+    "cpu-load-average-plain": {},
+    "memory-plain": {},
+    "swap-memory-plain": {},
+    "disk-io-plain": {},
+    "network-telemetry-plain": {},
+    "disk-partitions-plain": {},
+    "gpu-thermal-fan-plain": {},
+    "network-telemetry-transfer-plain": {},
+    "clock-digital-plain": {},
+    "clock-digital-prestyled": {},
+    "clock-analog-plain": {},
+    "clock-analog-prestyled": {},
+    "clock-analog-prestyled2": {},
+    "clock-digital-analog-prestyled": {},
+    "clock-digital-day": {},
+    "rainmeter-mond-clock-remake": {},
+    "day-plain": {},
+    "day-prestyled": {},
+    "day-prestyled2": {},
+    "week-plain": {},
+    "week-prestyled": {},
+    "month-plain": {},
+    "month-prestyled": {}
+  }
 }

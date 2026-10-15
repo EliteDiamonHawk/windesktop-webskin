@@ -3,6 +3,7 @@ import { createClock as createPlainClock } from "./clock-digital-plain.js";
 import { createDay as createPlainDay } from "./day-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-clock-digital-day-styles";
+const WIDGET_SETTINGS_ID = "clock-digital-day";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -87,8 +88,8 @@ export function createClock(options = {}) {
   if (color) element.style.setProperty("--webskin-clock-color", color);
   if (backgroundColor) element.style.setProperty("--webskin-clock-background", backgroundColor);
 
-  const hours = createPlainClock({ ...clockOptions, format: "24h", seconds: false, showPeriod: false, syntax: "HH" });
-  const minutes = createPlainClock({ ...clockOptions, format: "24h", seconds: false, showPeriod: false, syntax: "mm" });
+  const hours = createPlainClock({ ...clockOptions, format: "24h", seconds: false, showPeriod: false, syntax: "HH", widgetId: WIDGET_SETTINGS_ID });
+  const minutes = createPlainClock({ ...clockOptions, format: "24h", seconds: false, showPeriod: false, syntax: "mm", widgetId: WIDGET_SETTINGS_ID });
   const day = createPlainDay({ date, locale, format: dateFormat });
   const content = document.createElement("div");
   content.className = "webskin-clock--digital-day__content";

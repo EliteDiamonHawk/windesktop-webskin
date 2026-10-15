@@ -7,6 +7,7 @@ import {
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const STYLE_ID = "webskin-clock-analog-plain-styles";
+const WIDGET_SETTINGS_ID = "clock-analog-plain";
 
 const svgElement = (tag, attributes = {}) => {
   const element = document.createElementNS(SVG_NS, tag);
@@ -95,6 +96,7 @@ class PlainAnalogClock extends Widget {
       offsetMinutes = 0,
       smooth = false,
       updateInterval,
+      widgetId = WIDGET_SETTINGS_ID,
       className = "",
     } = options;
     validateUpdateInterval(updateInterval);
@@ -147,7 +149,7 @@ class PlainAnalogClock extends Widget {
     if (smooth) {
       this.addCleanup(subscribeAnimation(render));
     } else {
-      this.addCleanup(subscribeClock(render, updateInterval));
+      this.addCleanup(subscribeClock(render, { updateInterval, widgetId }));
     }
   }
 }

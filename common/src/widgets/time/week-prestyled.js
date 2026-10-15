@@ -2,6 +2,7 @@
 import { createWeek as createPlainWeek } from "./week-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-week-prestyled-styles";
+const WIDGET_SETTINGS_ID = "week-prestyled";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -65,7 +66,7 @@ const ensureStyles = () => {
 /** Create the WebSkin-provided pre-styled calendar week. */
 export function createWeek(options = {}) {
   ensureStyles();
-  const element = createPlainWeek(options);
+  const element = createPlainWeek({ ...options, widgetId: WIDGET_SETTINGS_ID });
   element.classList.add("webskin-calendar--week-prestyled");
   if (options.color) element.style.setProperty("--webskin-calendar-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-calendar-background", options.backgroundColor);

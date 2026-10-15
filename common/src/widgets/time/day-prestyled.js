@@ -2,6 +2,7 @@
 import { createDay as createPlainDay } from "./day-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-day-prestyled-styles";
+const WIDGET_SETTINGS_ID = "day-prestyled";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -38,7 +39,7 @@ const ensureStyles = () => {
 /** Create the WebSkin-provided pre-styled formatted calendar day. */
 export function createDay(options = {}) {
   ensureStyles();
-  const element = createPlainDay({ ...options, variant: "formatted" });
+  const element = createPlainDay({ ...options, variant: "formatted", widgetId: WIDGET_SETTINGS_ID });
   element.classList.add("webskin-calendar--day-prestyled");
   if (options.color) element.style.setProperty("--webskin-calendar-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-calendar-background", options.backgroundColor);

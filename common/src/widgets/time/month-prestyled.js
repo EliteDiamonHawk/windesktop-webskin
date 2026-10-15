@@ -2,6 +2,7 @@
 import { createMonth as createPlainMonth } from "./month-plain.js?v=month-widget-1";
 
 const STYLE_ID = "webskin-calendar-month-prestyled-styles";
+const WIDGET_SETTINGS_ID = "month-prestyled";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -73,7 +74,7 @@ const ensureStyles = () => {
 /** Create the WebSkin-provided pre-styled month calendar. */
 export function createMonth(options = {}) {
   ensureStyles();
-  const element = createPlainMonth(options);
+  const element = createPlainMonth({ ...options, widgetId: WIDGET_SETTINGS_ID });
   element.classList.add("webskin-calendar--month-prestyled");
   if (options.color) element.style.setProperty("--webskin-calendar-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-calendar-background", options.backgroundColor);

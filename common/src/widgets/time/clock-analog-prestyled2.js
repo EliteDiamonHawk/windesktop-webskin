@@ -1,6 +1,7 @@
 import { createClock as createPlainAnalogClock } from "./clock-analog-plain.js";
 
 const STYLE_ID = "webskin-clock-analog-prestyled2-styles";
+const WIDGET_SETTINGS_ID = "clock-analog-prestyled2";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -60,7 +61,11 @@ const ensureStyles = () => {
 
 /** Create the WebSkin-provided second pre-styled analog clock treatment. */
 export function createClock(options = {}) {
-  const element = createPlainAnalogClock({ ...options, smooth: options.smooth ?? true });
+  const element = createPlainAnalogClock({
+    ...options,
+    smooth: options.smooth ?? true,
+    widgetId: WIDGET_SETTINGS_ID,
+  });
   ensureStyles();
   element.classList.add("webskin-clock--analog-prestyled2");
   if (options.color) element.style.setProperty("--webskin-analog2-accent", options.color);

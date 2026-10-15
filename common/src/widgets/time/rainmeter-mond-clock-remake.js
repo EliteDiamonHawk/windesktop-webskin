@@ -3,6 +3,7 @@ import { createDay } from "./day-plain.js";
 import { createClock as createDigitalClock } from "./clock-digital-plain.js";
 
 const STYLE_ID = "webskin-clock-rainmeter-mond-clock-remake-styles";
+const WIDGET_SETTINGS_ID = "rainmeter-mond-clock-remake";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -172,6 +173,7 @@ class RainmeterMondClockRemake extends Widget {
       syntax: "-h:mm A-     ",  //whitespace for centering
       offsetMinutes,
       updateInterval,
+      widgetId: WIDGET_SETTINGS_ID,
       className: "webskin-mond-clock__time",
     });
     time.append(clockWidget);

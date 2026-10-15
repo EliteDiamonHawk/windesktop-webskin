@@ -20,6 +20,7 @@ import {
 } from "./calendar-data.js?v=month-widget-1";
 
 const STYLE_ID = "webskin-calendar-month-plain-styles";
+const WIDGET_SETTINGS_ID = "month-plain";
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 const ensureStyles = () => {
@@ -112,6 +113,7 @@ class PlainMonth extends Widget {
       maxWeeks: suppliedMaxWeeks,
       highlightDate: suppliedHighlightDate,
       updateInterval,
+      widgetId = WIDGET_SETTINGS_ID,
       className = "",
     } = options;
     validateUpdateInterval(updateInterval);
@@ -181,7 +183,9 @@ class PlainMonth extends Widget {
     };
 
     render(suppliedDate);
-    if (suppliedDate === undefined) this.addCleanup(watchCurrentDate(render, updateInterval));
+    if (suppliedDate === undefined) {
+      this.addCleanup(watchCurrentDate(render, { updateInterval, widgetId }));
+    }
   }
 }
 

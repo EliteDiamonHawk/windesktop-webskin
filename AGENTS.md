@@ -41,6 +41,7 @@ Use stop-slop if updating docs.
 - Use `apply_patch`. Preserve unrelated working-tree changes.
 - Keep credentials, settings, caches, package stores, and build output out of
   commits.
+- Do not keep legacy, or old support, as the project has not yet been published.
 
 ## Checks
 

@@ -1,4 +1,4 @@
-import { Widget } from "../widgets.js";
+import { Widget } from "../../widgets.js";
 
 export const DEFAULT_INTERVAL = 5000;
 export const DEFAULT_INTERVALS = Object.freeze({ fast: 5000, standard: 30000, slow: 60000 });

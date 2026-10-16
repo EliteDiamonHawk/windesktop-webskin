@@ -1,7 +1,7 @@
 import { Widget } from "../../widgets.js";
 import { subscribeClock, validateUpdateInterval } from "../time-scheduler.js";
 
-const WIDGET_SETTINGS_ID = "clock-digital-plain";
+const WIDGET_SETTINGS_ID = "digital-plain";
 
 const STYLE_ID = "webskin-clock-digital-plain-styles";
 

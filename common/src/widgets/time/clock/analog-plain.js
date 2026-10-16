@@ -7,7 +7,7 @@ import {
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const STYLE_ID = "webskin-clock-analog-plain-styles";
-const WIDGET_SETTINGS_ID = "clock-analog-plain";
+const WIDGET_SETTINGS_ID = "analog-plain";
 
 const svgElement = (tag, attributes = {}) => {
   const element = document.createElementNS(SVG_NS, tag);

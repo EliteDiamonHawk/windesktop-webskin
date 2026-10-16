@@ -18,12 +18,12 @@ clock.destroy?.();
 
 | Module | Import | Function |
 | --- | --- | --- |
-| Digital plain | `/common/widgets/time/clock/clock-digital-plain.js` | `createClock(options)` |
-| Digital pre-styled | `/common/widgets/time/clock/clock-digital-prestyled.js` | `createClock(options)` |
-| Analog plain | `/common/widgets/time/clock/clock-analog-plain.js` | `createClock(options)` |
-| Analog pre-styled | `/common/widgets/time/clock/clock-analog-prestyled.js` | `createClock(options)` |
-| Analog pre-styled 2 | `/common/widgets/time/clock/clock-analog-prestyled2.js` | `createClock(options)` |
-| Digital and analog | `/common/widgets/time/clock/clock-digital-analog-prestyled.js` | `createClock(options)` |
+| Digital plain | `/common/widgets/time/clock/digital-plain.js` | `createClock(options)` |
+| Digital pre-styled | `/common/widgets/time/clock/digital-prestyled.js` | `createClock(options)` |
+| Analog plain | `/common/widgets/time/clock/analog-plain.js` | `createClock(options)` |
+| Analog pre-styled | `/common/widgets/time/clock/analog-prestyled.js` | `createClock(options)` |
+| Analog pre-styled 2 | `/common/widgets/time/clock/analog-prestyled2.js` | `createClock(options)` |
+| Digital and analog | `/common/widgets/time/clock/digital-analog-prestyled.js` | `createClock(options)` |
 | Rainmeter Mond remake | `/common/widgets/time/clock/rainmeter-mond-clock-remake.js` | `createClock(options)` |
 
 Digital clocks accept `format` (`12h` or `24h`), `seconds`,
@@ -132,9 +132,9 @@ Calendar pre-styled widgets use:
 ## System telemetry
 
 System widgets live under `/common/widgets/system/` and read the
-privacy-filtered snapshot from `/api/system/metrics`. Each constructor accepts
-`className`, `endpoint`, and the legacy millisecond `interval`. Format-capable
-widgets also accept `format`. The time-style `updateInterval` option accepts
+privacy-filtered snapshot from `/api/system/metrics`. Constructors generally
+accept `className`, `endpoint`, and the legacy millisecond `interval`.
+Format-capable widgets also accept `format`. The time-style `updateInterval` option accepts
 positive integer seconds; when both are supplied, `interval` takes precedence.
 Without an explicit interval, system widgets use their configured polling
 family: fast telemetry defaults to five seconds, standard metrics to 30
@@ -176,6 +176,7 @@ document.querySelector("#network").append(createNetworkTelemetryTransfer());
 The system constructors are:
 
 ```text
+createLastBoot
 createBattery
 createCpuUtilization
 createCpuUtilizationList
@@ -191,6 +192,14 @@ createDiskPartitions
 createGpuThermalFan
 createNetworkTelemetryTransfer
 ```
+
+`createLastBoot` accepts `{boot-time}` and `{uptime}` format tokens. Its
+default format is `{boot-time}`. The boot time is an ISO-8601 UTC timestamp;
+uptime is calculated in the browser from the boot timestamp and the current
+browser time. The default browser update interval is 60 seconds; set
+`updateInterval: 1` for live second-by-second updates. The returned element
+also exposes `subscribeBootTime()` for a one-shot reread and
+`unsubscribeBootTime()` to cancel an active reread.
 
 The CPU utilization list repeats one format line for the overall value and each
 core. Its limit ignores non-positive values. Set `zeroIndex: true` to label

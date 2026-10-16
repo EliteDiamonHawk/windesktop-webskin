@@ -1,6 +1,6 @@
 import { Widget } from "../../widgets.js";
 import { createDay } from "../calendar/day-plain.js";
-import { createClock as createDigitalClock } from "./clock-digital-plain.js";
+import { createClock as createDigitalClock } from "./digital-plain.js";
 
 const STYLE_ID = "webskin-clock-rainmeter-mond-clock-remake-styles";
 const WIDGET_SETTINGS_ID = "rainmeter-mond-clock-remake";
@@ -27,6 +27,8 @@ const ensureStyles = () => {
       font-display: block;
     }
     .webskin-clock--rainmeter-mond-clock-remake {
+      -webkit-user-select: none;
+      user-select: none;
       --webskin-mond-color: #000;
       --webskin-mond-width: max-content;
       --webskin-mond-weekday-size: 5rem;

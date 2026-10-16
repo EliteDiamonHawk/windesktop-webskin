@@ -1,7 +1,7 @@
-import { createClock as createPlainAnalogClock } from "./clock-analog-plain.js";
+import { createClock as createPlainAnalogClock } from "./analog-plain.js";
 
 const STYLE_ID = "webskin-clock-analog-prestyled2-styles";
-const WIDGET_SETTINGS_ID = "clock-analog-prestyled2";
+const WIDGET_SETTINGS_ID = "analog-prestyled2";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -9,6 +9,8 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     svg.webskin-clock--analog-prestyled2 {
+      -webkit-user-select: none;
+      user-select: none;
       --webskin-analog2-color: #2e2e2e;
       --webskin-analog2-accent: #d6d6d6;
       --webskin-analog2-face: #2e2e2e;

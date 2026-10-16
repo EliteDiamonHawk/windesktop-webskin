@@ -23,8 +23,8 @@ pnpm --filter @project/frontend build
 
 ## Asset builds
 
-The `common` Vite config copies source files to `localdata/common/` and keeps
-their module paths. The `themes` config copies the `dev` package to
+The `common` Vite config copies source files and `public/` assets to
+`localdata/common/` and keeps their module paths. The `themes` config copies the `dev` package to
 `localdata/themes/dev/`. Vite leaves `/common/` imports unresolved.
 
 FastAPI serves the generated files. It does not run Vite or a package manager

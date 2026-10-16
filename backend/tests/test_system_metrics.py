@@ -42,6 +42,10 @@ class SystemMetricsTests(unittest.TestCase):
         with self.assertRaises(HTTPException):
             route.endpoint(fields="memory.private.secret")
 
+        self.assertEqual(route.endpoint(fields="system.boot_time"), {"fields": {"system.boot_time"}})
+        with self.assertRaises(HTTPException):
+            route.endpoint(fields="system.uptime_seconds")
+
     def test_selected_metrics_skip_unrequested_capability_calls(self) -> None:
         calls: list[str] = []
 
@@ -118,6 +122,50 @@ class SystemMetricsTests(unittest.TestCase):
         self.assertNotIn("interfaces", snapshot["network"])
         self.assertNotIn("addresses", snapshot["network"])
         self.assertEqual(snapshot["sensors"]["available"], False)
+
+    def test_system_snapshot_contains_boot_time(self) -> None:
+        fake_psutil = SimpleNamespace(boot_time=lambda: 1_700_000_000)
+        service = SystemMetricsService(hardware_monitor=self._unavailable_hardware_monitor())
+
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            snapshot = service.collect({"system.boot_time"})
+
+        self.assertEqual(
+            snapshot["system"],
+            {
+                "available": True,
+                "boot_time": "2023-11-14T22:13:20+00:00",
+            },
+        )
+
+    def test_system_snapshot_skips_boot_time_when_system_fields_are_not_requested(self) -> None:
+        calls = 0
+
+        def boot_time():
+            nonlocal calls
+            calls += 1
+            return 1_700_000_000
+
+        fake_psutil = SimpleNamespace(
+            boot_time=boot_time,
+            virtual_memory=lambda: SimpleNamespace(total=100, available=60, used=40, free=50, percent=40),
+        )
+        service = SystemMetricsService(hardware_monitor=self._unavailable_hardware_monitor())
+
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            snapshot = service.collect({"memory.virtual.used_bytes"})
+
+        self.assertEqual(calls, 0)
+        self.assertEqual(snapshot["system"], {"available": False, "boot_time": None})
+
+    def test_unavailable_boot_time_is_explicit(self) -> None:
+        fake_psutil = SimpleNamespace(boot_time=lambda: (_ for _ in ()).throw(NotImplementedError()))
+        service = SystemMetricsService(hardware_monitor=self._unavailable_hardware_monitor())
+
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            snapshot = service.collect({"system.boot_time"})
+
+        self.assertEqual(snapshot["system"], {"available": False, "boot_time": None})
 
     def test_unsupported_sensor_and_load_values_are_explicit(self) -> None:
         fake_psutil = SimpleNamespace(

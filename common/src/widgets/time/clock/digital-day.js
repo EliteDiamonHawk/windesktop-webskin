@@ -1,9 +1,9 @@
 import { Widget } from "../../widgets.js";
-import { createClock as createPlainClock } from "./clock-digital-plain.js";
+import { createClock as createPlainClock } from "./digital-plain.js";
 import { createDay as createPlainDay } from "../calendar/day-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-clock-digital-day-styles";
-const WIDGET_SETTINGS_ID = "clock-digital-day";
+const WIDGET_SETTINGS_ID = "digital-day";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -11,6 +11,8 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-clock--digital-day {
+      -webkit-user-select: none;
+      user-select: none;
       --webskin-clock-color: #d6d6d6;
       --webskin-clock-background: #2e2e2e;
       align-items: center;
@@ -36,6 +38,7 @@ const ensureStyles = () => {
       flex-direction: column;
       justify-content: center;
       transform: translateY(var(--webskin-clock-content-offset, .75rem));
+      width: 100%;
     }
     .webskin-clock--digital-day [data-webskin-clock-part="hours"],
     .webskin-clock--digital-day [data-webskin-clock-part="minutes"] {
@@ -44,6 +47,9 @@ const ensureStyles = () => {
       font-weight: 600;
       letter-spacing: -.08em;
       line-height: .84;
+      text-align: center;
+      transform: translateX(-2px);
+      width: 100%;
     }
     .webskin-clock--digital-day .webskin-clock--digital-plain {
       display: contents;
@@ -59,7 +65,8 @@ const ensureStyles = () => {
       justify-content: center;
       line-height: 1;
       margin-top: .7rem;
-      width: auto;
+      text-align: center;
+      width: 100%;
       height: auto;
     }
   `;

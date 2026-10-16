@@ -10,6 +10,8 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-calendar--day-plain.webskin-calendar--day-prestyled2[data-webskin-calendar-variant="single-day"] {
+      -webkit-user-select: none;
+      user-select: none;
       --webskin-calendar-color: #d6d6d6;
       --webskin-calendar-background: #2e2e2e;
       --webskin-calendar-border: var(--webskin-calendar-background);

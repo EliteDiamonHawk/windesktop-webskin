@@ -1,8 +1,9 @@
-import { copyFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { extname, relative, resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 const sourceRoot = resolve('src');
+const publicRoot = resolve('public');
 const outputRoot = resolve('../localdata/common');
 
 function sourceFiles(directory = sourceRoot) {
@@ -12,15 +13,29 @@ function sourceFiles(directory = sourceRoot) {
   });
 }
 
+function publicFiles(directory = publicRoot) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = resolve(directory, entry.name);
+    return entry.isDirectory() ? publicFiles(path) : [path];
+  });
+}
+
 function copyStaticFiles() {
   return {
     name: 'copy-common-static-files',
     buildStart() {
+      rmSync(outputRoot, { recursive: true, force: true });
       for (const file of sourceFiles()) this.addWatchFile(file);
+      for (const file of publicFiles()) this.addWatchFile(file);
     },
     closeBundle() {
       for (const file of sourceFiles()) {
         const destination = resolve(outputRoot, relative(sourceRoot, file));
+        mkdirSync(resolve(destination, '..'), { recursive: true });
+        copyFileSync(file, destination);
+      }
+      for (const file of publicFiles()) {
+        const destination = resolve(outputRoot, relative(publicRoot, file));
         mkdirSync(resolve(destination, '..'), { recursive: true });
         copyFileSync(file, destination);
       }

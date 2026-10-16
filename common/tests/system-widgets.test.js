@@ -40,6 +40,10 @@ class FakeElement {
 }
 
 const snapshot = {
+  system: {
+    available: true,
+    boot_time: "2023-11-14T22:13:20+00:00",
+  },
   cpu: {
     utilization: { overall: 12.5, per_core: [10, 20] },
     cores: { physical: 2, logical: 4 },
@@ -147,6 +151,68 @@ test("formats dynamic values, preserves literals, and requests only referenced f
   assert.deepEqual(fields, ["memory.virtual.percent", "memory.virtual.used_bytes"]);
   assert.equal(timerDelays.at(-1), 15000);
   assert.equal(settingsRequests, 1);
+});
+
+test("last-boot defaults to boot time and requests only that field", async () => {
+  const boot = widgets.createLastBoot();
+  created.push(boot);
+
+  assert.deepEqual(rowsText(boot), ["-"]);
+  await waitForPoll();
+
+  assert.deepEqual(rowsText(boot), ["2023-11-14T22:13:20+00:00"]);
+  const fields = new URL(requestUrls[0], "http://localhost").searchParams.get("fields").split(",");
+  assert.deepEqual(fields, ["system.boot_time"]);
+  assert.equal(timers.length, 0);
+});
+
+test("last-boot custom formats calculate uptime in the browser", async () => {
+  const originalNow = Date.now;
+  let now = 1_700_001_234_000;
+  Date.now = () => now;
+  const combined = widgets.createLastBoot({ format: "Boot={boot-time}\\nUptime={uptime} seconds" });
+  created.push(combined);
+
+  try {
+    assert.deepEqual(rowsText(combined), ["Boot=-", "Uptime=- seconds"]);
+    await waitForPoll();
+
+    assert.deepEqual(rowsText(combined), ["Boot=2023-11-14T22:13:20+00:00", "Uptime=1,234 seconds"]);
+    const fields = new URL(requestUrls[0], "http://localhost").searchParams.get("fields").split(",");
+    assert.deepEqual(fields, ["system.boot_time"]);
+    assert.equal(timerDelays.at(-1), 60000);
+
+    now += 60_000;
+    timers[0]();
+    assert.deepEqual(rowsText(combined), ["Boot=2023-11-14T22:13:20+00:00", "Uptime=1,294 seconds"]);
+    assert.equal(requestUrls.length, 1);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("last-boot supports live browser updates and manual boot-time cancellation", async () => {
+  const originalNow = Date.now;
+  Date.now = () => 1_700_001_234_000;
+  const boot = widgets.createLastBoot({ format: "{uptime}", updateInterval: 1 });
+  created.push(boot);
+
+  try {
+    await waitForPoll();
+    assert.equal(timerDelays.at(-1), 1000);
+    assert.equal(requestUrls.length, 1);
+
+    boot.subscribeBootTime();
+    boot.unsubscribeBootTime();
+    await waitForPoll();
+    assert.equal(requestUrls.length, 1);
+
+    boot.subscribeBootTime();
+    await waitForPoll();
+    assert.equal(requestUrls.length, 2);
+  } finally {
+    Date.now = originalNow;
+  }
 });
 
 test("coalesces widgets with the same endpoint and interval", async () => {

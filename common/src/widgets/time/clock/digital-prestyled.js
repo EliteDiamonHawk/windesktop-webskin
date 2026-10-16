@@ -1,7 +1,7 @@
-import { createClock as createPlainClock } from "./clock-digital-plain.js";
+import { createClock as createPlainClock } from "./digital-plain.js";
 
 const STYLE_ID = "webskin-clock-digital-prestyled-styles";
-const WIDGET_SETTINGS_ID = "clock-digital-prestyled";
+const WIDGET_SETTINGS_ID = "digital-prestyled";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -9,6 +9,8 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-clock--digital-prestyled {
+      -webkit-user-select: none;
+      user-select: none;
       --webskin-clock-color: #d6d6d6;
       --webskin-clock-background: #2e2e2e;
       align-items: baseline;

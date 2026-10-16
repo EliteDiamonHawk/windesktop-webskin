@@ -1,9 +1,9 @@
-import { createClock as createDigitalPlain } from "./clock-digital-plain.js";
-import { createClock as createAnalogPlain } from "./clock-analog-plain.js";
+import { createClock as createDigitalPlain } from "./digital-plain.js";
+import { createClock as createAnalogPlain } from "./analog-plain.js";
 import { Widget } from "../../widgets.js";
 
 const STYLE_ID = "webskin-clock-digital-analog-prestyled-styles";
-const WIDGET_SETTINGS_ID = "clock-digital-analog-prestyled";
+const WIDGET_SETTINGS_ID = "digital-analog-prestyled";
 
 const ensureStyles = () => {
   if (document.getElementById(STYLE_ID)) return;
@@ -11,6 +11,8 @@ const ensureStyles = () => {
   style.id = STYLE_ID;
   style.textContent = `
     .webskin-clock--digital-analog-prestyled {
+      -webkit-user-select: none;
+      user-select: none;
       --webskin-combination-color: #d6d6d6;
       --webskin-combination-analog-color: #2e2e2e;
       --webskin-combination-analog-face: #d6d6d6;

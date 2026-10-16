@@ -33,15 +33,15 @@ class TimeWidgetSettingsTests(unittest.TestCase):
         service = SettingsService(MemorySettingsStorage({
             ("app", "time_clock_update_interval_seconds", None): 5,
             ("app", "time_calendar_update_interval_seconds", None): 60,
-            ("widgets", "updateInterval", "clock-digital-plain"): 2,
+            ("widgets", "updateInterval", "digital-plain"): 2,
             ("widgets", "updateInterval", "month-prestyled"): 15,
         }))
 
         resolved = service.resolve_time_widget_intervals()
         self.assertEqual(resolved["clock"], 5)
         self.assertEqual(resolved["calendar"], 60)
-        self.assertEqual(resolved["widgets"]["clock-digital-plain"], 2)
-        self.assertEqual(resolved["widgets"]["clock-analog-plain"], 5)
+        self.assertEqual(resolved["widgets"]["digital-plain"], 2)
+        self.assertEqual(resolved["widgets"]["analog-plain"], 5)
         self.assertEqual(resolved["widgets"]["month-prestyled"], 15)
 
     def test_invalid_widget_and_app_values_use_family_defaults(self) -> None:
@@ -54,7 +54,7 @@ class TimeWidgetSettingsTests(unittest.TestCase):
         resolved = service.resolve_time_widget_intervals()
         self.assertEqual(resolved["clock"], 5)
         self.assertEqual(resolved["calendar"], 60)
-        self.assertEqual(resolved["widgets"]["clock-digital-plain"], 5)
+        self.assertEqual(resolved["widgets"]["digital-plain"], 5)
         self.assertEqual(resolved["widgets"]["day-plain"], 60)
 
     def test_legacy_family_entries_are_ignored(self) -> None:
@@ -66,14 +66,16 @@ class TimeWidgetSettingsTests(unittest.TestCase):
         }))
 
         resolved = service.resolve_time_widget_intervals()
-        self.assertEqual(resolved["widgets"]["clock-digital-plain"], 5)
+        self.assertEqual(resolved["widgets"]["digital-plain"], 5)
         self.assertEqual(resolved["widgets"]["day-plain"], 60)
 
     def test_common_widget_registry_is_hardcoded(self) -> None:
-        self.assertTrue(SettingsService.is_common_widget("clock-digital-plain"))
+        self.assertTrue(SettingsService.is_common_widget("digital-plain"))
+        self.assertFalse(SettingsService.is_common_widget("clock-digital-plain"))
         self.assertTrue(SettingsService.is_common_widget("memory-plain"))
+        self.assertTrue(SettingsService.is_common_widget("last-boot-plain"))
         self.assertFalse(SettingsService.is_common_widget("main-clock"))
-        self.assertEqual(len(COMMON_WIDGET_IDS), 29)
+        self.assertEqual(len(COMMON_WIDGET_IDS), 30)
 
     def test_system_widget_family_and_widget_overrides(self) -> None:
         service = SettingsService(MemorySettingsStorage({

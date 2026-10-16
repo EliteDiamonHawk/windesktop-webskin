@@ -73,8 +73,8 @@ For example, constructor-level time settings use these widget IDs and files:
 {
   "version": 1,
   "widgets": {
-    "clock-digital-plain": {
-      "file": "widgets/clock-digital-plain.json"
+    "digital-plain": {
+      "file": "widgets/digital-plain.json"
     },
     "month-prestyled": {
       "file": "widgets/month-prestyled.json"
@@ -83,12 +83,12 @@ For example, constructor-level time settings use these widget IDs and files:
 }
 ```
 
-`settings/widgets/clock-digital-plain.json`:
+`settings/widgets/digital-plain.json`:
 
 ```json
 {
   "version": 1,
-  "id": "clock-digital-plain",
+  "id": "digital-plain",
   "settings": {
     "updateInterval": 2
   }
@@ -111,7 +111,7 @@ The existing scoped settings routes can read and change these values, for
 example:
 
 ```text
-PUT /api/settings/widgets/clock-digital-plain/updateInterval
+PUT /api/settings/widgets/digital-plain/updateInterval
 Body: 2
 ```
 

@@ -10,6 +10,7 @@ class SettingNotFoundError(KeyError):
 
 
 COMMON_WIDGET_IDS = frozenset({
+    "last-boot-plain",
     "battery-plain",
     "cpu-utilization-plain",
     "cpu-utilization-list-plain",
@@ -24,13 +25,13 @@ COMMON_WIDGET_IDS = frozenset({
     "disk-partitions-plain",
     "gpu-thermal-fan-plain",
     "network-telemetry-transfer-plain",
-    "clock-digital-plain",
-    "clock-digital-prestyled",
-    "clock-analog-plain",
-    "clock-analog-prestyled",
-    "clock-analog-prestyled2",
-    "clock-digital-analog-prestyled",
-    "clock-digital-day",
+    "digital-plain",
+    "digital-prestyled",
+    "analog-plain",
+    "analog-prestyled",
+    "analog-prestyled2",
+    "digital-analog-prestyled",
+    "digital-day",
     "rainmeter-mond-clock-remake",
     "day-plain",
     "day-prestyled",
@@ -45,13 +46,13 @@ TIME_WIDGET_INTERVALS = {
     **{
         widget_id: ("clock", "time_clock_update_interval_seconds", 5)
         for widget_id in (
-            "clock-digital-plain",
-            "clock-digital-prestyled",
-            "clock-analog-plain",
-            "clock-analog-prestyled",
-            "clock-analog-prestyled2",
-            "clock-digital-analog-prestyled",
-            "clock-digital-day",
+            "digital-plain",
+            "digital-prestyled",
+            "analog-plain",
+            "analog-prestyled",
+            "analog-prestyled2",
+            "digital-analog-prestyled",
+            "digital-day",
             "rainmeter-mond-clock-remake",
         )
     },

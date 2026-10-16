@@ -204,6 +204,7 @@ def create_system_router(collector=collect_system_metrics) -> APIRouter:
     router = APIRouter(prefix="/api/system")
 
     allowed_fields = {
+        "system.boot_time",
         "cpu.utilization",
         "cpu.utilization.overall",
         "cpu.utilization.per_core",

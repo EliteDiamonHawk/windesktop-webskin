@@ -12,3 +12,4 @@ export { createNetworkTelemetry } from "./metrics/network-telemetry-plain.js";
 export { createDiskPartitions } from "./metrics/disk-partitions-plain.js";
 export { createGpuThermalFan } from "./metrics/gpu-thermal-fan-plain.js";
 export { createNetworkTelemetryTransfer } from "./metrics/network-telemetry-transfer-plain.js";
+export { createLastBoot } from "./metrics/last-boot-plain.js";

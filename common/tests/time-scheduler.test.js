@@ -47,8 +47,8 @@ const installWindow = () => {
             clock: 7,
             calendar: 11,
             widgets: {
-              "clock-digital-plain": 2,
-              "clock-analog-plain": 9,
+              "digital-plain": 2,
+              "analog-plain": 9,
               "day-plain": 13,
             },
           }),
@@ -133,10 +133,10 @@ test("backend-resolved defaults apply once and explicit widget options skip the 
 test("common widget settings resolve independently within a family", async () => {
   const updates = [];
   const digital = scheduler.subscribeClock(() => updates.push("digital"), {
-    widgetId: "clock-digital-plain",
+    widgetId: "digital-plain",
   });
   const analog = scheduler.subscribeClock(() => updates.push("analog"), {
-    widgetId: "clock-analog-plain",
+    widgetId: "analog-plain",
   });
   await new Promise((resolve) => setImmediate(resolve));
   await new Promise((resolve) => setImmediate(resolve));

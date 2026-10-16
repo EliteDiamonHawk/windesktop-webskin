@@ -384,6 +384,28 @@ def _network(tracker: PsutilCapabilityTracker, requested_fields: set[str] | None
     )
 
 
+def _system(
+    tracker: PsutilCapabilityTracker,
+    requested_fields: set[str] | None = None,
+) -> dict[str, Any]:
+    if not _field_requested(requested_fields, "system"):
+        return _available(False, boot_time=None)
+
+    boot_epoch = tracker.call("system_boot_time", lambda: psutil.boot_time())
+    if boot_epoch is _UNAVAILABLE or not isinstance(boot_epoch, int | float) or isinstance(boot_epoch, bool):
+        return _available(False, boot_time=None)
+
+    try:
+        boot_time = datetime.fromtimestamp(float(boot_epoch), timezone.utc).isoformat()
+    except (OverflowError, OSError, ValueError):
+        return _available(False, boot_time=None)
+
+    return _available(
+        True,
+        boot_time=boot_time if _field_requested(requested_fields, "system.boot_time") else None,
+    )
+
+
 def _psutil_temperature_records(raw: Any) -> list[dict[str, Any]]:
     records = []
     for group, readings in raw.items():
@@ -596,6 +618,7 @@ class SystemMetricsService:
 
             snapshot = {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
+                "system": _system(self._tracker, requested_fields),
                 "cpu": _cpu(self._tracker, requested_fields),
                 "memory": _memory(self._tracker, requested_fields),
                 "disks": _disks(self._tracker, requested_fields, self._disk_cache),

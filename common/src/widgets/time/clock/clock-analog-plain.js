@@ -1,9 +1,9 @@
-import { Widget } from "../widgets.js";
+import { Widget } from "../../widgets.js";
 import {
   subscribeAnimation,
   subscribeClock,
   validateUpdateInterval,
-} from "./time-scheduler.js";
+} from "../time-scheduler.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const STYLE_ID = "webskin-clock-analog-plain-styles";

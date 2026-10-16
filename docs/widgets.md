@@ -18,13 +18,13 @@ clock.destroy?.();
 
 | Module | Import | Function |
 | --- | --- | --- |
-| Digital plain | `/common/widgets/time/clock-digital-plain.js` | `createClock(options)` |
-| Digital pre-styled | `/common/widgets/time/clock-digital-prestyled.js` | `createClock(options)` |
-| Analog plain | `/common/widgets/time/clock-analog-plain.js` | `createClock(options)` |
-| Analog pre-styled | `/common/widgets/time/clock-analog-prestyled.js` | `createClock(options)` |
-| Analog pre-styled 2 | `/common/widgets/time/clock-analog-prestyled2.js` | `createClock(options)` |
-| Digital and analog | `/common/widgets/time/clock-digital-analog-prestyled.js` | `createClock(options)` |
-| Rainmeter Mond remake | `/common/widgets/time/rainmeter-mond-clock-remake.js` | `createClock(options)` |
+| Digital plain | `/common/widgets/time/clock/clock-digital-plain.js` | `createClock(options)` |
+| Digital pre-styled | `/common/widgets/time/clock/clock-digital-prestyled.js` | `createClock(options)` |
+| Analog plain | `/common/widgets/time/clock/clock-analog-plain.js` | `createClock(options)` |
+| Analog pre-styled | `/common/widgets/time/clock/clock-analog-prestyled.js` | `createClock(options)` |
+| Analog pre-styled 2 | `/common/widgets/time/clock/clock-analog-prestyled2.js` | `createClock(options)` |
+| Digital and analog | `/common/widgets/time/clock/clock-digital-analog-prestyled.js` | `createClock(options)` |
+| Rainmeter Mond remake | `/common/widgets/time/clock/rainmeter-mond-clock-remake.js` | `createClock(options)` |
 
 Digital clocks accept `format` (`12h` or `24h`), `seconds`,
 `showPeriod`, `syntax`, `offsetMinutes`, `updateInterval`, and `className`.
@@ -57,14 +57,14 @@ custom properties:
 
 | Module | Import | Function |
 | --- | --- | --- |
-| Formatted day | `/common/widgets/time/day-plain.js` | `createDay(options)` |
-| Formatted day pre-styled | `/common/widgets/time/day-prestyled.js` | `createDay(options)` |
-| Single day | `/common/widgets/time/day-plain.js` | `createDay({ variant: "single-day", ...options })` |
-| Single day pre-styled | `/common/widgets/time/day-prestyled2.js` | `createDay(options)` |
-| Week | `/common/widgets/time/week-plain.js` | `createWeek(options)` |
-| Week pre-styled | `/common/widgets/time/week-prestyled.js` | `createWeek(options)` |
-| Month | `/common/widgets/time/month-plain.js` | `createMonth(options)` |
-| Month pre-styled | `/common/widgets/time/month-prestyled.js` | `createMonth(options)` |
+| Formatted day | `/common/widgets/time/calendar/day-plain.js` | `createDay(options)` |
+| Formatted day pre-styled | `/common/widgets/time/calendar/day-prestyled.js` | `createDay(options)` |
+| Single day | `/common/widgets/time/calendar/day-plain.js` | `createDay({ variant: "single-day", ...options })` |
+| Single day pre-styled | `/common/widgets/time/calendar/day-prestyled2.js` | `createDay(options)` |
+| Week | `/common/widgets/time/calendar/week-plain.js` | `createWeek(options)` |
+| Week pre-styled | `/common/widgets/time/calendar/week-prestyled.js` | `createWeek(options)` |
+| Month | `/common/widgets/time/calendar/month-plain.js` | `createMonth(options)` |
+| Month pre-styled | `/common/widgets/time/calendar/month-prestyled.js` | `createMonth(options)` |
 
 Calendar options:
 

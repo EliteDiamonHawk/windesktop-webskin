@@ -1,6 +1,6 @@
-import { Widget } from "../widgets.js";
+import { Widget } from "../../widgets.js";
 import { createClock as createPlainClock } from "./clock-digital-plain.js";
-import { createDay as createPlainDay } from "./day-plain.js?v=calendar-date-5";
+import { createDay as createPlainDay } from "../calendar/day-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-clock-digital-day-styles";
 const WIDGET_SETTINGS_ID = "clock-digital-day";

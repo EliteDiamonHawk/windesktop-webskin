@@ -5,7 +5,7 @@ import {
   createLocalDate,
   getMonthGrid,
   getRollingMonthGrid,
-} from "../src/widgets/time/calendar-data.js";
+} from "../src/widgets/time/calendar/calendar-data.js";
 
 const cellCount = (date, maxWeeks) => getMonthGrid(date, 0, maxWeeks).length;
 

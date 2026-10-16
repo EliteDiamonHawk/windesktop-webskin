@@ -83,8 +83,8 @@ test.before(async () => {
   baseDocument = globalThis.document;
   baseWindow = globalThis.window;
   installDom();
-  plain = await import("../src/widgets/time/month-plain.js?month-widget-test");
-  prestyled = await import("../src/widgets/time/month-prestyled.js?month-widget-test");
+  plain = await import("../src/widgets/time/calendar/month-plain.js?month-widget-test");
+  prestyled = await import("../src/widgets/time/calendar/month-prestyled.js?month-widget-test");
   globalThis.document = baseDocument;
   globalThis.window = baseWindow;
 });

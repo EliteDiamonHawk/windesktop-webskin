@@ -1,5 +1,5 @@
-import { Widget } from "../widgets.js";
-import { subscribeClock, validateUpdateInterval } from "./time-scheduler.js";
+import { Widget } from "../../widgets.js";
+import { subscribeClock, validateUpdateInterval } from "../time-scheduler.js";
 
 const WIDGET_SETTINGS_ID = "clock-digital-plain";
 

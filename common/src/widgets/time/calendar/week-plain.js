@@ -1,6 +1,6 @@
 // Plain calendar view in the shared time widget category.
-import { Widget } from "../widgets.js?v=calendar-date-5";
-import { validateUpdateInterval } from "./time-scheduler.js";
+import { Widget } from "../../widgets.js?v=calendar-date-5";
+import { validateUpdateInterval } from "../time-scheduler.js";
 import {
   addDays,
   calendarDateState,

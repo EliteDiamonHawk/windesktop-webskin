@@ -1,5 +1,5 @@
 // Shared local calendar data for the time widget category.
-import { subscribeCalendar } from "./time-scheduler.js";
+import { subscribeCalendar } from "../time-scheduler.js";
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const DATE_TOKEN_PATTERN = /YYYY|MMMM|dddd|MMM|ddd|YY|MM|DD|M|D/g;

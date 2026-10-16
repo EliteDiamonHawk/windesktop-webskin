@@ -23,7 +23,7 @@ Theme Name/
 Import shared modules from `/common/`:
 
 ```js
-import { createClock } from "/common/widgets/time/clock-digital-plain.js";
+import { createClock } from "/common/widgets/time/clock/clock-digital-plain.js";
 
 document.querySelector("#clock").append(createClock());
 ```

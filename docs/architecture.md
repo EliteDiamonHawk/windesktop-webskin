@@ -26,7 +26,7 @@ CSS.
 - `main.py` creates the FastAPI app, lifespan, CORS settings, and health routes.
 - `routes.py` validates HTTP input and maps service errors to response codes.
 - `settings.py` provides the settings service.
-- `persistence.py` reads and writes versioned JSON.
+- `persistence.py` reads and writes versioned namespace JSON plus per-widget files.
 - `themes.py` manages theme packages and previews.
 - `paths.py` selects runtime roots and rejects asset escapes.
 - `system_metrics.py` collects the privacy-filtered system snapshot.

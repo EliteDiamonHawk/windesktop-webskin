@@ -155,6 +155,7 @@ logs/
 
 # Local development settings
 /localdata/settings.json
+/localdata/settings/
 /localdata/common/
 /localdata/themes/dev/
 /.uv-cache/

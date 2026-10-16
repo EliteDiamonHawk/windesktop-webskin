@@ -130,6 +130,17 @@ class SettingsService:
     def is_common_widget(identifier: str) -> bool:
         return identifier in COMMON_WIDGET_IDS
 
+    @staticmethod
+    def is_valid_widget(identifier: str) -> bool:
+        return bool(
+            isinstance(identifier, str)
+            and identifier
+            and identifier not in {".", ".."}
+            and "/" not in identifier
+            and "\\" not in identifier
+            and "\x00" not in identifier
+        )
+
     def resolve_time_widget_intervals(self) -> dict[str, Any]:
         family_defaults: dict[str, int] = {}
         resolved_widgets: dict[str, int] = {}

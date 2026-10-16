@@ -72,32 +72,32 @@ def create_settings_router(service: SettingsService | None = None) -> APIRouter:
     def get_scoped(namespace: str, identifier: str) -> dict[str, Any]:
         if namespace not in ("themes", "widgets"):
             raise HTTPException(status_code=404, detail="Settings namespace not found")
-        if namespace == "widgets" and not settings_service.is_common_widget(identifier):
-            raise HTTPException(status_code=404, detail="Common widget not found")
+        if namespace == "widgets" and not settings_service.is_valid_widget(identifier):
+            raise HTTPException(status_code=404, detail="Widget identifier is invalid")
         return read(namespace, identifier=identifier)
 
     @router.get("/{namespace}/{identifier}/{key}")
     def get_scoped_value(namespace: str, identifier: str, key: str) -> Any:
         if namespace not in ("themes", "widgets"):
             raise HTTPException(status_code=404, detail="Settings namespace not found")
-        if namespace == "widgets" and not settings_service.is_common_widget(identifier):
-            raise HTTPException(status_code=404, detail="Common widget not found")
+        if namespace == "widgets" and not settings_service.is_valid_widget(identifier):
+            raise HTTPException(status_code=404, detail="Widget identifier is invalid")
         return read(namespace, key, identifier)
 
     @router.put("/{namespace}/{identifier}/{key}")
     def set_scoped_value(namespace: str, identifier: str, key: str, value: Any = Body(...)) -> Any:
         if namespace not in ("themes", "widgets"):
             raise HTTPException(status_code=404, detail="Settings namespace not found")
-        if namespace == "widgets" and not settings_service.is_common_widget(identifier):
-            raise HTTPException(status_code=404, detail="Common widget not found")
+        if namespace == "widgets" and not settings_service.is_valid_widget(identifier):
+            raise HTTPException(status_code=404, detail="Widget identifier is invalid")
         return write(namespace, key, value, identifier)
 
     @router.delete("/{namespace}/{identifier}/{key}", status_code=status.HTTP_204_NO_CONTENT)
     def delete_scoped_value(namespace: str, identifier: str, key: str) -> None:
         if namespace not in ("themes", "widgets"):
             raise HTTPException(status_code=404, detail="Settings namespace not found")
-        if namespace == "widgets" and not settings_service.is_common_widget(identifier):
-            raise HTTPException(status_code=404, detail="Common widget not found")
+        if namespace == "widgets" and not settings_service.is_valid_widget(identifier):
+            raise HTTPException(status_code=404, detail="Widget identifier is invalid")
         remove(namespace, key, identifier)
 
     return router

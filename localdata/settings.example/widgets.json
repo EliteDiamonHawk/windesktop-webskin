@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "widgets": {
+    "memory-plain": {
+      "file": "widgets/memory-plain.json"
+    }
+  }
+}

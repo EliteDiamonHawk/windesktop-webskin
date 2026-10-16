@@ -52,5 +52,5 @@ FastAPI publishes its schema at `/docs`.
 - A 404 under `/common/` or `/themes/` means the asset build has not run. Run `pnpm build:assets`.
 - A dashboard connection error means FastAPI is down or uses another port. Check `/api/health`.
 - An unexpected theme root can come from `WEBSKIN_THEMES_ROOT`, `WEBSKIN_ENV`, or `WEBSKIN_PRODUCTION`.
-- An unexpected settings file can come from `WEBSKIN_SETTINGS_PATH` or the active environment mode.
+- An unexpected settings directory can come from `WEBSKIN_SETTINGS_PATH` or the active environment mode.
 

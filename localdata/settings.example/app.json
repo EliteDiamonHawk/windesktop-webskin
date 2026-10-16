@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "app": {
+    "hardware_monitor_enabled": true,
+    "time_clock_update_interval_seconds": 5,
+    "time_calendar_update_interval_seconds": 60,
+    "system_fast_update_interval_seconds": 5,
+    "system_standard_update_interval_seconds": 30,
+    "system_slow_update_interval_seconds": 60
+  }
+}

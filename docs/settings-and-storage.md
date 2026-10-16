@@ -2,31 +2,49 @@
 
 ## File format
 
-The settings file uses version `1` and three namespaces:
+Settings use version `1` namespace files. The settings directory contains
+`app.json`, `themes.json`, and `widgets.json`. The widget index points to one
+file per configured widget under the `widgets/` subdirectory:
+
+```json
+settings/
+|-- app.json
+|-- themes.json
+|-- widgets.json
+`-- widgets/
+    `-- memory-plain.json
+```
+
+`app.json` stores application keys and `themes.json` stores objects under theme
+IDs. `widgets.json` stores the widget index:
 
 ```json
 {
   "version": 1,
-  "app": {
-    "hardware_monitor_enabled": true,
-    "time_clock_update_interval_seconds": 5,
-    "time_calendar_update_interval_seconds": 60,
-    "system_fast_update_interval_seconds": 5,
-    "system_standard_update_interval_seconds": 30,
-    "system_slow_update_interval_seconds": 60
-  },
-  "themes": {},
   "widgets": {
-    "clock-digital-plain": {},
-    "month-prestyled": {},
-    "memory-plain": {}
+    "memory-plain": {
+      "file": "widgets/memory-plain.json"
+    }
   }
 }
 ```
 
-`app` stores application keys. `themes` stores objects under a theme ID.
-`widgets` stores objects under hardcoded common-widget IDs. Theme-created
-widget IDs are not accepted by the widget settings routes.
+Each indexed widget file has its own ID and settings object:
+
+```json
+{
+  "version": 1,
+  "id": "memory-plain",
+  "settings": {
+    "updateInterval": 15
+  }
+}
+```
+
+Widget files are created on the first write. An uninitialized widget reads as
+an empty settings object and does not create a file. Settings routes accept any
+safe widget ID. Deleting the last setting keeps the empty widget file and its
+index entry.
 
 Set `app.hardware_monitor_enabled` to `false` to skip LibreHardwareMonitor
 initialization and sensor fallback:
@@ -38,7 +56,7 @@ initialization and sensor fallback:
 ```
 
 The backend enables the monitor when the key is absent or invalid. It reads the
-key during startup, so restart FastAPI after editing `settings.json`.
+key during startup, so restart FastAPI after editing `app.json`.
 `psutil` metrics continue to work when the monitor is disabled.
 
 Time widgets use one backend-resolved settings request per page load. The
@@ -47,21 +65,44 @@ family default. Invalid or missing values fall back to 5 seconds for clocks
 and 60 seconds for calendars. A theme can override the backend result by
 passing `updateInterval` directly to the widget constructor.
 
-For example, constructor-level time settings use these widget IDs:
+For example, constructor-level time settings use these widget IDs and files:
+
+`settings/widgets.json`:
 
 ```json
 {
-  "themes": {
-    "dev": {}
-  },
+  "version": 1,
   "widgets": {
     "clock-digital-plain": {
-      "updateInterval": 2
+      "file": "widgets/clock-digital-plain.json"
     },
     "month-prestyled": {
-      "updateInterval": 60
-    },
-    "memory-plain": {}
+      "file": "widgets/month-prestyled.json"
+    }
+  }
+}
+```
+
+`settings/widgets/clock-digital-plain.json`:
+
+```json
+{
+  "version": 1,
+  "id": "clock-digital-plain",
+  "settings": {
+    "updateInterval": 2
+  }
+}
+```
+
+`settings/widgets/month-prestyled.json`:
+
+```json
+{
+  "version": 1,
+  "id": "month-prestyled",
+  "settings": {
+    "updateInterval": 60
   }
 }
 ```
@@ -121,8 +162,8 @@ milliseconds and takes precedence when both options are supplied.
 | `PUT` | `/api/settings/{namespace}/{id}/{key}` | Write one scoped value |
 | `DELETE` | `/api/settings/{namespace}/{id}/{key}` | Delete one scoped value |
 
-Scoped routes accept `themes` and the hardcoded common-widget IDs under
-`widgets`. Unknown widget IDs and missing values return `404`.
+Scoped routes accept `themes` and safe widget IDs under `widgets`. Missing
+settings return `404`; uninitialized widget namespaces read as empty objects.
 Storage failures return `503`.
 
 ## File locations
@@ -130,24 +171,28 @@ Storage failures return `503`.
 Development uses:
 
 ```text
-localdata/settings.json
+localdata/settings/
 ```
 
 Production and frozen runs use:
 
 ```text
-%LOCALAPPDATA%/WinDesktopWebskin/settings.json
+%LOCALAPPDATA%/WinDesktopWebskin/settings/
 ```
 
-Set `WEBSKIN_SETTINGS_PATH` to choose another file.
+Set `WEBSKIN_SETTINGS_PATH` to choose another settings directory. The backend
+creates `app.json`, `themes.json`, `widgets.json`, and `widgets/` there when
+they are missing. The old single `settings.json` format is not read or
+migrated.
 
 Theme packages use a separate root. See [Theme runtime](theme-runtime.md) for
 `WEBSKIN_THEMES_ROOT` and environment selection.
 
 ## Writes
 
-The JSON storage validates the version and namespace shapes when it loads the
-file. For each write, it creates a temporary file beside the target, flushes
-and syncs the file, then replaces the target. Keep that sequence in storage
-changes.
+The JSON storage validates versions, namespace shapes, widget IDs, and indexed
+paths when it loads a file. For each write, it creates a temporary file beside
+the target, flushes and syncs the file, then replaces the target. A first widget
+write replaces the widget file before it updates `widgets.json`, so the index
+never points to a file that was not written.
 

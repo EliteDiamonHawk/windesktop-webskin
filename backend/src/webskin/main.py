@@ -7,7 +7,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .persistence import SettingsStorageError
-from .routes import create_settings_router, create_system_router, create_theme_assets_router, create_themes_router
+from .routes import (
+    create_settings_router,
+    create_system_controls_router,
+    create_system_metrics_router,
+    create_theme_assets_router,
+    create_themes_router,
+)
 from .settings import SettingNotFoundError, SettingsService
 
 logger = logging.getLogger(__name__)
@@ -67,7 +73,8 @@ app.add_middleware(
 )
 
 app.include_router(create_settings_router(settings_service))
-app.include_router(create_system_router(lambda requested_fields=None: app.state.system_metrics.collect(requested_fields)))
+app.include_router(create_system_metrics_router(lambda requested_fields=None: app.state.system_metrics.collect(requested_fields)))
+app.include_router(create_system_controls_router())
 app.include_router(create_themes_router())
 app.include_router(create_theme_assets_router())
 

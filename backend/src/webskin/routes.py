@@ -207,9 +207,8 @@ def create_theme_assets_router(storage: UserThemeStorage | None = None) -> APIRo
     return router
 
 
-def create_system_router(collector=collect_system_metrics, control_runner=execute_system_control) -> APIRouter:
-    router = APIRouter(prefix="/api/system")
-
+def create_system_metrics_router(collector=collect_system_metrics) -> APIRouter:
+    router = APIRouter(prefix="/api/system/metrics")
     allowed_fields = {
         "system.boot_time",
         "cpu.utilization",
@@ -289,12 +288,18 @@ def create_system_router(collector=collect_system_metrics, control_runner=execut
             raise HTTPException(status_code=422, detail=f"Unsupported system metric field: {invalid[0]}")
         return fields
 
-    @router.get("/metrics")
+    @router.get("")
     def get_metrics(fields: str | None = None) -> dict[str, Any]:
         requested_fields = parse_fields(fields)
         return collector() if requested_fields is None else collector(requested_fields=requested_fields)
 
-    @router.post("/controls/{control}", status_code=status.HTTP_204_NO_CONTENT)
+    return router
+
+
+def create_system_controls_router(control_runner=execute_system_control) -> APIRouter:
+    router = APIRouter(prefix="/api/system/controls")
+
+    @router.post("/{control}", status_code=status.HTTP_204_NO_CONTENT)
     def run_control(control: str) -> None:
         if control not in SYSTEM_CONTROL_COMMANDS:
             raise HTTPException(status_code=404, detail="System control was not found")

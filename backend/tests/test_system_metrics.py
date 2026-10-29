@@ -8,7 +8,7 @@ from unittest.mock import patch
 from fastapi import HTTPException
 
 from webskin.hardware_monitor import HardwareMonitorProvider
-from webskin.routes import create_system_router
+from webskin.routes import create_system_metrics_router
 from webskin.system_metrics import (
     DiskMetricsCache,
     PsutilCapabilityTracker,
@@ -25,14 +25,14 @@ class SystemMetricsTests(unittest.TestCase):
         return SimpleNamespace(read=lambda: {"available": False, "readings": []}, close=lambda: None)
 
     def test_metrics_route_returns_collector_snapshot(self) -> None:
-        router = create_system_router(lambda: {"timestamp": "test", "network": {"available": True}})
+        router = create_system_metrics_router(lambda: {"timestamp": "test", "network": {"available": True}})
         route = router.routes[0]
 
         self.assertEqual(route.path, "/api/system/metrics")
         self.assertEqual(route.endpoint(), {"timestamp": "test", "network": {"available": True}})
 
     def test_metrics_route_validates_and_passes_field_selection(self) -> None:
-        router = create_system_router(lambda requested_fields: {"fields": requested_fields})
+        router = create_system_metrics_router(lambda requested_fields: {"fields": requested_fields})
         route = router.routes[0]
 
         self.assertEqual(

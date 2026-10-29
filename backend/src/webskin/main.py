@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import logging
 from os import getenv
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,10 +9,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from .persistence import SettingsStorageError
 from .routes import create_settings_router, create_system_router, create_theme_assets_router, create_themes_router
 from .settings import SettingNotFoundError, SettingsService
-from .system_metrics import SystemMetricsService
 
 logger = logging.getLogger(__name__)
 settings_service = SettingsService()
+
+
+def SystemMetricsService(*args: Any, **kwargs: Any) -> Any:
+    """Load system metrics only when the application lifespan starts."""
+    from .system_metrics import SystemMetricsService as _SystemMetricsService
+
+    return _SystemMetricsService(*args, **kwargs)
 
 
 def _hardware_monitor_enabled(service: SettingsService) -> bool:

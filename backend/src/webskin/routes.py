@@ -8,9 +8,15 @@ from fastapi.responses import FileResponse
 from .persistence import SettingsStorageError
 from .paths import get_theme_paths, safe_asset_path
 from .settings import SettingNotFoundError, SettingsService
-from .system_metrics import collect_system_metrics
 from .system_controls import SYSTEM_CONTROL_COMMANDS, SystemControlError, execute_system_control
 from .themes import ThemeNameConflictError, ThemeStorageError, UserThemeStorage, user_theme_storage
+
+
+def collect_system_metrics(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Load system telemetry implementation only when telemetry is requested."""
+    from .system_metrics import collect_system_metrics as _collect_system_metrics
+
+    return _collect_system_metrics(*args, **kwargs)
 
 
 def create_settings_router(service: SettingsService | None = None) -> APIRouter:

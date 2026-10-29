@@ -71,11 +71,12 @@ class TimeWidgetSettingsTests(unittest.TestCase):
 
     def test_common_widget_registry_is_hardcoded(self) -> None:
         self.assertTrue(SettingsService.is_common_widget("digital-plain"))
+        self.assertTrue(SettingsService.is_common_widget("digital-prestyled2"))
         self.assertFalse(SettingsService.is_common_widget("clock-digital-plain"))
         self.assertTrue(SettingsService.is_common_widget("memory-plain"))
         self.assertTrue(SettingsService.is_common_widget("last-boot-plain"))
         self.assertFalse(SettingsService.is_common_widget("main-clock"))
-        self.assertEqual(len(COMMON_WIDGET_IDS), 30)
+        self.assertEqual(len(COMMON_WIDGET_IDS), 31)
 
     def test_system_widget_family_and_widget_overrides(self) -> None:
         service = SettingsService(MemorySettingsStorage({

@@ -20,6 +20,7 @@ clock.destroy?.();
 | --- | --- | --- |
 | Digital plain | `/common/widgets/time/clock/digital-plain.js` | `createClock(options)` |
 | Digital pre-styled | `/common/widgets/time/clock/digital-prestyled.js` | `createClock(options)` |
+| Digital pre-styled 2 | `/common/widgets/time/clock/digital-prestyled2.js` | `createClock(options)` |
 | Analog plain | `/common/widgets/time/clock/analog-plain.js` | `createClock(options)` |
 | Analog pre-styled | `/common/widgets/time/clock/analog-prestyled.js` | `createClock(options)` |
 | Analog pre-styled 2 | `/common/widgets/time/clock/analog-prestyled2.js` | `createClock(options)` |
@@ -30,8 +31,10 @@ Digital clocks accept `format` (`12h` or `24h`), `seconds`,
 `showPeriod`, `syntax`, `offsetMinutes`, `updateInterval`, and `className`.
 Analog clocks accept `offsetMinutes`, `smooth`, `updateInterval`, and
 `className`. Pre-styled clocks accept `color` and `backgroundColor` where
-their module defines them. `updateInterval` is a positive integer number of
-seconds. The clock default is 5 seconds; set it to 1 for per-second updates.
+their module defines them. `digital-prestyled2` also accepts `accentColor`,
+`maskOffset`, `maskRoundness`, `blur`, and an optional `layout`.
+`updateInterval` is a positive integer number of seconds. The clock default is
+5 seconds; set it to 1 for per-second updates.
 When omitted, the backend resolves the common widget setting, then the app
 clock setting, once per page load.
 Themes can override the resolved value by passing `updateInterval` directly.

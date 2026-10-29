@@ -27,6 +27,7 @@ COMMON_WIDGET_IDS = frozenset({
     "network-telemetry-transfer-plain",
     "digital-plain",
     "digital-prestyled",
+    "digital-prestyled2",
     "analog-plain",
     "analog-prestyled",
     "analog-prestyled2",
@@ -48,6 +49,7 @@ TIME_WIDGET_INTERVALS = {
         for widget_id in (
             "digital-plain",
             "digital-prestyled",
+            "digital-prestyled2",
             "analog-plain",
             "analog-prestyled",
             "analog-prestyled2",

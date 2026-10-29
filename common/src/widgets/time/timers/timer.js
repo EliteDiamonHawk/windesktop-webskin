@@ -14,13 +14,25 @@ const ensureStyles = () => {
   style.textContent = `
     .webskin-timer {
       box-sizing: border-box;
-      display: inline-block;
-      width: var(--webskin-timer-width, 8ch);
-      height: var(--webskin-timer-height, 1.5em);
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .5rem;
+      width: var(--webskin-timer-width, max-content);
+      height: var(--webskin-timer-height, auto);
       min-width: 0;
       min-height: 0;
+    }
+    .webskin-timer__display {
+      display: block;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
+    }
+    .webskin-timer__controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      width: max-content;
+      gap: .5rem;
     }
   `;
   document.head?.append(style);
@@ -70,13 +82,17 @@ export class PlainTimer extends Widget {
     if (kind === "stopwatch" && limit !== undefined && limit !== null) validateDuration(limit, "limit");
     validateUpdateInterval(updateInterval);
 
-    const element = document.createElement("time");
+    const element = document.createElement("section");
+    const display = document.createElement("time");
     super(element, { type: "timer" });
     element.className = ["webskin-timer", `webskin-timer--${kind}`, className]
       .filter(Boolean)
       .join(" ");
     element.dataset.webskinTimerType = kind;
-    element.setAttribute("aria-label", kind === "countdown" ? "Countdown timer" : "Stopwatch");
+    element.setAttribute("aria-live", "polite");
+    display.className = "webskin-timer__display";
+    display.dataset.webskinTimerPart = "display";
+    display.setAttribute("aria-label", kind === "countdown" ? "Countdown timer" : "Stopwatch");
 
     let current = kind === "countdown" ? time : 0;
     const initial = kind === "countdown" ? time : 0;
@@ -94,7 +110,7 @@ export class PlainTimer extends Widget {
     let destroyed = false;
 
     const render = () => {
-      element.textContent = formatDuration(current);
+      display.textContent = formatDuration(current);
       element.dataset.webskinTimerState = state;
       element.dataset.webskinTimerMilliseconds = String(Math.max(0, Math.floor(current)));
     };
@@ -292,12 +308,29 @@ export class PlainTimer extends Widget {
       setUpdateInterval: { configurable: true, value: setUpdateInterval },
     });
 
+    const controls = document.createElement("div");
+    controls.className = "webskin-timer__controls";
+    for (const [label, action] of [
+      ["Play", start],
+      ["Restart", restart],
+      ["Resume", resume],
+      ["Pause", pause],
+    ]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.dataset.webskinTimerControl = action.name || label.toLowerCase();
+      button.addEventListener("click", action);
+      controls.append(button);
+    }
+    element.append(display, controls);
     render();
     this.addCleanup(() => {
       destroyed = true;
       active = false;
       runId += 1;
       clearActiveTimers();
+      controls.replaceChildren();
     });
   }
 }

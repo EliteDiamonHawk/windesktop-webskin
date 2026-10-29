@@ -10,10 +10,36 @@ class FakeElement {
     this.id = "";
     this.textContent = "";
     this.attributes = {};
+    this.listeners = new Map();
   }
 
   append(...children) { this.children.push(...children); }
+  replaceChildren(...children) { this.children = children; }
   setAttribute(name, value) { this.attributes[name] = String(value); }
+  addEventListener(name, listener) { this.listeners.set(name, listener); }
+  removeEventListener(name, listener) {
+    if (this.listeners.get(name) === listener) this.listeners.delete(name);
+  }
+  click() { return this.listeners.get("click")?.(); }
+  matches(selector) {
+    const match = selector.match(/^\[data-webskin-timer-(part|control)(?:="([^"]+)")?\]$/);
+    if (!match) return false;
+    const value = this.dataset[`webskinTimer${match[1] === "part" ? "Part" : "Control"}`];
+    return match[2] === undefined ? value !== undefined : value === match[2];
+  }
+  querySelectorAll(selector) {
+    const matches = [];
+    const visit = (element) => {
+      for (const child of element.children) {
+        if (!(child instanceof FakeElement)) continue;
+        if (child.matches(selector)) matches.push(child);
+        visit(child);
+      }
+    };
+    visit(this);
+    return matches;
+  }
+  querySelector(selector) { return this.querySelectorAll(selector)[0] ?? null; }
 }
 
 let now = 0;
@@ -65,6 +91,8 @@ const runNextTimer = () => {
   entry[1]();
 };
 
+const displayOf = (timer) => timer.querySelector('[data-webskin-timer-part="display"]').textContent;
+
 let originalDateNow;
 let countdown;
 let stopwatch;
@@ -86,29 +114,33 @@ test.after(() => {
 test("countdown starts paused and exposes controls", async () => {
   installDom();
   const timer = countdown({ time: 10_000, updateInterval: 5 });
-  assert.equal(timer.textContent, "00:00:10");
+  assert.equal(displayOf(timer), "00:00:10");
+  const controls = timer.querySelectorAll("[data-webskin-timer-control]");
+  assert.deepEqual(controls.map((button) => button.textContent), ["Play", "Restart", "Resume", "Pause"]);
   assert.equal(timer.dataset.webskinTimerState, "paused");
   assert.equal(requests, 0);
 
-  timer.start();
+  controls[0].click();
   await flush();
   assert.equal(requests, 1);
   assert.equal(timer.dataset.webskinTimerState, "running");
 
   now = 2_500;
   runNextTimer();
-  assert.equal(timer.textContent, "00:00:07");
+  assert.equal(displayOf(timer), "00:00:07");
 
-  timer.pause();
+  controls[3].click();
   await flush();
   assert.equal(timer.dataset.webskinTimerState, "paused");
   assert.equal(requests, 2);
 
   timer.setTime(3_000);
-  assert.equal(timer.textContent, "00:00:03");
-  timer.restart();
-  assert.equal(timer.textContent, "00:00:10");
+  assert.equal(displayOf(timer), "00:00:03");
+  controls[1].click();
+  assert.equal(displayOf(timer), "00:00:10");
   assert.equal(timer.dataset.webskinTimerState, "paused");
+  controls[2].click();
+  controls[3].click();
   timer.destroy();
 });
 
@@ -121,7 +153,7 @@ test("countdown finishes at zero and queries system time at end", async () => {
   runNextTimer();
   await flush();
 
-  assert.equal(timer.textContent, "00:00:00");
+  assert.equal(displayOf(timer), "00:00:00");
   assert.equal(timer.dataset.webskinTimerState, "finished");
   assert.equal(requests, 2);
   timer.resume();
@@ -132,20 +164,20 @@ test("countdown finishes at zero and queries system time at end", async () => {
 test("stopwatch clamps at limit and requires restart", async () => {
   installDom();
   const timer = stopwatch({ limit: 3_000 });
-  assert.equal(timer.textContent, "00:00:00");
+  assert.equal(displayOf(timer), "00:00:00");
   timer.start();
   await flush();
   now = 3_000;
   runNextTimer();
   await flush();
 
-  assert.equal(timer.textContent, "00:00:03");
+  assert.equal(displayOf(timer), "00:00:03");
   assert.equal(timer.dataset.webskinTimerState, "finished");
   const requestsAtLimit = requests;
   timer.resume();
   assert.equal(requests, requestsAtLimit);
   timer.restart();
-  assert.equal(timer.textContent, "00:00:00");
+  assert.equal(displayOf(timer), "00:00:00");
   assert.equal(timer.dataset.webskinTimerState, "paused");
   timer.setLimit(null);
   timer.start();
@@ -171,7 +203,7 @@ test("sync interval can change while running and failed sync uses browser time",
   await flush();
   now = 1_500;
   runNextTimer();
-  assert.equal(fallback.textContent, "00:00:01");
+  assert.equal(displayOf(fallback), "00:00:01");
   fallback.destroy();
 });
 

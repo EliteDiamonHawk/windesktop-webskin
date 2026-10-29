@@ -94,9 +94,10 @@ widgets use local dates and do not convert them to UTC.
 | Countdown | `/common/widgets/time/timers/countdown.js` | `createCountdown(options)` |
 | Stopwatch | `/common/widgets/time/timers/stopwatch.js` | `createStopwatch(options)` |
 
-Timers render plain `HH:MM:SS` text. Durations use integer milliseconds. Both
-constructors return paused `<time>` elements with `start()`, `pause()`,
-`resume()`, `restart()`, and `setUpdateInterval(seconds)` methods.
+Timers render plain `HH:MM:SS` text with four plain HTML controls underneath:
+Play, Restart, Resume, and Pause. Durations use integer milliseconds. Both
+constructors return paused timer elements with `start()`, `pause()`, `resume()`,
+`restart()`, and `setUpdateInterval(seconds)` methods.
 
 ```js
 import { createCountdown } from "/common/widgets/time/timers/countdown.js";

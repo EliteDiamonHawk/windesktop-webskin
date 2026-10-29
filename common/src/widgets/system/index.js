@@ -13,3 +13,8 @@ export { createDiskPartitions } from "./metrics/disk-partitions-plain.js";
 export { createGpuThermalFan } from "./metrics/gpu-thermal-fan-plain.js";
 export { createNetworkTelemetryTransfer } from "./metrics/network-telemetry-transfer-plain.js";
 export { createLastBoot } from "./metrics/last-boot-plain.js";
+export { createSleep } from "./controls/sleep.js";
+export { createShutdown } from "./controls/shutdown.js";
+export { createLock } from "./controls/lock.js";
+export { createLogout } from "./controls/logout.js";
+export { createRestart } from "./controls/restart.js";

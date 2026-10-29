@@ -9,6 +9,7 @@ from .persistence import SettingsStorageError
 from .paths import get_theme_paths, safe_asset_path
 from .settings import SettingNotFoundError, SettingsService
 from .system_metrics import collect_system_metrics
+from .system_controls import SYSTEM_CONTROL_COMMANDS, SystemControlError, execute_system_control
 from .themes import ThemeNameConflictError, ThemeStorageError, UserThemeStorage, user_theme_storage
 
 
@@ -200,7 +201,7 @@ def create_theme_assets_router(storage: UserThemeStorage | None = None) -> APIRo
     return router
 
 
-def create_system_router(collector=collect_system_metrics) -> APIRouter:
+def create_system_router(collector=collect_system_metrics, control_runner=execute_system_control) -> APIRouter:
     router = APIRouter(prefix="/api/system")
 
     allowed_fields = {
@@ -286,5 +287,14 @@ def create_system_router(collector=collect_system_metrics) -> APIRouter:
     def get_metrics(fields: str | None = None) -> dict[str, Any]:
         requested_fields = parse_fields(fields)
         return collector() if requested_fields is None else collector(requested_fields=requested_fields)
+
+    @router.post("/controls/{control}", status_code=status.HTTP_204_NO_CONTENT)
+    def run_control(control: str) -> None:
+        if control not in SYSTEM_CONTROL_COMMANDS:
+            raise HTTPException(status_code=404, detail="System control was not found")
+        try:
+            control_runner(control)
+        except (OSError, SystemControlError) as exc:
+            raise HTTPException(status_code=503, detail="System control is unavailable") from exc
 
     return router

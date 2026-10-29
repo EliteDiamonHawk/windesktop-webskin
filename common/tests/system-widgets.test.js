@@ -9,11 +9,17 @@ class FakeElement {
     this.attributes = {};
     this.className = "";
     this.textContent = "";
+    this.listeners = new Map();
   }
 
   append(...children) { this.children.push(...children); }
   replaceChildren(...children) { this.children = children; }
   setAttribute(name, value) { this.attributes[name] = String(value); }
+  addEventListener(name, listener) { this.listeners.set(name, listener); }
+  removeEventListener(name, listener) {
+    if (this.listeners.get(name) === listener) this.listeners.delete(name);
+  }
+  click() { return this.listeners.get("click")?.(); }
 
   matches(selector) {
     const part = selector.match(/^\[data-webskin-system-part="([^"]+)"\]$/);
@@ -305,4 +311,35 @@ test("removed legacy constructors are not exported", () => {
   assert.equal("createMemoryList" in widgets, false);
   assert.equal("createCpuFrequenciesList" in widgets, false);
   assert.equal("createHardwareSensor" in widgets, false);
+});
+
+test("creates plain system controls and protects shutdown/restart by default", async () => {
+  const logout = widgets.createLogout();
+  const shutdown = widgets.createShutdown();
+  const restart = widgets.createRestart({ safety: false });
+  created.push(logout, shutdown, restart);
+
+  assert.equal(logout.tagName, "button");
+  assert.equal(logout.type, "button");
+  assert.equal(logout.textContent, "Log Out");
+  assert.equal(shutdown.textContent, "Shutdown");
+  assert.equal(restart.textContent, "Restart");
+
+  logout.click();
+  shutdown.click();
+  shutdown.click();
+  restart.click();
+  await waitForPoll();
+  assert.deepEqual(requestUrls, [
+    "/api/system/controls/logout",
+    "/api/system/controls/restart",
+  ]);
+
+  shutdown.click();
+  await waitForPoll();
+  assert.deepEqual(requestUrls, [
+    "/api/system/controls/logout",
+    "/api/system/controls/restart",
+    "/api/system/controls/shutdown",
+  ]);
 });

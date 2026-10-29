@@ -1,0 +1,1050 @@
+{
+  "schemaVersion": "clock1-mask-layout/2",
+  "units": "artboard-px",
+  "generalScale": 1.48,
+  "generalOrigin": {
+    "x": 32,
+    "y": 18
+  },
+  "generalPoints": [
+    {
+      "point": 1,
+      "x": 32,
+      "y": 18
+    },
+    {
+      "point": 2,
+      "x": 152,
+      "y": 18
+    },
+    {
+      "point": 3,
+      "x": 32,
+      "y": 242
+    },
+    {
+      "point": 4,
+      "x": 152,
+      "y": 242
+    }
+  ],
+  "generalRelativePoints": [
+    {
+      "point": 1,
+      "relativeTo": 1,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "point": 2,
+      "relativeTo": 1,
+      "x": 120,
+      "y": 0
+    },
+    {
+      "point": 3,
+      "relativeTo": 1,
+      "x": 0,
+      "y": 224
+    },
+    {
+      "point": 4,
+      "relativeTo": 1,
+      "x": 120,
+      "y": 224
+    }
+  ],
+  "digitPositions": [
+    {
+      "digitPosition": 1,
+      "anchorPoint": 1,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "digitPosition": 2,
+      "anchorPoint": 2,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "digitPosition": 3,
+      "anchorPoint": 3,
+      "x": 0,
+      "y": -50
+    },
+    {
+      "digitPosition": 4,
+      "anchorPoint": 4,
+      "x": 0,
+      "y": -50
+    }
+  ],
+  "rowScales": [
+    {
+      "row": "AB",
+      "positions": [
+        "A",
+        "B"
+      ],
+      "y": 0,
+      "scale": 1
+    },
+    {
+      "row": "CD",
+      "positions": [
+        "C",
+        "D"
+      ],
+      "y": -50,
+      "scale": 1
+    }
+  ],
+  "maskSettings": {
+    "offset": 40,
+    "roundness": 100,
+    "sharedAcross": "all numbers and digit positions"
+  },
+  "selectedNumbers": [
+    {
+      "digitPosition": 1,
+      "number": 1
+    },
+    {
+      "digitPosition": 2,
+      "number": 0
+    },
+    {
+      "digitPosition": 3,
+      "number": 5
+    },
+    {
+      "digitPosition": 4,
+      "number": 3
+    }
+  ],
+  "numberVariants": [
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 0,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 1,
+      "x": -5,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 2,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 3,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 4,
+      "x": 5,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 5,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 6,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 7,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 8,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 9,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 0,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 1,
+      "x": -10,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 2,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 3,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 4,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 5,
+      "x": 10,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 6,
+      "x": -10,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 7,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 8,
+      "x": 5,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 9,
+      "x": 0,
+      "y": 0,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 0,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 1,
+      "x": -5,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 2,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 3,
+      "x": -2,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 4,
+      "x": 5,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 5,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 6,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 7,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 8,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 9,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": false
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 0,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 1,
+      "x": -10,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 2,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 3,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 4,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 5,
+      "x": -10,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 6,
+      "x": -10,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 7,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 8,
+      "x": 5,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 9,
+      "x": 0,
+      "y": -50,
+      "scale": 0.767742,
+      "baseScale": 0.767742,
+      "rowScale": 1,
+      "saved": true
+    }
+  ],
+  "maskVariants": [
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 0,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 1,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 2,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 3,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 4,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 5,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 6,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 7,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 8,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 1,
+      "row": "AB",
+      "number": 9,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 0,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 1,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 2,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 3,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 4,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 5,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 6,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 7,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 8,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 2,
+      "row": "AB",
+      "number": 9,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 0,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 1,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 2,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 3,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 4,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 5,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 6,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 7,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 8,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 3,
+      "row": "CD",
+      "number": 9,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 0,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 1,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 2,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 3,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 4,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 5,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 6,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 7,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 8,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    },
+    {
+      "digitPosition": 4,
+      "row": "CD",
+      "number": 9,
+      "offset": 40,
+      "roundness": 100,
+      "shared": true
+    }
+  ],
+  "savedVariants": [
+    {
+      "digitPosition": 1,
+      "number": 0
+    },
+    {
+      "digitPosition": 1,
+      "number": 1
+    },
+    {
+      "digitPosition": 1,
+      "number": 2
+    },
+    {
+      "digitPosition": 1,
+      "number": 3
+    },
+    {
+      "digitPosition": 1,
+      "number": 4
+    },
+    {
+      "digitPosition": 2,
+      "number": 0
+    },
+    {
+      "digitPosition": 2,
+      "number": 1
+    },
+    {
+      "digitPosition": 2,
+      "number": 2
+    },
+    {
+      "digitPosition": 2,
+      "number": 3
+    },
+    {
+      "digitPosition": 2,
+      "number": 4
+    },
+    {
+      "digitPosition": 2,
+      "number": 5
+    },
+    {
+      "digitPosition": 2,
+      "number": 6
+    },
+    {
+      "digitPosition": 2,
+      "number": 7
+    },
+    {
+      "digitPosition": 2,
+      "number": 8
+    },
+    {
+      "digitPosition": 2,
+      "number": 9
+    },
+    {
+      "digitPosition": 3,
+      "number": 0
+    },
+    {
+      "digitPosition": 3,
+      "number": 1
+    },
+    {
+      "digitPosition": 3,
+      "number": 2
+    },
+    {
+      "digitPosition": 3,
+      "number": 3
+    },
+    {
+      "digitPosition": 3,
+      "number": 4
+    },
+    {
+      "digitPosition": 3,
+      "number": 5
+    },
+    {
+      "digitPosition": 4,
+      "number": 0
+    },
+    {
+      "digitPosition": 4,
+      "number": 1
+    },
+    {
+      "digitPosition": 4,
+      "number": 2
+    },
+    {
+      "digitPosition": 4,
+      "number": 3
+    },
+    {
+      "digitPosition": 4,
+      "number": 4
+    },
+    {
+      "digitPosition": 4,
+      "number": 5
+    },
+    {
+      "digitPosition": 4,
+      "number": 6
+    },
+    {
+      "digitPosition": 4,
+      "number": 7
+    },
+    {
+      "digitPosition": 4,
+      "number": 8
+    },
+    {
+      "digitPosition": 4,
+      "number": 9
+    }
+  ],
+  "maskConstruction": {
+    "source": "Google Sans Flex SVG digit asset",
+    "algorithm": "adaptive curve flattening + parallel normal offset + joined contour fill",
+    "textAssetFallback": "SVG text glyph with renderer-native parallel stroke outline",
+    "flattenToleranceSvgUnits": 0.5,
+    "offsetUnits": "source SVG units",
+    "roundnessUnits": "percent of a circular offset join",
+    "defaultOffset": 22,
+    "defaultRoundness": 100,
+    "sharedAcrossAllNumbers": true
+  },
+  "digitAssets": {
+    "format": "SVG text",
+    "fontFamily": "Google Sans Flex",
+    "fontWeight": 1000,
+    "bold": true,
+    "viewBox": "0 0 1000 1000"
+  },
+  "referencePreset": "clock1 / minimal 04:01 geometry",
+  "rendering": {
+    "svgUnitToArtboardPx": 0.31,
+    "defaultTargetGlyphHeightPx": 238,
+    "stackLowToHigh": [
+      "A mask",
+      "A",
+      "B mask",
+      "B",
+      "C mask",
+      "C",
+      "D mask",
+      "D"
+    ]
+  },
+  "valueCount": 569
+}

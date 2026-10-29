@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A visual editor for positioning Google Sans Flex clock digit SVGs and their rounded masks." />
+    <title>Clock1 · SVG Mask Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght@6..144,75..125,300..700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <div>
+            <div class="eyebrow">CLOCK1 / SVG WORKBENCH</div>
+            <h1>Mask the moment.</h1>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <div class="live-state"><span class="live-dot"></span><span id="statusText">Assets ready</span></div>
+          <button class="button quiet" id="resetButton" type="button">Reset</button>
+          <button class="button primary" id="exportButton" type="button">Export layout <span class="button-key">⌘↗</span></button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="hero-row">
+          <div>
+            <p class="kicker">Google Sans Flex · 4-position clock</p>
+            <h2>Shape a reusable clock system.</h2>
+            <p class="hero-copy">Tune the four anchors, place every number variant, and give each SVG a soft, slightly oversized wrapper. Your layout stays in memory and exports as a self-contained JSON recipe.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric"><strong id="numericCount">0</strong><span>numeric values</span></div>
+            <div class="metric"><strong id="savedCount">0 / 40</strong><span>variants saved</span></div>
+          </div>
+        </section>
+
+        <section class="editor-grid">
+          <div class="preview-column">
+            <div class="section-heading">
+              <div>
+                <p class="section-label">01 / COMPOSITION</p>
+                <h3>Clock canvas</h3>
+              </div>
+              <div class="canvas-actions">
+                <button class="button small" id="sampleButton" type="button">Load 04:01 reference</button>
+                <label class="toggle"><input type="checkbox" id="showGuides" checked /><span class="toggle-track"></span><span>Guides</span></label>
+              </div>
+            </div>
+
+            <div class="stage-frame">
+              <div class="stage-toolbar">
+                <span class="stage-caption"><span class="stage-icon">✦</span> Live preview</span>
+                <span class="stage-hint">Drag values in the panels →</span>
+              </div>
+              <div class="stage" id="stage" aria-label="Clock SVG preview">
+                <div class="artboard" id="artboard">
+                  <div class="guide-line horizontal top-guide"></div>
+                  <div class="guide-line horizontal bottom-guide"></div>
+                  <div class="guide-line vertical left-guide"></div>
+                  <div class="guide-line vertical right-guide"></div>
+                  <div class="guide-diagonal diagonal-a"></div>
+                  <div class="guide-diagonal diagonal-b"></div>
+                  <div class="origin-crosshair"></div>
+                  <div class="layers" id="layers"></div>
+                  <div class="points" id="points"></div>
+                </div>
+              </div>
+              <div class="stage-footer">
+                <span><kbd>G</kbd> guides</span>
+                <span><kbd>R</kbd> reset</span>
+                <span class="stage-coordinate" id="stageCoordinate">world 0 × 0</span>
+              </div>
+            </div>
+
+            <div class="number-strip" id="positionCards"></div>
+          </div>
+
+          <aside class="control-column">
+            <div class="panel tabs-panel">
+              <div class="tabs" role="tablist" aria-label="Editor sections">
+                <button class="tab is-active" data-tab="geometry" role="tab" aria-selected="true" type="button">Geometry</button>
+                <button class="tab" data-tab="variants" role="tab" aria-selected="false" type="button">Variants</button>
+                <button class="tab" data-tab="export" role="tab" aria-selected="false" type="button">Export</button>
+              </div>
+
+              <div class="tab-content" data-panel="geometry">
+                <div class="panel-intro">
+                  <div class="intro-icon">⌗</div>
+                  <div><h4>General geometry</h4><p>Point 1 is the reference. The other three points stay relative to it.</p></div>
+                </div>
+                <div class="subsection">
+                  <div class="subsection-heading"><span>General points</span><span class="micro-note">world units</span></div>
+                  <div class="field-grid point-grid" id="generalControls"></div>
+                </div>
+                <div class="subsection">
+                  <div class="subsection-heading"><span>Digit rows</span><span class="micro-note">shared y + scale, per-digit x</span></div>
+                  <div class="field-grid" id="digitControls"></div>
+                </div>
+                <div class="subsection scale-row">
+                  <div><span class="subsection-title">Overall scale</span><p class="micro-note">Scales the complete clock</p></div>
+                  <div class="range-with-value"><input id="overallScale" type="range" min="0.35" max="1.6" step="0.01" /><output id="overallScaleValue">1.00×</output></div>
+                </div>
+              </div>
+
+              <div class="tab-content is-hidden" data-panel="variants">
+                <div class="panel-intro">
+                  <div class="intro-icon peach">✳</div>
+                  <div><h4>Variant placement</h4><p>Each position owns a 0–9 set. Select a cell to edit its number; the offset mask is shared across every digit.</p></div>
+                </div>
+                <div class="active-variant" id="activeVariantLabel">Position A · number 1</div>
+                <div class="variant-matrix" id="variantMatrix"></div>
+                <div class="subsection selected-editor" id="variantEditor"></div>
+              </div>
+
+              <div class="tab-content is-hidden" data-panel="export">
+                <div class="panel-intro">
+                  <div class="intro-icon mint">↗</div>
+                  <div><h4>Export recipe</h4><p>Download the exact relative layout values used to recreate the clock later.</p></div>
+                </div>
+                <div class="export-summary" id="exportSummary"></div>
+                <div class="export-actions">
+                  <button class="button primary wide" id="copyButton" type="button">Copy JSON</button>
+                  <button class="button quiet wide" id="downloadButton" type="button">Download JSON</button>
+                  <label class="button quiet wide file-button">Import JSON<input id="importInput" type="file" accept="application/json,.json" /></label>
+                </div>
+                <p class="fine-print">The export includes 4 absolute points, 4 relative point offsets, 4 digit offsets, 40 number records, 40 generated mask records, saved markers, selected numbers, mask offsets, join roundness, and overall scale.</p>
+              </div>
+            </div>
+
+            <div class="legend-card">
+              <div class="legend-title">Mask construction</div>
+              <div class="legend-row"><span class="legend-swatch mask-swatch"></span><span>Filled offset mask</span><span class="legend-value" id="maskLegend">22u · 100% round</span></div>
+              <div class="legend-row"><span class="legend-swatch number-swatch"></span><span>Google Sans Flex digit</span><span class="legend-value">SVG path</span></div>
+              <p>Each mask is a filled parallel offset of the digit contours, with connected rounded joins and preserved counters.</p>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

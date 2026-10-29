@@ -161,7 +161,7 @@ logs/
 /.uv-cache/
 /.uv-cache-local/
 /.uv-cache-task/
-/stop-slop/
 /themes/dev/
 /temp/
 /reslink.toml
+/.agents/skills

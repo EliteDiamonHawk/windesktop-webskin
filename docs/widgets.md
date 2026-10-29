@@ -87,6 +87,40 @@ Calendar elements expose `data-webskin-calendar-part`,
 `data-webskin-calendar-today` where the module supports each field. The
 widgets use local dates and do not convert them to UTC.
 
+## Timers
+
+| Module | Import | Function |
+| --- | --- | --- |
+| Countdown | `/common/widgets/time/timers/countdown.js` | `createCountdown(options)` |
+| Stopwatch | `/common/widgets/time/timers/stopwatch.js` | `createStopwatch(options)` |
+
+Timers render plain `HH:MM:SS` text. Durations use integer milliseconds. Both
+constructors return paused `<time>` elements with `start()`, `pause()`,
+`resume()`, `restart()`, and `setUpdateInterval(seconds)` methods.
+
+```js
+import { createCountdown } from "/common/widgets/time/timers/countdown.js";
+import { createStopwatch } from "/common/widgets/time/timers/stopwatch.js";
+
+const countdown = createCountdown({ time: 90_000 });
+const stopwatch = createStopwatch({ limit: 3_600_000 });
+document.querySelector("#countdown").append(countdown);
+document.querySelector("#stopwatch").append(stopwatch);
+countdown.start();
+stopwatch.start();
+```
+
+Countdown options require `time`. `setTime(milliseconds)` replaces its value
+and pauses it. `restart()` restores the initial countdown value and pauses.
+Stopwatch `limit` is optional; `setLimit(millisecondsOrNull)` changes it.
+Reaching a limit stops the stopwatch. `restart()` clears that finished state.
+
+Timers use browser time for elapsed-time calculations. They query
+`/api/system/time` when starting, every 60 seconds by default, and when a run
+ends. Pass `updateInterval` in seconds or call `setUpdateInterval(seconds)` to
+change the sync frequency. Backend time responses contain only the current
+`epochMilliseconds` value.
+
 ## CSS hooks
 
 Plain widgets expose structure. Pre-styled widgets provide colors, surfaces,

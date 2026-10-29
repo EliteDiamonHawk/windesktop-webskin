@@ -15,6 +15,7 @@ port `8000` during development.
 | Method | Path | Result |
 | --- | --- | --- |
 | `GET` | `/api/system/metrics` | Privacy-filtered CPU, memory, disk, aggregate network, and sensor data |
+| `GET` | `/api/system/time` | Current host time as `{ "epochMilliseconds": ... }` |
 
 Add a comma-separated `fields` query parameter to request a subset:
 

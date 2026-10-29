@@ -9,6 +9,7 @@ from .persistence import SettingsStorageError
 from .paths import get_theme_paths, safe_asset_path
 from .settings import SettingNotFoundError, SettingsService
 from .system_controls import SYSTEM_CONTROL_COMMANDS, SystemControlError, execute_system_control
+from .system_time import get_system_time
 from .themes import ThemeNameConflictError, ThemeStorageError, UserThemeStorage, user_theme_storage
 
 
@@ -292,6 +293,16 @@ def create_system_metrics_router(collector=collect_system_metrics) -> APIRouter:
     def get_metrics(fields: str | None = None) -> dict[str, Any]:
         requested_fields = parse_fields(fields)
         return collector() if requested_fields is None else collector(requested_fields=requested_fields)
+
+    return router
+
+
+def create_system_time_router(clock=get_system_time) -> APIRouter:
+    router = APIRouter(prefix="/api/system/time")
+
+    @router.get("")
+    def get_time() -> dict[str, int]:
+        return clock()
 
     return router
 

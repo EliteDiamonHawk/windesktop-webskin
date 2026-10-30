@@ -29,11 +29,6 @@ function copyStaticFiles() {
       for (const file of publicFiles()) this.addWatchFile(file);
     },
     closeBundle() {
-      for (const file of sourceFiles()) {
-        const destination = resolve(outputRoot, relative(sourceRoot, file));
-        mkdirSync(resolve(destination, '..'), { recursive: true });
-        copyFileSync(file, destination);
-      }
       for (const file of publicFiles()) {
         const destination = resolve(outputRoot, relative(publicRoot, file));
         mkdirSync(resolve(destination, '..'), { recursive: true });
@@ -45,15 +40,15 @@ function copyStaticFiles() {
 
 const javascriptInputs = Object.fromEntries(
   sourceFiles()
-    .filter((file) => extname(file) === '.js')
-    .map((file) => [relative(sourceRoot, file).replace(/\.js$/, ''), file]),
+    .filter((file) => extname(file) === '.ts' && !file.endsWith('.d.ts'))
+    .map((file) => [relative(sourceRoot, file).replace(/\.ts$/, ''), file]),
 );
 
 export default defineConfig({
   configFile: false,
   plugins: [copyStaticFiles()],
   build: {
-    write: false,
+    write: true,
     outDir: outputRoot,
     emptyOutDir: true,
     rollupOptions: {

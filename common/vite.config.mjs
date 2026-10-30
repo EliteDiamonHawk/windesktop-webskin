@@ -1,5 +1,5 @@
-import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
-import { extname, relative, resolve } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { dirname, extname, relative, resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 const sourceRoot = resolve('src');
@@ -38,6 +38,17 @@ function copyStaticFiles() {
   };
 }
 
+function resolveTypeScriptModules() {
+  return {
+    name: 'resolve-typescript-modules',
+    resolveId(source, importer) {
+      if (!importer || !source.startsWith('.') || !source.endsWith('.js')) return null;
+      const typescriptSource = resolve(dirname(importer), source.replace(/\.js$/, '.ts'));
+      return existsSync(typescriptSource) ? typescriptSource : null;
+    },
+  };
+}
+
 const javascriptInputs = Object.fromEntries(
   sourceFiles()
     .filter((file) => extname(file) === '.ts' && !file.endsWith('.d.ts'))
@@ -46,7 +57,7 @@ const javascriptInputs = Object.fromEntries(
 
 export default defineConfig({
   configFile: false,
-  plugins: [copyStaticFiles()],
+  plugins: [resolveTypeScriptModules(), copyStaticFiles()],
   build: {
     write: true,
     outDir: outputRoot,

@@ -11,8 +11,6 @@ the detailed references.
   routes, and runtime asset serving.
 - `common/` and `themes/` contain Vite source projects. Their builds write
   browser files to `localdata/` during development.
-- `wv2wall/` is a Git submodule outside the pnpm workspace. Use its
-  [`README.md`](wv2wall/README.md) when you work in that project.
 
 Use the page that matches your change:
 

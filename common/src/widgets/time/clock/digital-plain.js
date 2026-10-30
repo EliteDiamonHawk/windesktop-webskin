@@ -114,7 +114,6 @@ class PlainDigitalClock extends Widget {
   }
 }
 
-/** Create a theme-owned digital clock with ordinary DOM hooks. */
 export function createClock(options = {}) {
   return new PlainDigitalClock(options).element;
 }

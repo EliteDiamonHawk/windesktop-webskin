@@ -162,7 +162,7 @@ class RainmeterMondClockRemake extends Widget {
     const dateWidget = createDay({
       date,
       locale,
-      format: "DD MMMM, YYYY.     ",  //whitespace for centering
+      format: "DD MMMM, YYYY.     ",
       className: "webskin-mond-clock__date",
     });
     formattedDate.append(dateWidget);
@@ -172,7 +172,7 @@ class RainmeterMondClockRemake extends Widget {
       format: "12h",
       seconds: false,
       showPeriod: true,
-      syntax: "-h:mm A-     ",  //whitespace for centering
+      syntax: "-h:mm A-     ",
       offsetMinutes,
       updateInterval,
       widgetId: WIDGET_SETTINGS_ID,
@@ -187,7 +187,6 @@ class RainmeterMondClockRemake extends Widget {
   }
 }
 
-/** Create the Rainmeter Mond-style composite clock. */
 export function createClock(options = {}) {
   return new RainmeterMondClockRemake(options).element;
 }

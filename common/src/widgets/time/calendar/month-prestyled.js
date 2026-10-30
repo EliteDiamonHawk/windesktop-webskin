@@ -1,4 +1,3 @@
-// Pre-styled calendar view in the shared time widget category.
 import { createMonth as createPlainMonth } from "./month-plain.js?v=month-widget-1";
 
 const STYLE_ID = "webskin-calendar-month-prestyled-styles";
@@ -73,7 +72,6 @@ const ensureStyles = () => {
   document.head.append(style);
 };
 
-/** Create the WebSkin-provided pre-styled month calendar. */
 export function createMonth(options = {}) {
   ensureStyles();
   const element = createPlainMonth({ ...options, widgetId: WIDGET_SETTINGS_ID });

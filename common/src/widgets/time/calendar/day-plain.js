@@ -1,4 +1,3 @@
-// Plain calendar day view in the shared time widget category.
 import { Widget } from "../../widgets.js?v=calendar-date-5";
 import { validateUpdateInterval } from "../time-scheduler.js";
 import {
@@ -145,7 +144,6 @@ class PlainDay extends Widget {
   }
 }
 
-/** Create a locale-aware plain calendar day. */
 export function createDay(options = {}) {
   return new PlainDay(options).element;
 }

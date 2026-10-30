@@ -154,7 +154,6 @@ class PlainAnalogClock extends Widget {
   }
 }
 
-/** Create a behavior-first analog clock with theme-overridable CSS hooks. */
 export function createClock(options = {}) {
   return new PlainAnalogClock(options).element;
 }

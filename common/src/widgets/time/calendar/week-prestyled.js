@@ -1,4 +1,3 @@
-// Pre-styled calendar view in the shared time widget category.
 import { createWeek as createPlainWeek } from "./week-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-week-prestyled-styles";
@@ -65,7 +64,6 @@ const ensureStyles = () => {
   document.head.append(style);
 };
 
-/** Create the WebSkin-provided pre-styled calendar week. */
 export function createWeek(options = {}) {
   ensureStyles();
   const element = createPlainWeek({ ...options, widgetId: WIDGET_SETTINGS_ID });

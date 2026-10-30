@@ -73,7 +73,6 @@ const ensureStyles = () => {
   document.head.append(style);
 };
 
-/** Create a pre-styled stacked digital clock with the current day below it. */
 export function createClock(options = {}) {
   ensureStyles();
   const {

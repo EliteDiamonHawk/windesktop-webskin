@@ -1,4 +1,3 @@
-// Shared local calendar data for the time widget category.
 import { subscribeCalendar } from "../time-scheduler.js";
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -6,7 +5,6 @@ const DATE_TOKEN_PATTERN = /YYYY|MMMM|dddd|MMM|ddd|YY|MM|DD|M|D/g;
 
 const pad = (value, length = 2) => String(value).padStart(length, "0");
 
-/** Create a local calendar date at noon, avoiding midnight DST transitions. */
 export const createLocalDate = (year, monthIndex, day) => {
   const date = new Date(2000, 0, 1, 12);
   date.setFullYear(year, monthIndex, day);
@@ -25,7 +23,6 @@ export const today = () => {
   return createLocalDate(now.getFullYear(), now.getMonth(), now.getDate());
 };
 
-/** Normalize Date objects and local YYYY-MM-DD values without UTC conversion. */
 export const normalizeDate = (value) => {
   if (value === undefined) return today();
 
@@ -43,7 +40,6 @@ export const normalizeDate = (value) => {
   throw new TypeError("Calendar dates must be Date objects or YYYY-MM-DD strings");
 };
 
-/** Resolve the date used for the current/today state of a calendar. */
 export const resolveHighlightDate = (date, highlightDate) => (
   highlightDate === undefined
     ? date === undefined ? undefined : normalizeDate(date)
@@ -104,7 +100,6 @@ export const localeWeekStartsOn = (locale, override) => {
     const weekInfo = localeObject.weekInfo ?? localeObject.getWeekInfo?.();
     if (weekInfo?.firstDay >= 1 && weekInfo.firstDay <= 7) return weekInfo.firstDay % 7;
   } catch {
-    // Use the broadly supported Sunday default when locale week data is unavailable.
   }
   return 0;
 };
@@ -138,8 +133,6 @@ export const getMonthGrid = (date, weekStartsOn, maxWeeks = 6) => {
   const gridStart = startOfWeek(monthStart, weekStartsOn);
   const leadingDays = (monthStart.getDay() - weekStartsOn + 7) % 7;
   const naturalWeeks = Math.ceil((monthEnd.getDate() + leadingDays) / 7);
-  // maxWeeks is the requested rendered height, not only an upper bound. This
-  // keeps five- and six-row month widgets stable as the displayed month changes.
   const visibleWeeks = maxWeeks;
   const anchorWeek = Math.floor((leadingDays + date.getDate() - 1) / 7);
   const firstWeek = naturalWeeks > visibleWeeks && anchorWeek >= visibleWeeks - 1
@@ -277,7 +270,6 @@ export const mediumDateSegments = (date, formatters) => formatters.medium.format
   index,
 }));
 
-/** Notify a current-following widget when the local calendar date changes. */
 export const watchCurrentDate = (callback, options) => {
   let currentKey = dateKey(today());
   return subscribeCalendar(() => {

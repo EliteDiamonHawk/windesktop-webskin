@@ -6,7 +6,6 @@ const CONTROL_ENDPOINT = "/api/system/controls";
 
 const joinEndpoint = (endpoint, control) => `${String(endpoint).replace(/\/$/, "")}/${encodeURIComponent(control)}`;
 
-/** Create a plain Windows system-control button. */
 export function createSystemControl({
   control,
   label,

@@ -1,4 +1,3 @@
-// Pre-styled calendar day view in the shared time widget category.
 import { createDay as createPlainDay } from "./day-plain.js?v=calendar-date-5";
 
 const STYLE_ID = "webskin-calendar-day-prestyled-styles";
@@ -38,7 +37,6 @@ const ensureStyles = () => {
   document.head.append(style);
 };
 
-/** Create the WebSkin-provided pre-styled formatted calendar day. */
 export function createDay(options = {}) {
   ensureStyles();
   const element = createPlainDay({ ...options, variant: "formatted", widgetId: WIDGET_SETTINGS_ID });

@@ -15,8 +15,6 @@ const MASK_FLATTEN_TOLERANCE = 0.5;
 const MAX_FLATTEN_DEPTH = 12;
 const DIGITS = Array.from({ length: 10 }, (_, number) => number);
 
-// Values come from temp/clock1/clock1-layout.json. Rows intentionally share
-// y offsets and scales; only x offsets vary by position and numeral.
 const DEFAULT_LAYOUT = {
   generalScale: 1.48,
   generalPoints: [
@@ -200,8 +198,6 @@ const parseMaskSubpaths = (pathData) => {
       lastQuadraticControl = control;
       lastCubicControl = null;
     } else if (upper === "A") {
-      // Current traced assets have no arcs. Endpoint fallback keeps mask
-      // generation bounded if a future asset introduces one.
       const p1 = nextPoint(values[5], values[6], relative);
       addSegment({ type: "line", p0, p1: clonePoint(p1) });
       current = p1;
@@ -677,8 +673,6 @@ class DigitalPrestyled2Clock extends Widget {
       const defs = createSvgElement("defs");
       masks.forEach(({ element }) => defs.append(element));
       layers.append(defs);
-      // Knockout masks are transparent. Each lower digit is cut by every
-      // higher digit's filled contour before the higher digit is drawn.
       geometries.forEach((geometry, position) => {
         const layer = createSvgElement("g", {
           mask: `url(#${masks[position].id})`,
@@ -703,7 +697,6 @@ class DigitalPrestyled2Clock extends Widget {
   }
 }
 
-/** Create the traced, overlapping 24-hour digital clock treatment. */
 export function createClock(options = {}) {
   return new DigitalPrestyled2Clock(options).element;
 }

@@ -1,9 +1,3 @@
-/**
- * Shared contract for WebSkin widgets.
- *
- * Widgets own a DOM element and may register cleanup callbacks. Consumers can
- * always call `element.destroy?.()` when removing a widget from the page.
- */
 export class Widget {
   #cleanups = [];
   #destroyed = false;
@@ -21,7 +15,6 @@ export class Widget {
     });
   }
 
-  /** Register work that must be undone when the widget is destroyed. */
   addCleanup(cleanup) {
     if (typeof cleanup !== "function") throw new TypeError("Widget cleanup must be a function");
     if (this.#destroyed) {
@@ -32,7 +25,6 @@ export class Widget {
     return cleanup;
   }
 
-  /** Stop timers, listeners, and other resources owned by this widget. */
   destroy() {
     if (this.#destroyed) return;
     this.#destroyed = true;

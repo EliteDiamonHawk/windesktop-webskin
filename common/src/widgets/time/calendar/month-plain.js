@@ -1,4 +1,3 @@
-// Plain calendar view in the shared time widget category.
 import { Widget } from "../../widgets.js?v=month-widget-1";
 import { validateUpdateInterval } from "../time-scheduler.js";
 import {
@@ -189,7 +188,6 @@ class PlainMonth extends Widget {
   }
 }
 
-/** Create a plain localized month calendar. */
 export function createMonth(options = {}) {
   return new PlainMonth(options).element;
 }

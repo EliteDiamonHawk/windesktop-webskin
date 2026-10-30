@@ -40,7 +40,6 @@ const ensureStyles = () => {
   document.head.append(style);
 };
 
-/** Create the WebSkin-provided pre-styled digital clock. */
 export function createClock(options = {}) {
   ensureStyles();
   const element = createPlainClock({ ...options, widgetId: WIDGET_SETTINGS_ID });

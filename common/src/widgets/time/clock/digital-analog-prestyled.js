@@ -124,7 +124,6 @@ class DigitalAnalogClock extends Widget {
   }
 }
 
-/** Create the WebSkin-provided digital and reversed analog treatment. */
 export function createClock(options = {}) {
   return new DigitalAnalogClock(options).element;
 }

@@ -61,7 +61,6 @@ const ensureStyles = () => {
   document.head.append(style);
 };
 
-/** Create the WebSkin-provided second pre-styled analog clock treatment. */
 export function createClock(options = {}) {
   const element = createPlainAnalogClock({
     ...options,

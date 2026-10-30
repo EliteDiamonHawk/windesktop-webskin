@@ -1,4 +1,3 @@
-// Plain calendar view in the shared time widget category.
 import { Widget } from "../../widgets.js?v=calendar-date-5";
 import { validateUpdateInterval } from "../time-scheduler.js";
 import {
@@ -149,7 +148,6 @@ class PlainWeek extends Widget {
   }
 }
 
-/** Create a plain seven-day calendar week. */
 export function createWeek(options = {}) {
   return new PlainWeek(options).element;
 }

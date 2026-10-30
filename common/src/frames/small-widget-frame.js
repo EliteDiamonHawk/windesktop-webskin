@@ -146,12 +146,7 @@ const setInitialText = (element, value) => {
   if (value !== undefined && value !== null) element.textContent = String(value);
 };
 
-/**
- * Create a reusable 11:10 small-widget frame.
- *
- * Value and subtext are initial text only. Widgets own live updates by
- * changing the returned element.parts.value and element.parts.subtext nodes.
- */
+
 export function smallWidgetFrame(options = {}) {
   ensureStyles();
 

@@ -73,8 +73,6 @@ matching folders in this directory.
         if path is not None:
             self.path = path
         else:
-            # User-created packages share the same installed directory as
-            # bundled packages. The runtime serving path is identical for all.
             self.path = get_theme_paths().theme_root
         self._lock = RLock()
 
@@ -385,8 +383,6 @@ matching folders in this directory.
                     preview_file.flush()
                     os.fsync(preview_file.fileno())
                 os.replace(temporary_path, theme_path / "preview.png")
-                # A generated preview supersedes the package's old authored
-                # preview asset. Keep the generated PNG as the sole preview.
                 (theme_path / "preview.svg").unlink(missing_ok=True)
             except OSError as exc:
                 raise ThemeStorageError(f"Could not write theme preview: {theme_path / 'preview.png'}") from exc

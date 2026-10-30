@@ -397,7 +397,6 @@ const themes: Theme[] = [];
       });
       filterThemes();
     } catch {
-      // Themes remain available while the backend is unavailable.
     }
   };
   void loadCreatedThemes();
@@ -426,7 +425,6 @@ const themes: Theme[] = [];
         filterThemes();
       }
     } catch {
-      // Do not show a card unless the app persisted the theme.
     }
   });
 

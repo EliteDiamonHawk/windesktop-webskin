@@ -46,3 +46,7 @@ Use stop-slop if updating docs.
 ## Checks
 
 Do not run developement, frontend or backend, as there will be insufficient permissions
+
+## Comments
+
+Do not make unneccessary comments in code. Only make comments to explain function or section code. In other words, when the code will prove vital in understanding, comprehension, structure, or organization. For example, do not comment "css hooks provided" for widgets as all widgets provide it.

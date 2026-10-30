@@ -9,5 +9,6 @@ export function createCountdown(options = {}) {
     updateInterval: options.updateInterval,
     endpoint: options.endpoint,
     className: options.className,
+    buttons: options.buttons,
   }).element;
 }

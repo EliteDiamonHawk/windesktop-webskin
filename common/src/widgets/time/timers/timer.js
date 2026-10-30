@@ -75,7 +75,7 @@ const requestSystemTime = async (endpoint) => {
 };
 
 export class PlainTimer extends Widget {
-  constructor({ kind, time = 0, limit, updateInterval = DEFAULT_UPDATE_INTERVAL, endpoint = TIME_ENDPOINT, className = "" }) {
+  constructor({ kind, time = 0, limit, updateInterval = DEFAULT_UPDATE_INTERVAL, endpoint = TIME_ENDPOINT, className = "", buttons = false }) {
     ensureStyles();
     if (kind !== "countdown" && kind !== "stopwatch") throw new TypeError("Unknown timer type");
     if (kind === "countdown") validateDuration(time, "time");
@@ -308,29 +308,34 @@ export class PlainTimer extends Widget {
       setUpdateInterval: { configurable: true, value: setUpdateInterval },
     });
 
-    const controls = document.createElement("div");
-    controls.className = "webskin-timer__controls";
-    for (const [label, action] of [
-      ["Play", start],
-      ["Restart", restart],
-      ["Resume", resume],
-      ["Pause", pause],
-    ]) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = label;
-      button.dataset.webskinTimerControl = action.name || label.toLowerCase();
-      button.addEventListener("click", action);
-      controls.append(button);
+    let controls;
+    if (buttons) {
+      controls = document.createElement("div");
+      controls.className = "webskin-timer__controls";
+      for (const [label, action] of [
+        ["Play", start],
+        ["Restart", restart],
+        ["Resume", resume],
+        ["Pause", pause],
+      ]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.dataset.webskinTimerControl = action.name || label.toLowerCase();
+        button.addEventListener("click", action);
+        controls.append(button);
+      }
+      element.append(display, controls);
+    } else {
+      element.append(display);
     }
-    element.append(display, controls);
     render();
     this.addCleanup(() => {
       destroyed = true;
       active = false;
       runId += 1;
       clearActiveTimers();
-      controls.replaceChildren();
+      controls?.replaceChildren();
     });
   }
 }

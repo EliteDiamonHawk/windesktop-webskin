@@ -8,5 +8,6 @@ export function createStopwatch(options = {}) {
     updateInterval: options.updateInterval,
     endpoint: options.endpoint,
     className: options.className,
+    buttons: options.buttons,
   }).element;
 }

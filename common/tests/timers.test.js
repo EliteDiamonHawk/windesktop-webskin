@@ -111,9 +111,16 @@ test.after(() => {
   delete globalThis.fetch;
 });
 
-test("countdown starts paused and exposes controls", async () => {
+test("timers hide controls by default", () => {
   installDom();
-  const timer = countdown({ time: 10_000, updateInterval: 5 });
+  const timer = countdown({ time: 10_000 });
+  assert.equal(timer.querySelectorAll("[data-webskin-timer-control]").length, 0);
+  timer.destroy();
+});
+
+test("countdown exposes controls when requested", async () => {
+  installDom();
+  const timer = countdown({ time: 10_000, updateInterval: 5, buttons: true });
   assert.equal(displayOf(timer), "00:00:10");
   const controls = timer.querySelectorAll("[data-webskin-timer-control]");
   assert.deepEqual(controls.map((button) => button.textContent), ["Play", "Restart", "Resume", "Pause"]);

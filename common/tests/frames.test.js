@@ -34,14 +34,14 @@ const installDom = () => {
 let smallWidgetFrame;
 test.before(async () => {
   installDom();
-  ({ smallWidgetFrame } = await import("../src/frames/smallWidgetFrame.js?frame-test"));
+  ({ smallWidgetFrame } = await import("../src/frames/small-widget-frame.js?frame-test"));
 });
 
 test("creates 11:10 frame with optional parts and current greyscale defaults", () => {
   const frame = smallWidgetFrame();
 
   assert.equal(frame.tagName, "section");
-  assert.equal(frame.dataset.webskinFrame, "smallWidgetFrame");
+  assert.equal(frame.dataset.webskinFrame, "small-widget-frame");
   assert.match(frame.className, /webskin-frame--small-widget/);
   assert.equal(frame.parts.value.textContent, "");
   assert.equal(frame.parts.subtext.textContent, "");

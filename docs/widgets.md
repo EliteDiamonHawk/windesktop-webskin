@@ -5,7 +5,7 @@ root element. A theme chooses the parent element and provides CSS.
 
 ## Small widget frame
 
-Import `/common/frames/smallWidgetFrame.js` and call
+Import `/common/frames/small-widget-frame.js` and call
 `smallWidgetFrame(options)`. The returned element keeps an 11:10 aspect ratio
 and exposes `element.parts.value`, `element.parts.subtext`,
 `element.parts.icon`, `element.parts.iconFrame`, and `element.parts.actions`.

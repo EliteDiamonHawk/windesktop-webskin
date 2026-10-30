@@ -161,7 +161,7 @@ export function smallWidgetFrame(options = {}) {
     "webskin-frame--small-widget",
     options.className,
   ].filter(Boolean).join(" ");
-  element.dataset.webskinFrame = "smallWidgetFrame";
+  element.dataset.webskinFrame = "small-widget-frame";
 
   const iconArea = createPart("icon-area");
   const iconFrame = createPart("icon-frame");
@@ -198,4 +198,5 @@ export function smallWidgetFrame(options = {}) {
 
   return element;
 }
+
 

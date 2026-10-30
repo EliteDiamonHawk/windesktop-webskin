@@ -3,6 +3,22 @@
 Shared widgets live under `/common/widgets/`. Each module returns a DOM or SVG
 root element. A theme chooses the parent element and provides CSS.
 
+## Small widget frame
+
+Import `/common/frames/smallWidgetFrame.js` and call
+`smallWidgetFrame(options)`. The returned element keeps an 11:10 aspect ratio
+and exposes `element.parts.value`, `element.parts.subtext`,
+`element.parts.icon`, `element.parts.iconFrame`, and `element.parts.actions`.
+
+`value` and `subtext` provide initial text only. The owning widget updates those
+nodes directly with `textContent`. Pass prepared DOM nodes through `icon` and
+`iconFrame`. Append up to two widget-owned controls to `parts.actions`; the
+frame does not create or manage buttons.
+
+Frame colors accept `color`, `backgroundColor`, `borderColor`, `subtextColor`,
+`iconFrameColor`, and `iconColor`. The same values remain customizable through
+the `--webskin-small-widget-*` CSS custom properties.
+
 ## Lifecycle
 
 The shared `Widget` class owns timers and listeners. Returned elements can

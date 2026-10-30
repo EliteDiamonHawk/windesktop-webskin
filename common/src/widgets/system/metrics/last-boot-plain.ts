@@ -66,6 +66,7 @@ export function createLastBoot(options = {}) {
     activeBootUnsubscribe = cancel;
     unsubscribe = systemMetricsManager.subscribe({
       endpoint: options.endpoint ?? "/api/system/metrics",
+      widgetId: options.widgetId,
       updateInterval: DEFAULT_UPDATE_INTERVAL,
       fields: ["system.boot_time"],
       onSnapshot: (snapshot) => {

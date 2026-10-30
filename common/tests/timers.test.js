@@ -7,6 +7,11 @@ class FakeElement {
     this.children = [];
     this.dataset = {};
     this.className = "";
+    this.style = {
+      values: new Map(),
+      setProperty: (name, value) => this.style.values.set(name, String(value)),
+      getPropertyValue: (name) => this.style.values.get(name) ?? "",
+    };
     this.id = "";
     this.textContent = "";
     this.attributes = {};
@@ -48,6 +53,7 @@ let timers = new Map();
 let timerDelays = [];
 let requests = 0;
 let requestFails = false;
+let invalidTimeResponse = false;
 
 const installDom = () => {
   now = 0;
@@ -56,6 +62,7 @@ const installDom = () => {
   timerDelays = [];
   requests = 0;
   requestFails = false;
+  invalidTimeResponse = false;
   const head = new FakeElement("head");
   globalThis.document = {
     head,
@@ -74,6 +81,7 @@ const installDom = () => {
   globalThis.fetch = async () => {
     requests += 1;
     if (requestFails) throw new Error("offline");
+    if (invalidTimeResponse) return { ok: true, json: async () => ({ epochMilliseconds: "invalid" }) };
     return { ok: true, json: async () => ({ epochMilliseconds: 1_000_000 + now }) };
   };
   Date.now = () => now;
@@ -96,12 +104,18 @@ const displayOf = (timer) => timer.querySelector('[data-webskin-timer-part="disp
 let originalDateNow;
 let countdown;
 let stopwatch;
+let styledCountdown;
+let styledStopwatch;
+let timerTimeManager;
 
 test.before(async () => {
   originalDateNow = Date.now;
   installDom();
-  countdown = (await import("../src/widgets/time/timers/countdown.js?timer-test")).createCountdown;
-  stopwatch = (await import("../src/widgets/time/timers/stopwatch.js?timer-test")).createStopwatch;
+  countdown = (await import("../src/widgets/time/timers/countdown-plain.js?timer-test")).createCountdown;
+  stopwatch = (await import("../src/widgets/time/timers/stopwatch-plain.js?timer-test")).createStopwatch;
+  styledCountdown = (await import("../src/widgets/time/timers/countdown-prestyled.js?timer-test")).createCountdown;
+  styledStopwatch = (await import("../src/widgets/time/timers/stopwatch-prestyled.js?timer-test")).createStopwatch;
+  timerTimeManager = (await import("../src/widgets/time/timers/timers.js?timer-test")).timerTimeManager;
 });
 
 test.after(() => {
@@ -116,6 +130,54 @@ test("timers hide controls by default", () => {
   const timer = countdown({ time: 10_000 });
   assert.equal(timer.querySelectorAll("[data-webskin-timer-control]").length, 0);
   timer.destroy();
+});
+
+test("pre-styled timers use assets and state-based controls", () => {
+  installDom();
+  const timer = styledCountdown({ time: 10_000 });
+  assert.equal(timer.parts.value.children[0].textContent, "00:00:10");
+  assert.equal(timer.parts.subtext.textContent, "Countdown");
+  assert.deepEqual(timer.parts.actions.children.map((button) => button.textContent), ["Play", "Restart"]);
+  assert.equal(
+    timer.parts.icon.children[0].style.getPropertyValue("mask-image"),
+    'url("/assets/icons/hourglass-half-svgrepo-com.svg")',
+  );
+  assert.equal(
+    timer.parts.iconFrame.children[0].style.getPropertyValue("mask-image"),
+    'url("/assets/shapes/soft-burst.svg")',
+  );
+
+  timer.parts.actions.children[0].click();
+  assert.deepEqual(timer.parts.actions.children.map((button) => button.textContent), ["Pause", "Restart"]);
+  timer.parts.actions.children[0].click();
+  assert.deepEqual(timer.parts.actions.children.map((button) => button.textContent), ["Resume", "Restart"]);
+  timer.destroy();
+
+  const stopwatchTimer = styledStopwatch({ buttons: false });
+  assert.equal(stopwatchTimer.parts.actions.children.length, 0);
+  stopwatchTimer.destroy();
+});
+
+test("timers support clock-style duration syntax", () => {
+  installDom();
+  const countdownTimer = countdown({ time: 90_000, syntax: "m minute, ss second" });
+  assert.equal(displayOf(countdownTimer), "1 minute, 30 second");
+  countdownTimer.destroy();
+
+  const stopwatchTimer = stopwatch({ syntax: "H:mm:ss" });
+  assert.equal(displayOf(stopwatchTimer), "0:00:00");
+  stopwatchTimer.destroy();
+});
+
+test("timer syntax uses total elapsed hours and forwards through pre-styled timers", () => {
+  installDom();
+  const countdownTimer = countdown({ time: 90_000_000 });
+  assert.equal(displayOf(countdownTimer), "25:00:00");
+  countdownTimer.destroy();
+
+  const styledTimer = styledCountdown({ time: 90_000, syntax: "m:ss remaining" });
+  assert.equal(styledTimer.parts.value.children[0].textContent, "1:30 remaining");
+  styledTimer.destroy();
 });
 
 test("countdown exposes controls when requested", async () => {
@@ -151,7 +213,7 @@ test("countdown exposes controls when requested", async () => {
   timer.destroy();
 });
 
-test("countdown finishes at zero and queries system time at end", async () => {
+test("countdown finishes at zero and unsubscribes at end", async () => {
   installDom();
   const timer = countdown({ time: 2_000 });
   timer.start();
@@ -162,9 +224,9 @@ test("countdown finishes at zero and queries system time at end", async () => {
 
   assert.equal(displayOf(timer), "00:00:00");
   assert.equal(timer.dataset.webskinTimerState, "finished");
-  assert.equal(requests, 2);
+  assert.equal(requests, 1);
   timer.resume();
-  assert.equal(requests, 2);
+  assert.equal(requests, 1);
   timer.destroy();
 });
 
@@ -212,6 +274,33 @@ test("sync interval can change while running and failed sync uses browser time",
   runNextTimer();
   assert.equal(displayOf(fallback), "00:00:01");
   fallback.destroy();
+});
+
+test("active timers share backend time requests", async () => {
+  installDom();
+  const first = countdown({ time: 10_000, updateInterval: 3 });
+  const second = stopwatch({ updateInterval: 3 });
+  first.start();
+  second.start();
+  await flush();
+  assert.equal(requests, 1);
+  first.destroy();
+  second.destroy();
+  assert.equal(timers.size, 0);
+});
+
+test("timer time subscription reports invalid responses", async () => {
+  installDom();
+  invalidTimeResponse = true;
+  let errors = 0;
+  const unsubscribe = timerTimeManager.subscribe({
+    interval: 4,
+    onError: () => { errors += 1; },
+  });
+  await flush();
+  assert.equal(errors, 1);
+  unsubscribe();
+  assert.equal(timers.size, 0);
 });
 
 test("invalid timer values are rejected", () => {

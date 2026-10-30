@@ -5,15 +5,35 @@ class FakeElement {
   constructor(tagName) {
     this.tagName = tagName;
     this.children = [];
+    this.parentNode = null;
     this.dataset = {};
     this.attributes = {};
     this.className = "";
+    this.style = {
+      values: new Map(),
+      setProperty: (name, value) => this.style.values.set(name, String(value)),
+      getPropertyValue: (name) => this.style.values.get(name) ?? "",
+    };
     this.textContent = "";
     this.listeners = new Map();
   }
 
-  append(...children) { this.children.push(...children); }
-  replaceChildren(...children) { this.children = children; }
+  append(...children) {
+    children.forEach((child) => {
+      if (child?.parentNode) {
+        child.parentNode.children = child.parentNode.children.filter((current) => current !== child);
+      }
+      if (child && typeof child === "object") child.parentNode = this;
+      this.children.push(child);
+    });
+  }
+  replaceChildren(...children) {
+    this.children.forEach((child) => {
+      if (child?.parentNode === this) child.parentNode = null;
+    });
+    this.children = [];
+    this.append(...children);
+  }
   setAttribute(name, value) { this.attributes[name] = String(value); }
   addEventListener(name, listener) { this.listeners.set(name, listener); }
   removeEventListener(name, listener) {
@@ -93,9 +113,12 @@ let settingsRequests = 0;
 let created = [];
 
 const installDom = () => {
+  const head = new FakeElement("head");
   globalThis.document = {
+    head,
     createElement: (tagName) => new FakeElement(tagName),
     createTextNode: (text) => ({ textContent: String(text) }),
+    getElementById: (id) => head.children.find((child) => child.id === id) ?? null,
   };
   globalThis.window = {
     setTimeout: (callback, delay) => {
@@ -157,6 +180,71 @@ test("formats dynamic values, preserves literals, and requests only referenced f
   assert.deepEqual(fields, ["memory.virtual.percent", "memory.virtual.used_bytes"]);
   assert.equal(timerDelays.at(-1), 15000);
   assert.equal(settingsRequests, 1);
+});
+
+test("renders single-value cards with icon and shape assets", async () => {
+  const cpu = widgets.createCpuUtilizationPrestyled();
+  created.push(cpu);
+  const liveContent = cpu.parts.value.children[0];
+
+  assert.equal(cpu.parts.subtext.textContent, "CPU");
+  assert.equal(liveContent.dataset.webskinSystemPart, "content");
+  assert.equal(
+    cpu.parts.icon.children[0].style.getPropertyValue("mask-image"),
+    'url("/assets/icons/wave-pulse-svgrepo-com.svg")',
+  );
+  assert.equal(
+    cpu.parts.iconFrame.children[0].style.getPropertyValue("mask-image"),
+    'url("/assets/shapes/flower.svg")',
+  );
+  await waitForPoll();
+  assert.equal(cpu.parts.value.children[0], liveContent);
+  assert.equal(textOf(cpu.parts.value), "12.5%");
+});
+
+test("prestylized last-boot wraps plain lifecycle and destroys it", async () => {
+  const originalNow = Date.now;
+  Date.now = () => 1_700_001_234_000;
+  try {
+    const boot = widgets.createLastBootPrestyled({ updateInterval: 1 });
+    created.push(boot);
+
+    assert.equal(typeof boot.subscribeBootTime, "function");
+    assert.equal(typeof boot.unsubscribeBootTime, "function");
+    assert.equal(textOf(boot.parts.value), "- s");
+
+    await waitForPoll();
+    assert.equal(textOf(boot.parts.value), "1,234 s");
+
+    boot.destroy();
+    assert.equal(typeof boot.destroy, "function");
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("prestylized metric cards use plain compact renderers", async () => {
+  const battery = widgets.createBatteryPrestyled({ interval: 1231 });
+  const disk = widgets.createDiskUsagePrestyled({ interval: 1232 });
+  const network = widgets.createNetworkPrestyled({ interval: 1233 });
+  created.push(battery, disk, network);
+
+  await waitForPoll();
+  assert.equal(textOf(battery.parts.value), "87.5%");
+  assert.equal(textOf(disk.parts.value), "40%");
+  assert.equal(textOf(network.parts.value), "n/a");
+});
+
+test("destroying prestylized card destroys its plain poller", async () => {
+  const cpu = widgets.createCpuUtilizationPrestyled({ interval: 1234 });
+  created.push(cpu);
+  await waitForPoll();
+  const requests = requestUrls.length;
+
+  cpu.destroy();
+  timers.at(-1)?.();
+  await waitForPoll();
+  assert.equal(requestUrls.length, requests);
 });
 
 test("last-boot defaults to boot time and requests only that field", async () => {

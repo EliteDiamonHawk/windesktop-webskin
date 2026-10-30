@@ -30,7 +30,7 @@ const ensureStyles = () => {
       aspect-ratio: 11 / 10;
       background: var(--webskin-small-widget-background);
       border: 1px solid var(--webskin-small-widget-border);
-      border-radius: .75rem;
+      border-radius: 40px;
       box-shadow: var(--webskin-small-widget-shadow);
       box-sizing: border-box;
       color: var(--webskin-small-widget-color);

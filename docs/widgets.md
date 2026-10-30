@@ -107,18 +107,26 @@ widgets use local dates and do not convert them to UTC.
 
 | Module | Import | Function |
 | --- | --- | --- |
-| Countdown | `/common/widgets/time/timers/countdown.js` | `createCountdown(options)` |
-| Stopwatch | `/common/widgets/time/timers/stopwatch.js` | `createStopwatch(options)` |
+| Countdown | `/common/widgets/time/timers/countdown-plain.js` | `createCountdown(options)` |
+| Stopwatch | `/common/widgets/time/timers/stopwatch-plain.js` | `createStopwatch(options)` |
 
-Timers render plain `HH:MM:SS` text. Pass `buttons: true` to add four plain
-HTML controls underneath: Play, Restart, Resume, and Pause. Buttons stay hidden
-by default. Durations use integer milliseconds. Both constructors return paused
+Pre-styled cards are available from `/common/widgets/time/timers/countdown-prestyled.js`
+and `/common/widgets/time/timers/stopwatch-prestyled.js`. They use the same
+constructor names and expose the same timer methods, with frame controls enabled
+by default and disabled with `buttons: false`.
+
+Timers render plain `HH:mm:ss` text by default. Pass `syntax` to customize the
+output with `HH` or `H` for total hours, `mm` or `m` for minutes, and `ss` or
+`s` for seconds. Other characters remain literal. For example,
+`syntax: "m:ss remaining"` renders `1:30 remaining`. Pass `buttons: true` to
+add four plain HTML controls underneath: Play, Restart, Resume, and Pause.
+Buttons stay hidden by default. Durations use integer milliseconds. Both constructors return paused
 timer elements with `start()`, `pause()`, `resume()`, `restart()`, and
 `setUpdateInterval(seconds)` methods.
 
 ```js
-import { createCountdown } from "/common/widgets/time/timers/countdown.js";
-import { createStopwatch } from "/common/widgets/time/timers/stopwatch.js";
+import { createCountdown } from "/common/widgets/time/timers/countdown-plain.js";
+import { createStopwatch } from "/common/widgets/time/timers/stopwatch-plain.js";
 
 const countdown = createCountdown({ time: 90_000 });
 const stopwatch = createStopwatch({ limit: 3_600_000 });
@@ -133,11 +141,12 @@ and pauses it. `restart()` restores the initial countdown value and pauses.
 Stopwatch `limit` is optional; `setLimit(millisecondsOrNull)` changes it.
 Reaching a limit stops the stopwatch. `restart()` clears that finished state.
 
-Timers use browser time for elapsed-time calculations. They query
-`/api/system/time` when starting, every 60 seconds by default, and when a run
-ends. Pass `updateInterval` in seconds or call `setUpdateInterval(seconds)` to
-change the sync frequency. Backend time responses contain only the current
-`epochMilliseconds` value.
+Timers use browser time for elapsed-time calculations. Active timers share
+`/api/system/time` polling, request an immediate sample when starting, and
+poll every 60 seconds by default. Polling stops when a timer pauses, finishes,
+or is destroyed. Pass `updateInterval` in seconds or call
+`setUpdateInterval(seconds)` to change the sync frequency. Backend time
+responses contain only the current `epochMilliseconds` value.
 
 ## CSS hooks
 

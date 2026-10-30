@@ -63,6 +63,7 @@ export default defineConfig({
     outDir: outputRoot,
     emptyOutDir: true,
     rollupOptions: {
+      preserveEntrySignatures: 'strict',
       input: javascriptInputs,
       output: {
         preserveModules: true,

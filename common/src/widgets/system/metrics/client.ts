@@ -366,7 +366,11 @@ export function createSystemWidget({
   element.setAttribute("aria-live", "polite");
   build(element);
   element.append(createPart("status", "", "output"));
-  render(element, null, { phase: "initial" });
+  const content = element.querySelector('[data-webskin-system-part="content"]');
+  const renderRoot = content
+    ? { querySelector: (selector) => selector === '[data-webskin-system-part="content"]' ? content : element.querySelector(selector) }
+    : element;
+  render(renderRoot, null, { phase: "initial" });
 
   let hasSnapshot = false;
   const unsubscribe = systemMetricsManager.subscribe({
@@ -378,11 +382,11 @@ export function createSystemWidget({
     onSnapshot: (snapshot) => {
       hasSnapshot = true;
       element.dataset.webskinSystemState = "ready";
-      render(element, snapshot, { phase: "ready" });
+      render(renderRoot, snapshot, { phase: "ready" });
     },
     onError: (error) => {
       element.dataset.webskinSystemState = "error";
-      if (!hasSnapshot) render(element, null, { phase: "error", error });
+      if (!hasSnapshot) render(renderRoot, null, { phase: "error", error });
     },
   });
   widget.addCleanup(unsubscribe);

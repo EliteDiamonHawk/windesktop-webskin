@@ -2,7 +2,7 @@ import { createPart, createSystemWidget, fieldsForFormat, renderTokenFormat, res
 import { formatBytes, formatNumber } from "./formatters.js";
 
 const DEFAULT_FORMAT = "Uploaded: {uploaded} {uploaded-unit}\nDownloaded: {downloaded} {downloaded-unit}\nUpload speed: {upload-speed} {upload-speed-unit}/s\nDownload speed: {download-speed} {download-speed-unit}/s\nUtilization: {utilization} %";
-const TOKENS = ["uploaded", "sent", "uploaded-unit", "sent-unit", "downloaded", "received", "downloaded-unit", "received-unit", "upload-speed", "upload-speed-unit", "download-speed", "download-speed-unit", "utilization"];
+const TOKENS = ["uploaded", "sent", "uploaded-unit", "sent-unit", "downloaded", "received", "downloaded-unit", "received-unit", "upload-speed", "upload-speed-unit", "upload-rate", "download-speed", "download-speed-unit", "download-rate", "utilization"];
 const TOKEN_FIELDS = Object.fromEntries(TOKENS.map((token) => [token, "network.bytes_sent"]));
 Object.assign(TOKEN_FIELDS, {
   downloaded: "network.bytes_received",
@@ -11,8 +11,17 @@ Object.assign(TOKEN_FIELDS, {
   "received-unit": "network.bytes_received",
   "download-speed": "network.bytes_received",
   "download-speed-unit": "network.bytes_received",
+  "upload-rate": "network.bytes_sent",
+  "download-rate": "network.bytes_received",
   utilization: [],
 });
+
+const formatRate = (value, phase) => {
+  const formatted = formatBytes(value, phase);
+  return formatted.value === "-" || formatted.value === "n/a"
+    ? formatted.value
+    : formatted.value + " " + formatted.unit + "/s";
+};
 
 export function createNetworkTelemetryTransfer(options = {}) {
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "network telemetry transfer");
@@ -38,8 +47,10 @@ export function createNetworkTelemetryTransfer(options = {}) {
         "received-unit": downloaded.unit,
         "upload-speed": uploadSpeed.value,
         "upload-speed-unit": uploadSpeed.unit,
+        "upload-rate": formatRate(transfer?.upload_speed, phase),
         "download-speed": downloadSpeed.value,
         "download-speed-unit": downloadSpeed.unit,
+        "download-rate": formatRate(transfer?.download_speed, phase),
         utilization: formatNumber(transfer?.utilization, phase),
       }, { fallback: phase === "initial" ? "-" : "n/a" });
     },

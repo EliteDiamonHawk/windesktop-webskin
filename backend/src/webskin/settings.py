@@ -25,6 +25,17 @@ COMMON_WIDGET_IDS = frozenset({
     "disk-partitions-plain",
     "gpu-thermal-fan-plain",
     "network-telemetry-transfer-plain",
+    "battery-prestyled",
+    "cpu-utilization-prestyled",
+    "cpu-core-counts-prestyled",
+    "cpu-frequency-prestyled",
+    "cpu-load-average-prestyled",
+    "memory-prestyled",
+    "swap-memory-prestyled",
+    "disk-usage-prestyled",
+    "network-prestyled",
+    "gpu-temperature-prestyled",
+    "last-boot-prestyled",
     "digital-plain",
     "digital-prestyled",
     "digital-prestyled2",
@@ -82,6 +93,9 @@ SYSTEM_WIDGET_INTERVALS = {
             "network-telemetry-plain",
             "network-telemetry-transfer-plain",
             "gpu-thermal-fan-plain",
+            "cpu-utilization-prestyled",
+            "network-prestyled",
+            "gpu-temperature-prestyled",
         )
     },
     **{
@@ -93,6 +107,10 @@ SYSTEM_WIDGET_INTERVALS = {
             "cpu-frequency-plain",
             "cpu-telemetry-plain",
             "cpu-load-average-plain",
+            "memory-prestyled",
+            "swap-memory-prestyled",
+            "battery-prestyled",
+            "cpu-frequency-prestyled",
         )
     },
     **{
@@ -100,6 +118,9 @@ SYSTEM_WIDGET_INTERVALS = {
         for widget_id in (
             "cpu-core-counts-plain",
             "disk-partitions-plain",
+            "cpu-core-counts-prestyled",
+            "disk-usage-prestyled",
+            "last-boot-prestyled",
         )
     },
 }

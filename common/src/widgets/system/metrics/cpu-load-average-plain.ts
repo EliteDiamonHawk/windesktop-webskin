@@ -18,6 +18,7 @@ const TOKEN_FIELDS = {
 
 export function createCpuLoadAverage(options = {}) {
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "CPU load average");
+  const digits = options.digits ?? 1;
   return createSystemWidget({
     ...options,
     fields: fieldsForFormat(format, TOKEN_FIELDS),
@@ -26,16 +27,16 @@ export function createCpuLoadAverage(options = {}) {
     render: (root, snapshot, { phase }) => {
       const load = snapshot?.cpu?.load_average;
       const values = {
-        one: formatNumber(load?.one_minute, phase),
-        "one-min": formatNumber(load?.one_minute, phase),
-        "one-minute": formatNumber(load?.one_minute, phase),
-        five: formatNumber(load?.five_minutes, phase),
-        "five-min": formatNumber(load?.five_minutes, phase),
-        "five-minute": formatNumber(load?.five_minutes, phase),
-        fift: formatNumber(load?.fifteen_minutes, phase),
-        fifteen: formatNumber(load?.fifteen_minutes, phase),
-        "fifteen-min": formatNumber(load?.fifteen_minutes, phase),
-        "fifteen-minute": formatNumber(load?.fifteen_minutes, phase),
+        one: formatNumber(load?.one_minute, phase, digits),
+        "one-min": formatNumber(load?.one_minute, phase, digits),
+        "one-minute": formatNumber(load?.one_minute, phase, digits),
+        five: formatNumber(load?.five_minutes, phase, digits),
+        "five-min": formatNumber(load?.five_minutes, phase, digits),
+        "five-minute": formatNumber(load?.five_minutes, phase, digits),
+        fift: formatNumber(load?.fifteen_minutes, phase, digits),
+        fifteen: formatNumber(load?.fifteen_minutes, phase, digits),
+        "fifteen-min": formatNumber(load?.fifteen_minutes, phase, digits),
+        "fifteen-minute": formatNumber(load?.fifteen_minutes, phase, digits),
       };
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, values, {
         fallback: phase === "initial" ? "-" : "n/a",

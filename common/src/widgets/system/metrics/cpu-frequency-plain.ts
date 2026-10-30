@@ -26,6 +26,7 @@ const PER_CORE_FIELDS = {
 
 export function createCpuFrequency(options = {}) {
   const core = options.core === undefined ? -1 : requireInteger(options, "core");
+  const digits = options.digits ?? 1;
   const defaultFormat = core < 0
     ? "Overall\nCurrent: {current} MHz\nMinimum: {min} MHz\nMaximum: {max} MHz"
     : "Core {core}\nCurrent: {current} MHz\nMinimum: {min} MHz\nMaximum: {max} MHz";
@@ -39,12 +40,12 @@ export function createCpuFrequency(options = {}) {
       const frequencies = snapshot?.cpu?.frequencies;
       const selected = core < 0 ? frequencies : frequencies?.per_core?.[core];
       const values = {
-        curr: formatNumber(selected?.current_mhz ?? (core < 0 ? frequencies?.current_mhz : undefined), phase),
-        current: formatNumber(selected?.current_mhz ?? (core < 0 ? frequencies?.current_mhz : undefined), phase),
-        min: formatNumber(selected?.minimum_mhz ?? (core < 0 ? frequencies?.minimum_mhz : undefined), phase),
-        minimum: formatNumber(selected?.minimum_mhz ?? (core < 0 ? frequencies?.minimum_mhz : undefined), phase),
-        max: formatNumber(selected?.maximum_mhz ?? (core < 0 ? frequencies?.maximum_mhz : undefined), phase),
-        maximum: formatNumber(selected?.maximum_mhz ?? (core < 0 ? frequencies?.maximum_mhz : undefined), phase),
+        curr: formatNumber(selected?.current_mhz ?? (core < 0 ? frequencies?.current_mhz : undefined), phase, digits),
+        current: formatNumber(selected?.current_mhz ?? (core < 0 ? frequencies?.current_mhz : undefined), phase, digits),
+        min: formatNumber(selected?.minimum_mhz ?? (core < 0 ? frequencies?.minimum_mhz : undefined), phase, digits),
+        minimum: formatNumber(selected?.minimum_mhz ?? (core < 0 ? frequencies?.minimum_mhz : undefined), phase, digits),
+        max: formatNumber(selected?.maximum_mhz ?? (core < 0 ? frequencies?.maximum_mhz : undefined), phase, digits),
+        maximum: formatNumber(selected?.maximum_mhz ?? (core < 0 ? frequencies?.maximum_mhz : undefined), phase, digits),
         core: core < 0 ? "-1" : String(core + 1),
         "zeroed-core": String(core),
       };

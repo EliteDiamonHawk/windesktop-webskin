@@ -12,6 +12,7 @@ Use these pages to run, extend, and debug WinDesktop WebSkin.
 
 - [Theme runtime](theme-runtime.md) defines package files, URLs, IDs, and runtime roots.
 - [Theme API](theme-api.md) documents HTTP routes and response fields.
+- [Layouts](layouts.md) documents shared static-image composition.
 - [Widgets](widgets.md) lists shared clocks, calendars, and system widgets.
 - [Previews](previews.md) explains preview discovery and generated PNGs.
 - [Settings and storage](settings-and-storage.md) defines settings files and routes.

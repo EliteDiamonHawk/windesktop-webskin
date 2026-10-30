@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js";
+import { classNames } from "../../dom.js";
 
 const REQUIRED_CLICKS = 3;
 const CLICK_WINDOW_MS = 3000;
@@ -20,13 +21,14 @@ export function createSystemControl({
   const element = document.createElement("button");
   element.type = "button";
   element.textContent = label;
-  element.className = [
+  element.className = classNames(
     "webskin-system-control",
     `webskin-system-control--${control}`,
+    "webskin-system-control--plain",
     className,
-  ].filter(Boolean).join(" ");
+  );
 
-  const widget = new Widget(element, { type: "system-control" });
+  const widget = new Widget(element, { type: "system-control", variant: "plain" });
   let clickCount = 0;
   let resetTimer;
 
@@ -64,6 +66,7 @@ export function createSystemControl({
     element.removeEventListener("click", activate);
     if (resetTimer !== undefined) clearTimeout(resetTimer);
   });
+  widget.setState("ready");
 
   return element;
 }

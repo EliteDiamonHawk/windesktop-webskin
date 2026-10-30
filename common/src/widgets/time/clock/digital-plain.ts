@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 import { subscribeClock, validateUpdateInterval } from "../time-scheduler.js";
 
 const WIDGET_SETTINGS_ID = "digital-plain";
@@ -69,6 +70,7 @@ const tokenValue = (token, now) => {
 
 class PlainDigitalClock extends Widget {
   constructor(options = {}) {
+    rejectLegacyInterval(options);
     ensureStyles();
     const {
       format = "12h",
@@ -79,12 +81,13 @@ class PlainDigitalClock extends Widget {
       updateInterval,
       widgetId = WIDGET_SETTINGS_ID,
       className = "",
+      variant = "plain",
     } = options;
     validateUpdateInterval(updateInterval);
 
     const element = document.createElement("time");
-    super(element, { type: "clock" });
-    element.className = ["webskin-clock", "webskin-clock--digital-plain", className].filter(Boolean).join(" ");
+    super(element, { type: "clock", variant });
+    element.className = classNames("webskin-clock", "webskin-clock--digital-plain", `webskin-clock--${variant}`, className);
     element.setAttribute("aria-label", "Current time");
 
     const displaySyntax = syntax ?? defaultSyntax({ format, seconds, showPeriod });
@@ -110,6 +113,7 @@ class PlainDigitalClock extends Widget {
     };
 
     render();
+    this.setState("ready");
     this.addCleanup(subscribeClock(render, { updateInterval, widgetId }));
   }
 }

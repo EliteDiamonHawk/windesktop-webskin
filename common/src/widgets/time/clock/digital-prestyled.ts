@@ -42,9 +42,10 @@ const ensureStyles = () => {
 
 export function createClock(options = {}) {
   ensureStyles();
-  const element = createPlainClock({ ...options, widgetId: WIDGET_SETTINGS_ID });
+  const element = createPlainClock({ ...options, widgetId: WIDGET_SETTINGS_ID, variant: "prestyled" });
   element.classList.remove("webskin-clock--digital-plain");
   element.classList.add("webskin-clock--digital-prestyled");
+  element.dataset.webskinWidgetVariant = "prestyled";
   if (options.className) element.classList.add(...String(options.className).split(/\s+/).filter(Boolean));
   if (options.color) element.style.setProperty("--webskin-clock-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-clock-background", options.backgroundColor);

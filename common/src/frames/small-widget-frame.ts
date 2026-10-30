@@ -1,3 +1,5 @@
+import { classNames, ensureStyle } from "../widgets/dom.js";
+
 const STYLE_ID = "webskin-small-widget-frame-styles";
 
 const COLOR_OPTIONS = {
@@ -10,11 +12,7 @@ const COLOR_OPTIONS = {
 };
 
 const ensureStyles = () => {
-  if (document.getElementById?.(STYLE_ID)) return;
-
-  const style = document.createElement("style");
-  style.id = STYLE_ID;
-  style.textContent = `
+  ensureStyle(STYLE_ID, `
     .webskin-frame--small-widget {
       -webkit-user-select: none;
       user-select: none;
@@ -132,8 +130,7 @@ const ensureStyles = () => {
     .webskin-frame--small-widget [data-webskin-frame-part="actions"]:empty {
       display: none;
     }
-  `;
-  document.head.append(style);
+  `);
 };
 
 const createPart = (name, tagName = "div") => {
@@ -151,11 +148,11 @@ export function smallWidgetFrame(options = {}) {
   ensureStyles();
 
   const element = document.createElement("section");
-  element.className = [
+  element.className = classNames(
     "webskin-frame",
     "webskin-frame--small-widget",
     options.className,
-  ].filter(Boolean).join(" ");
+  );
   element.dataset.webskinFrame = "small-widget-frame";
 
   const iconArea = createPart("icon-area");

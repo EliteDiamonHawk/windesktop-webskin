@@ -2,13 +2,14 @@ export class Widget {
   #cleanups = [];
   #destroyed = false;
 
-  constructor(element, { type } = {}) {
+  constructor(element, { type, variant } = {}) {
     if (!element || typeof element.append !== "function") {
       throw new TypeError("A widget must be backed by a DOM element");
     }
 
     this.element = element;
     if (type) element.dataset.webskinWidget = type;
+    if (variant) element.dataset.webskinWidgetVariant = variant;
     Object.defineProperty(element, "destroy", {
       configurable: true,
       value: () => this.destroy(),
@@ -23,6 +24,15 @@ export class Widget {
     }
     this.#cleanups.push(cleanup);
     return cleanup;
+  }
+
+  setState(state, family) {
+    this.element.dataset.webskinWidgetState = state;
+    if (family) {
+      const key = `webskin${String(family).replace(/(^|-)([a-z])/g, (_, __, letter) => letter.toUpperCase())}State`;
+      this.element.dataset[key] = state;
+    }
+    return state;
   }
 
   destroy() {

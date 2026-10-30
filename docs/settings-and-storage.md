@@ -143,9 +143,9 @@ The response contains `fast`, `standard`, `slow`, and resolved `widgets`
 values. A widget-level `widgets/{widget-id}/updateInterval` value overrides its
 family default. Invalid or missing values use the family default.
 
-System constructors also accept `updateInterval` in seconds, following the
-time-widget API. The existing `interval` option remains supported in
-milliseconds and takes precedence when both options are supplied.
+System constructors accept `updateInterval` in positive integer seconds,
+following the time-widget API. An explicit constructor value overrides resolved
+settings.
 
 ## Routes
 

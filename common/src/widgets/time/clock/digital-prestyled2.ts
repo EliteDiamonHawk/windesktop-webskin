@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 import { subscribeClock, validateUpdateInterval } from "../time-scheduler.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -590,6 +591,7 @@ const layoutFrom = (value) => {
 
 class DigitalPrestyled2Clock extends Widget {
   constructor(options = {}) {
+    rejectLegacyInterval(options);
     ensureStyles();
     const {
       format = "24h",
@@ -613,13 +615,14 @@ class DigitalPrestyled2Clock extends Widget {
     const numericMaskOffset = Math.max(0, Number(maskOffset) || 0);
     const numericMaskRoundness = clamp(Number(maskRoundness) || 0, 0, 100);
     const element = document.createElement("time");
-    super(element, { type: "clock" });
-    element.className = [
+    super(element, { type: "clock", variant: "prestyled" });
+    element.className = classNames(
       "webskin-clock",
       "webskin-clock--digital-prestyled2",
+      "webskin-clock--prestyled",
       blur ? "is-blur" : "",
       className,
-    ].filter(Boolean).join(" ");
+    );
     element.setAttribute("aria-label", "Current time");
     if (color) element.style.setProperty("--webskin-digital2-color", color);
     if (accentColor) element.style.setProperty("--webskin-digital2-accent", accentColor);
@@ -691,6 +694,7 @@ class DigitalPrestyled2Clock extends Widget {
     };
 
     render();
+    this.setState("ready");
     void ensureDigitAssets().then(() => render(lastSnapshot)).catch(() => render(lastSnapshot));
     this.addCleanup(() => { active = false; });
     this.addCleanup(subscribeClock(render, { updateInterval, widgetId: WIDGET_SETTINGS_ID }));

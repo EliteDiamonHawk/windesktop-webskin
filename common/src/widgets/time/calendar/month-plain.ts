@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js?v=month-widget-1";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 import { validateUpdateInterval } from "../time-scheduler.js";
 import {
   calendarDateState,
@@ -103,6 +104,7 @@ const setWeekdayState = (element, weekdayIndex, formatters) => {
 
 class PlainMonth extends Widget {
   constructor(options = {}) {
+    rejectLegacyInterval(options);
     ensureStyles();
     const {
       date: suppliedDate,
@@ -114,6 +116,7 @@ class PlainMonth extends Widget {
       updateInterval,
       widgetId = WIDGET_SETTINGS_ID,
       className = "",
+      variant = "plain",
     } = options;
     validateUpdateInterval(updateInterval);
 
@@ -124,10 +127,8 @@ class PlainMonth extends Widget {
     const maxWeeks = resolveMonthMaxWeeks(suppliedMaxWeeks);
     const monthLock = resolveMonthLock(lockDay, maxWeeks);
     const element = document.createElement("section");
-    super(element, { type: "calendar" });
-    element.className = ["webskin-calendar", "webskin-calendar--month-plain", className]
-      .filter(Boolean)
-      .join(" ");
+    super(element, { type: "calendar", variant });
+    element.className = classNames("webskin-calendar", "webskin-calendar--month-plain", `webskin-calendar--${variant}`, className);
     element.style.setProperty("--webskin-calendar-weeks", String(maxWeeks));
 
     const heading = createPart("month-heading", "", "header");
@@ -182,6 +183,7 @@ class PlainMonth extends Widget {
     };
 
     render(suppliedDate);
+    this.setState("ready");
     if (suppliedDate === undefined) {
       this.addCleanup(watchCurrentDate(render, { updateInterval, widgetId }));
     }

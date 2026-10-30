@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js?v=calendar-date-5";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 import { validateUpdateInterval } from "../time-scheduler.js";
 import {
   addDays,
@@ -65,14 +66,13 @@ const applyDateState = (element, date, highlightDate) => {
   element.dateTime = state.date;
 };
 
-const createCell = (date, formatters, highlightDate) => {
+const createCell = () => {
   const cell = document.createElement("time");
   cell.dataset.webskinCalendarPart = "date-cell";
   const weekday = createPart("weekday");
   const day = createPart("day");
   const month = createPart("month");
   cell.append(weekday, day, month);
-  renderCell(cell, { weekday, day, month }, date, formatters, highlightDate);
   return { cell, parts: { weekday, day, month } };
 };
 
@@ -86,6 +86,7 @@ const renderCell = (cell, parts, date, formatters, highlightDate) => {
 
 class PlainWeek extends Widget {
   constructor(options = {}) {
+    rejectLegacyInterval(options);
     ensureStyles();
     const {
       date: suppliedDate,
@@ -97,6 +98,7 @@ class PlainWeek extends Widget {
       updateInterval,
       widgetId = WIDGET_SETTINGS_ID,
       className = "",
+      variant = "plain",
     } = options;
     validateUpdateInterval(updateInterval);
 
@@ -106,14 +108,13 @@ class PlainWeek extends Widget {
     const firstDay = localeWeekStartsOn(locale, weekStartsOn);
     const rollingWindow = resolveWeekWindow(daysBefore, daysAfter);
     const element = document.createElement("div");
-    super(element, { type: "calendar" });
-    element.className = ["webskin-calendar", "webskin-calendar--week-plain", className]
-      .filter(Boolean)
-      .join(" ");
+    super(element, { type: "calendar", variant });
+    element.className = classNames("webskin-calendar", "webskin-calendar--week-plain", `webskin-calendar--${variant}`, className);
 
     const grid = createPart("week");
     element.append(grid);
-    const cells = [];
+    const cells = Array.from({ length: 7 }, createCell);
+    grid.append(...cells.map(({ cell }) => cell));
 
     const render = (nextDate) => {
       const anchor = normalizeDate(nextDate);
@@ -132,16 +133,11 @@ class PlainWeek extends Widget {
         delete element.dataset.webskinCalendarDaysBefore;
         delete element.dataset.webskinCalendarDaysAfter;
       }
-      for (const cell of cells) cell.cell.remove();
-      cells.length = 0;
-      for (const day of days) {
-        const nextCell = createCell(day, formatters, highlightDate);
-        cells.push(nextCell);
-        grid.append(nextCell.cell);
-      }
+      days.forEach((day, index) => renderCell(cells[index].cell, cells[index].parts, day, formatters, highlightDate));
     };
 
     render(suppliedDate);
+    this.setState("ready");
     if (suppliedDate === undefined) {
       this.addCleanup(watchCurrentDate(render, { updateInterval, widgetId }));
     }

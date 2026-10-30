@@ -1,7 +1,7 @@
-import { Widget } from "../../widgets.js";
 import { subscribeClock, validateUpdateInterval } from "../../time/time-scheduler.js";
-import { createPart, fieldsForFormat, renderTokenFormat, resolveFormat, systemMetricsManager } from "./client.js";
+import { createPart, createSystemWidget, fieldsForFormat, renderTokenFormat, resolveFormat, systemMetricsManager } from "./client.js";
 import { formatInteger, formatText } from "./formatters.js";
+import { rejectLegacyInterval } from "../../dom.js";
 
 const DEFAULT_FORMAT = "{boot-time}";
 const DEFAULT_UPDATE_INTERVAL = 60;
@@ -18,90 +18,71 @@ const uptimeSeconds = (bootTime, now) => {
 };
 
 export function createLastBoot(options = {}) {
+  rejectLegacyInterval(options);
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "last boot");
-  const requestedFields = fieldsForFormat(format, TOKEN_FIELDS);
   const updateInterval = options.updateInterval ?? DEFAULT_UPDATE_INTERVAL;
   validateUpdateInterval(updateInterval);
-
-  const element = document.createElement("section");
-  const widget = new Widget(element, { type: "system" });
-  element.className = ["webskin-system-widget", "webskin-system-widget--last-boot", options.className]
-    .filter(Boolean)
-    .join(" ");
-  element.dataset.webskinSystemType = "last-boot";
-  element.setAttribute("aria-live", "polite");
-
-  const content = createPart("content", "", "div");
-  element.append(content, createPart("status", "", "output"));
-
   let bootTime = null;
   let bootTimeLoaded = false;
-  let activeBootUnsubscribe = null;
-  let clockUnsubscribe = null;
 
-  const render = (phase = bootTimeLoaded ? "ready" : "initial", now = Date.now()) => {
-    renderTokenFormat(content, format, {
+  const renderValues = (root, phase = bootTimeLoaded ? "ready" : "initial", now = Date.now()) => {
+    renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
       "boot-time": formatText(bootTime, phase),
-      uptime: formatInteger(
-        bootTime ? uptimeSeconds(bootTime, now) : null,
-        phase,
-        0,
-      ),
+      uptime: formatInteger(bootTime ? uptimeSeconds(bootTime, now) : null, phase, 0),
     }, { fallback: phase === "initial" ? "-" : "n/a" });
   };
 
-  const unsubscribeBootTime = () => {
-    activeBootUnsubscribe?.();
-    activeBootUnsubscribe = null;
-  };
-
-  const subscribeBootTime = () => {
-    if (activeBootUnsubscribe) return activeBootUnsubscribe;
-
+  const subscribeOnce = ({ endpoint, updateInterval: updateIntervalSeconds, fields, onSnapshot, onError }) => {
     let unsubscribe;
-    const cancel = () => {
-      unsubscribe?.();
-      if (activeBootUnsubscribe === cancel) activeBootUnsubscribe = null;
-    };
-    activeBootUnsubscribe = cancel;
+    const cancel = () => unsubscribe?.();
+    cancel.once = true;
     unsubscribe = systemMetricsManager.subscribe({
-      endpoint: options.endpoint ?? "/api/system/metrics",
-      widgetId: options.widgetId,
-      updateInterval: DEFAULT_UPDATE_INTERVAL,
-      fields: ["system.boot_time"],
+      endpoint,
+      updateInterval: updateIntervalSeconds,
+      fields,
       onSnapshot: (snapshot) => {
-        bootTime = snapshot?.system?.boot_time ?? null;
-        bootTimeLoaded = true;
+        onSnapshot(snapshot);
         cancel();
-        render("ready");
       },
-      onError: () => {
+      onError: (error) => {
+        onError(error);
         cancel();
-        if (!bootTimeLoaded) render("error");
       },
     });
     return cancel;
   };
 
-  Object.defineProperty(element, "subscribeBootTime", {
-    configurable: true,
-    value: subscribeBootTime,
+  return createSystemWidget({
+    ...options,
+    type: "last-boot",
+    variant: "plain",
+    updateInterval,
+    family: "standard",
+    fields: fieldsForFormat(format, TOKEN_FIELDS),
+    build: (root) => root.append(createPart("content", "", "div")),
+    render: (root, snapshot, { phase }) => {
+      renderValues(root, phase);
+    },
+    subscribe: subscribeOnce,
+    onSnapshot: (snapshot) => {
+      bootTime = snapshot?.system?.boot_time ?? null;
+      bootTimeLoaded = true;
+    },
+    onRuntime: (runtime) => {
+      Object.defineProperty(runtime.element, "subscribeBootTime", {
+        configurable: true,
+        value: runtime.subscribe,
+      });
+      Object.defineProperty(runtime.element, "unsubscribeBootTime", {
+        configurable: true,
+        value: runtime.unsubscribe,
+      });
+      if (format.includes("{uptime}")) {
+        runtime.widget.addCleanup(subscribeClock(
+          (now) => renderValues(runtime.renderRoot, "ready", now.getTime()),
+          { updateInterval },
+        ));
+      }
+    },
   });
-  Object.defineProperty(element, "unsubscribeBootTime", {
-    configurable: true,
-    value: unsubscribeBootTime,
-  });
-
-  render();
-  subscribeBootTime();
-
-  if (requestedFields.includes("system.boot_time") && format.includes("{uptime}")) {
-    clockUnsubscribe = subscribeClock(
-      (now) => render("ready", now.getTime()),
-      { updateInterval },
-    );
-    widget.addCleanup(() => clockUnsubscribe?.());
-  }
-  widget.addCleanup(unsubscribeBootTime);
-  return element;
 }

@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 import {
   subscribeAnimation,
   subscribeClock,
@@ -91,6 +92,7 @@ const clockAngles = (now, smooth) => ({
 
 class PlainAnalogClock extends Widget {
   constructor(options = {}) {
+    rejectLegacyInterval(options);
     ensureStyles();
     const {
       offsetMinutes = 0,
@@ -98,6 +100,7 @@ class PlainAnalogClock extends Widget {
       updateInterval,
       widgetId = WIDGET_SETTINGS_ID,
       className = "",
+      variant = "plain",
     } = options;
     validateUpdateInterval(updateInterval);
 
@@ -106,8 +109,8 @@ class PlainAnalogClock extends Widget {
       role: "img",
       "aria-label": "Analog clock",
     });
-    super(element, { type: "clock" });
-    element.classList.add("webskin-clock", "webskin-clock--analog-plain", ...String(className).split(/\s+/).filter(Boolean));
+    super(element, { type: "clock", variant });
+    element.className = classNames("webskin-clock", "webskin-clock--analog-plain", `webskin-clock--${variant}`, className);
 
     const face = svgElement("circle", { cx: "50", cy: "50", r: "44" });
     face.dataset.webskinClockPart = "face";
@@ -146,6 +149,7 @@ class PlainAnalogClock extends Widget {
     };
 
     render();
+    this.setState("ready");
     if (smooth) {
       this.addCleanup(subscribeAnimation(render));
     } else {

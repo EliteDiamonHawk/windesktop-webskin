@@ -88,8 +88,7 @@ const installDom = () => {
 };
 
 const flush = async () => {
-  await Promise.resolve();
-  await Promise.resolve();
+  for (let index = 0; index < 4; index += 1) await Promise.resolve();
 };
 
 const runNextTimer = () => {
@@ -135,7 +134,7 @@ test("timers hide controls by default", () => {
 test("pre-styled timers use assets and state-based controls", () => {
   installDom();
   const timer = styledCountdown({ time: 10_000 });
-  assert.equal(timer.parts.value.children[0].textContent, "00:00:10");
+  assert.equal(timer.parts.value.textContent, "00:00:10");
   assert.equal(timer.parts.subtext.textContent, "Countdown");
   assert.deepEqual(timer.parts.actions.children.map((button) => button.textContent), ["Play", "Restart"]);
   assert.equal(
@@ -155,6 +154,8 @@ test("pre-styled timers use assets and state-based controls", () => {
 
   const stopwatchTimer = styledStopwatch({ buttons: false });
   assert.equal(stopwatchTimer.parts.actions.children.length, 0);
+  assert.equal("setTime" in stopwatchTimer, false);
+  assert.equal("setLimit" in timer, false);
   stopwatchTimer.destroy();
 });
 
@@ -176,7 +177,7 @@ test("timer syntax uses total elapsed hours and forwards through pre-styled time
   countdownTimer.destroy();
 
   const styledTimer = styledCountdown({ time: 90_000, syntax: "m:ss remaining" });
-  assert.equal(styledTimer.parts.value.children[0].textContent, "1:30 remaining");
+  assert.equal(styledTimer.parts.value.textContent, "1:30 remaining");
   styledTimer.destroy();
 });
 
@@ -184,12 +185,12 @@ test("countdown exposes controls when requested", async () => {
   installDom();
   const timer = countdown({ time: 10_000, updateInterval: 5, buttons: true });
   assert.equal(displayOf(timer), "00:00:10");
-  const controls = timer.querySelectorAll("[data-webskin-timer-control]");
-  assert.deepEqual(controls.map((button) => button.textContent), ["Play", "Restart", "Resume", "Pause"]);
+  const controls = () => timer.querySelectorAll("[data-webskin-timer-control]");
+  assert.deepEqual(controls().map((button) => button.textContent), ["Play", "Restart", "Resume", "Pause"]);
   assert.equal(timer.dataset.webskinTimerState, "paused");
   assert.equal(requests, 0);
 
-  controls[0].click();
+  controls()[0].click();
   await flush();
   assert.equal(requests, 1);
   assert.equal(timer.dataset.webskinTimerState, "running");
@@ -198,18 +199,18 @@ test("countdown exposes controls when requested", async () => {
   runNextTimer();
   assert.equal(displayOf(timer), "00:00:07");
 
-  controls[3].click();
+  controls()[3].click();
   await flush();
   assert.equal(timer.dataset.webskinTimerState, "paused");
-  assert.equal(requests, 2);
+  assert.equal(requests, 1);
 
   timer.setTime(3_000);
   assert.equal(displayOf(timer), "00:00:03");
-  controls[1].click();
+  controls()[1].click();
   assert.equal(displayOf(timer), "00:00:10");
   assert.equal(timer.dataset.webskinTimerState, "paused");
-  controls[2].click();
-  controls[3].click();
+  controls()[2].click();
+  controls()[3].click();
   timer.destroy();
 });
 
@@ -262,6 +263,7 @@ test("sync interval can change while running and failed sync uses browser time",
   await flush();
   assert.ok(timerDelays.includes(9_000));
   timer.setUpdateInterval(2);
+  await flush();
   assert.ok(timerDelays.includes(2_000));
   timer.destroy();
 
@@ -294,7 +296,7 @@ test("timer time subscription reports invalid responses", async () => {
   invalidTimeResponse = true;
   let errors = 0;
   const unsubscribe = timerTimeManager.subscribe({
-    interval: 4,
+    updateInterval: 4,
     onError: () => { errors += 1; },
   });
   await flush();
@@ -307,10 +309,16 @@ test("invalid timer values are rejected", () => {
   installDom();
   assert.throws(() => countdown(), TypeError);
   assert.throws(() => countdown({ time: -1 }), RangeError);
+  assert.throws(() => countdown({ time: 1_000, updateInterval: 0 }), RangeError);
   assert.throws(() => stopwatch({ limit: 1.5 }), RangeError);
   assert.throws(() => stopwatch({ updateInterval: 0 }), RangeError);
+  assert.throws(() => stopwatch({ interval: 1000 }), TypeError);
   const timer = stopwatch();
   assert.throws(() => timer.setLimit(-1), RangeError);
   assert.throws(() => timer.setUpdateInterval(1.5), RangeError);
+  const unsupportedCountdown = countdown({ time: 1000 });
+  assert.equal("setLimit" in unsupportedCountdown, false);
+  assert.equal("setTime" in timer, false);
+  unsupportedCountdown.destroy();
   timer.destroy();
 });

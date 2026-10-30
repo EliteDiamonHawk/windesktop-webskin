@@ -1,3 +1,5 @@
+import { rejectLegacyInterval } from "../dom.js";
+
 const DEFAULT_CLOCK_UPDATE_INTERVAL = 5;
 const DEFAULT_CALENDAR_UPDATE_INTERVAL = 60;
 
@@ -69,7 +71,7 @@ const schedule = (kind) => {
     for (const subscriber of [...subscribers]) {
       if (current >= subscriber.nextDue) {
         do {
-          subscriber.nextDue += subscriber.interval * 1000;
+        subscriber.nextDue += subscriber.updateInterval * 1000;
         } while (subscriber.nextDue <= current);
         subscriber.callback(snapshot);
       }
@@ -86,6 +88,7 @@ const normalizeOptions = (value) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new TypeError("Time scheduler options must be an object");
   }
+  rejectLegacyInterval(value);
   return value;
 };
 
@@ -98,7 +101,7 @@ const subscribe = (family, callback, requestedOptions) => {
   const subscriber = {
     callback,
     widgetId,
-    interval: explicitInterval ?? fallback,
+    updateInterval: explicitInterval ?? fallback,
     nextDue: Date.now() + (explicitInterval ?? fallback) * 1000,
   };
   subscribers.add(subscriber);
@@ -106,10 +109,10 @@ const subscribe = (family, callback, requestedOptions) => {
 
   if (explicitInterval === undefined) {
     void resolvedIntervals().then((intervals) => {
-      const interval = intervals.widgets?.[widgetId] ?? intervals[family];
-      if (!subscribers.has(subscriber) || subscriber.interval === interval) return;
-      subscriber.interval = interval;
-      subscriber.nextDue = Date.now() + interval * 1000;
+      const updateInterval = intervals.widgets?.[widgetId] ?? intervals[family];
+      if (!subscribers.has(subscriber) || subscriber.updateInterval === updateInterval) return;
+      subscriber.updateInterval = updateInterval;
+      subscriber.nextDue = Date.now() + updateInterval * 1000;
       schedule(family);
     });
   }

@@ -39,7 +39,7 @@ const ensureStyles = () => {
 
 export function createDay(options = {}) {
   ensureStyles();
-  const element = createPlainDay({ ...options, variant: "formatted", widgetId: WIDGET_SETTINGS_ID });
+  const element = createPlainDay({ ...options, variant: "formatted", widgetId: WIDGET_SETTINGS_ID, widgetVariant: "prestyled" });
   element.classList.add("webskin-calendar--day-prestyled");
   if (options.color) element.style.setProperty("--webskin-calendar-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-calendar-background", options.backgroundColor);

@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 import { createDay } from "../calendar/day-plain.js";
 import { createClock as createDigitalClock } from "./digital-plain.js";
 
@@ -119,6 +120,7 @@ const createPart = (part) => {
 
 class RainmeterMondClockRemake extends Widget {
   constructor(options = {}) {
+    rejectLegacyInterval(options);
     ensureStyles();
     const {
       date,
@@ -135,12 +137,13 @@ class RainmeterMondClockRemake extends Widget {
     } = options;
 
     const element = document.createElement("section");
-    super(element, { type: "clock" });
-    element.className = [
+    super(element, { type: "clock", variant: "prestyled" });
+    element.className = classNames(
       "webskin-clock",
       "webskin-clock--rainmeter-mond-clock-remake",
+      "webskin-clock--prestyled",
       className,
-    ].filter(Boolean).join(" ");
+    );
     element.setAttribute("aria-label", "Current date and time");
     if (color) element.style.setProperty("--webskin-mond-color", color);
     if (width) element.style.setProperty("--webskin-mond-width", width);
@@ -184,6 +187,7 @@ class RainmeterMondClockRemake extends Widget {
     this.addCleanup(() => calendarDate.destroy?.());
     this.addCleanup(() => dateWidget.destroy?.());
     this.addCleanup(() => clockWidget.destroy?.());
+    this.setState("ready");
   }
 }
 

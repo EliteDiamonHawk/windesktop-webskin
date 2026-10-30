@@ -169,9 +169,14 @@ test.afterEach(() => {
 test("formats dynamic values, preserves literals, and requests only referenced fields", async () => {
   const memory = widgets.createMemory({ format: "Used={used}\\nUsage {percent} %" });
   created.push(memory);
+  assert.equal(memory.dataset.webskinWidgetVariant, "plain");
+  assert.equal(memory.dataset.webskinWidgetState, "initial");
   assert.deepEqual(rowsText(memory), ["Used=-", "Usage - %"]);
+  const valueParts = [...memory.querySelectorAll('[data-webskin-system-format-part="used"]')];
   await waitForPoll();
+  assert.equal(memory.dataset.webskinWidgetState, "ready");
   assert.deepEqual(rowsText(memory), ["Used=2", "Usage 50 %"]);
+  assert.equal(memory.querySelector('[data-webskin-system-format-part="used"]'), valueParts[0]);
   assert.deepEqual(
     [...memory.querySelectorAll('[data-webskin-system-format-part="used"]')].map((part) => part.textContent),
     ["2"],
@@ -185,6 +190,8 @@ test("formats dynamic values, preserves literals, and requests only referenced f
 test("renders single-value cards with icon and shape assets", async () => {
   const cpu = widgets.createCpuUtilizationPrestyled();
   created.push(cpu);
+  assert.equal(cpu.dataset.webskinWidgetVariant, "prestyled");
+  assert.equal(cpu.dataset.webskinSystemState, "initial");
   const liveContent = cpu.parts.value.children[0];
 
   assert.equal(cpu.parts.subtext.textContent, "CPU");
@@ -198,6 +205,7 @@ test("renders single-value cards with icon and shape assets", async () => {
     'url("/assets/shapes/flower.svg")',
   );
   await waitForPoll();
+  assert.equal(cpu.dataset.webskinSystemState, "ready");
   assert.equal(cpu.parts.value.children[0], liveContent);
   assert.equal(textOf(cpu.parts.value), "12.5%");
 });
@@ -213,6 +221,8 @@ test("prestylized last-boot wraps plain lifecycle and destroys it", async () => 
     assert.equal(typeof boot.unsubscribeBootTime, "function");
     assert.equal(textOf(boot.parts.value), "- s");
 
+    boot.unsubscribeBootTime();
+    boot.subscribeBootTime();
     await waitForPoll();
     assert.equal(textOf(boot.parts.value), "1,234 s");
 
@@ -223,10 +233,10 @@ test("prestylized last-boot wraps plain lifecycle and destroys it", async () => 
   }
 });
 
-test("prestylized metric cards use plain compact renderers", async () => {
-  const battery = widgets.createBatteryPrestyled({ interval: 1231 });
-  const disk = widgets.createDiskUsagePrestyled({ interval: 1232 });
-  const network = widgets.createNetworkPrestyled({ interval: 1233 });
+test("prestylized metric cards use compact renderers on outer roots", async () => {
+  const battery = widgets.createBatteryPrestyled({ updateInterval: 11 });
+  const disk = widgets.createDiskUsagePrestyled({ updateInterval: 12 });
+  const network = widgets.createNetworkPrestyled({ updateInterval: 13 });
   created.push(battery, disk, network);
 
   await waitForPoll();
@@ -235,8 +245,8 @@ test("prestylized metric cards use plain compact renderers", async () => {
   assert.equal(textOf(network.parts.value), "n/a");
 });
 
-test("destroying prestylized card destroys its plain poller", async () => {
-  const cpu = widgets.createCpuUtilizationPrestyled({ interval: 1234 });
+test("destroying prestylized card stops its outer-root poller", async () => {
+  const cpu = widgets.createCpuUtilizationPrestyled({ updateInterval: 14 });
   created.push(cpu);
   await waitForPoll();
   const requests = requestUrls.length;
@@ -309,9 +319,9 @@ test("last-boot supports live browser updates and manual boot-time cancellation"
   }
 });
 
-test("coalesces widgets with the same endpoint and interval", async () => {
-  const memory = widgets.createMemory({ format: "{used}", interval: 30000 });
-  const network = widgets.createNetworkTelemetry({ format: "{sent}", interval: 30000 });
+test("coalesces widgets with the same endpoint and update interval", async () => {
+  const memory = widgets.createMemory({ format: "{used}", updateInterval: 30 });
+  const network = widgets.createNetworkTelemetry({ format: "{sent}", updateInterval: 30 });
   created.push(memory, network);
   await waitForPoll();
   assert.equal(requestUrls.length, 1);
@@ -319,13 +329,13 @@ test("coalesces widgets with the same endpoint and interval", async () => {
   assert.deepEqual(fields, ["memory.virtual.used_bytes", "network.bytes_sent"]);
 });
 
-test("uses independent polling families and supports interval overrides", async () => {
+test("uses independent polling families and supports update interval overrides", async () => {
   const memory = widgets.createMemory({ format: "{used}" });
   const cpu = widgets.createCpuUtilization({ format: "{value}" });
   const standard = widgets.createCpuTelemetry();
   const override = widgets.createBattery({ updateInterval: 2 });
-  const legacy = widgets.createSwapMemory({ interval: 1234 });
-  created.push(memory, cpu, standard, override, legacy);
+  const explicit = widgets.createSwapMemory({ updateInterval: 12 });
+  created.push(memory, cpu, standard, override, explicit);
   await waitForPoll();
 
   assert.equal(requestUrls.length, 5);
@@ -333,7 +343,11 @@ test("uses independent polling families and supports interval overrides", async 
   assert.ok(timerDelays.includes(5000));
   assert.ok(timerDelays.includes(30000));
   assert.ok(timerDelays.includes(2000));
-  assert.ok(timerDelays.includes(1234));
+  assert.ok(timerDelays.includes(12000));
+});
+
+test("rejects legacy millisecond interval option", () => {
+  assert.throws(() => widgets.createMemory({ interval: 1000 }), TypeError);
 });
 
 test("renders CPU variants and limits", async () => {

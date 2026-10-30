@@ -1,6 +1,7 @@
 import { createClock as createDigitalPlain } from "./digital-plain.js";
 import { createClock as createAnalogPlain } from "./analog-plain.js";
 import { Widget } from "../../widgets.js";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 
 const STYLE_ID = "webskin-clock-digital-analog-prestyled-styles";
 const WIDGET_SETTINGS_ID = "digital-analog-prestyled";
@@ -78,6 +79,7 @@ const ensureStyles = () => {
 
 class DigitalAnalogClock extends Widget {
   constructor(options = {}) {
+    rejectLegacyInterval(options);
     ensureStyles();
     const {
       format = "24h",
@@ -93,10 +95,8 @@ class DigitalAnalogClock extends Widget {
     } = options;
 
     const element = document.createElement("div");
-    super(element, { type: "clock" });
-    element.className = ["webskin-clock", "webskin-clock--digital-analog-prestyled", className]
-      .filter(Boolean)
-      .join(" ");
+    super(element, { type: "clock", variant: "prestyled" });
+    element.className = classNames("webskin-clock", "webskin-clock--digital-analog-prestyled", "webskin-clock--prestyled", className);
 
     const sharedOptions = { offsetMinutes, updateInterval, widgetId: WIDGET_SETTINGS_ID };
     const analog = createAnalogPlain({ ...sharedOptions, smooth: smooth ?? true });
@@ -121,6 +121,7 @@ class DigitalAnalogClock extends Widget {
       analog.destroy?.();
       digital.destroy?.();
     });
+    this.setState("ready");
   }
 }
 

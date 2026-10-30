@@ -40,8 +40,10 @@ export function createClock(options = {}) {
     ...options,
     smooth: options.smooth ?? true,
     widgetId: WIDGET_SETTINGS_ID,
+    variant: "prestyled",
   });
   element.classList.add("webskin-clock--analog-prestyled");
+  element.dataset.webskinWidgetVariant = "prestyled";
   if (options.color) element.style.setProperty("--webskin-analog-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-analog-face", options.backgroundColor);
   return element;

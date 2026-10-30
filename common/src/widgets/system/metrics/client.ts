@@ -1,12 +1,14 @@
 import { Widget } from "../../widgets.js";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 
-export const DEFAULT_INTERVAL = 5000;
-export const DEFAULT_INTERVALS = Object.freeze({ fast: 5000, standard: 30000, slow: 60000 });
+export const DEFAULT_INTERVAL = 5;
+export const DEFAULT_INTERVALS = Object.freeze({ fast: 5, standard: 30, slow: 60 });
 const TOKEN_PATTERN = /\{([a-z][a-z0-9-]*)\}/g;
 const LEGACY_TOKEN_PATTERN = /\<[^<>]*\>/;
 const ESCAPES = { n: "\n", r: "\r", t: "\t", "\\": "\\" };
 const POLL_GROUPS = new Map();
 let resolvedIntervalsPromise;
+const TOKEN_RENDERERS = new WeakMap();
 
 const settingsFallback = () => ({
   fast: DEFAULT_INTERVALS.fast,
@@ -34,7 +36,7 @@ const resolvedIntervals = async () => {
         if (!response.ok) return fallback;
         const value = await response.json();
         const familyInterval = (family) => (
-          validSeconds(value?.[family]) ? value[family] * 1000 : fallback[family]
+          validSeconds(value?.[family]) ? value[family] : fallback[family]
         );
         return {
           fast: familyInterval("fast"),
@@ -43,7 +45,7 @@ const resolvedIntervals = async () => {
           widgets: Object.fromEntries(
             Object.entries(value?.widgets ?? {})
               .filter(([, interval]) => validSeconds(interval))
-              .map(([widgetId, interval]) => [widgetId, interval * 1000]),
+              .map(([widgetId, interval]) => [widgetId, interval]),
           ),
         };
       } catch {
@@ -107,31 +109,77 @@ export const renderTokenLine = (row, line, values, fallback = "n/a", partPrefix 
   if (cursor < line.length) row.append(document.createTextNode(line.slice(cursor)));
 };
 
+const buildTokenLine = (row, line, partPrefix = "") => {
+  let cursor = 0;
+  const tokens = [];
+  for (const match of line.matchAll(TOKEN_PATTERN)) {
+    if (match.index > cursor) row.append(document.createTextNode(line.slice(cursor, match.index)));
+    const token = match[1];
+    const element = createPart(partPrefix + token);
+    element.dataset.webskinSystemFormatPart = token;
+    row.append(element);
+    tokens.push({ token, element });
+    cursor = match.index + match[0].length;
+  }
+  if (cursor < line.length) row.append(document.createTextNode(line.slice(cursor)));
+  return tokens;
+};
+
+const updateTokenLine = (template, values, fallback) => {
+  template.forEach(({ token, element }) => {
+    element.textContent = displayValue(values[token], fallback);
+  });
+};
+
 export const renderTokenFormat = (root, format, values, {
   fallback = "n/a",
   partPrefix = "",
   rowParts = [],
 } = {}) => {
-  root.replaceChildren();
-  format.split(/\r\n|\n|\r/).forEach((line, index) => {
-    const row = document.createElement("div");
-    row.dataset.webskinSystemPart = rowParts[index] ?? partPrefix + "row-" + index;
-    renderTokenLine(row, line, values, fallback, partPrefix);
-    root.append(row);
-  });
+  const key = format + "\u0000" + partPrefix + "\u0000" + rowParts.join("\u0000");
+  let state = TOKEN_RENDERERS.get(root);
+  if (!state || state.kind !== "format" || state.key !== key) {
+    root.replaceChildren();
+    state = {
+      kind: "format",
+      key,
+      rows: format.split(/\r\n|\n|\r/).map((line, index) => {
+        const row = document.createElement("div");
+        row.dataset.webskinSystemPart = rowParts[index] ?? partPrefix + "row-" + index;
+        const template = buildTokenLine(row, line, partPrefix);
+        root.append(row);
+        return template;
+      }),
+    };
+    TOKEN_RENDERERS.set(root, state);
+  }
+  state.rows.forEach((template) => updateTokenLine(template, values, fallback));
 };
 
 export const renderRepeatedFormat = (root, format, rows, {
   fallback = "n/a",
   partPrefix = "",
 } = {}) => {
-  root.replaceChildren();
-  rows.forEach((values, index) => {
+  const key = format + "\u0000" + partPrefix;
+  let state = TOKEN_RENDERERS.get(root);
+  if (!state || state.kind !== "repeated" || state.key !== key) {
+    state = { kind: "repeated", key, rows: [] };
+    root.replaceChildren();
+    TOKEN_RENDERERS.set(root, state);
+  }
+  while (state.rows.length < rows.length) {
+    const index = state.rows.length;
     const row = document.createElement("div");
     row.dataset.webskinSystemPart = partPrefix + "row-" + index;
-    renderTokenLine(row, format, values, fallback, partPrefix + index + "-");
+    const template = buildTokenLine(row, format, partPrefix + index + "-");
+    state.rows.push({ row, template });
     root.append(row);
-  });
+  }
+  if (state.rows.length > rows.length) {
+    state.rows = state.rows.slice(0, rows.length);
+    root.replaceChildren(...state.rows.map(({ row }) => row));
+  }
+  rows.forEach((values, index) => updateTokenLine(state.rows[index].template, values, fallback));
 };
 
 const endpointWithFields = (endpoint, fields) => {
@@ -139,17 +187,12 @@ const endpointWithFields = (endpoint, fields) => {
   return endpoint + separator + "fields=" + encodeURIComponent(fields.join(","));
 };
 
-const intervalValue = (interval) => {
-  const value = Number(interval);
-  return Number.isFinite(value) && value > 0 ? value : DEFAULT_INTERVAL;
-};
-
 const updateIntervalValue = (updateInterval) => {
   if (updateInterval === undefined) return undefined;
   if (!validSeconds(updateInterval)) {
     throw new RangeError("updateInterval must be a positive integer number of seconds");
   }
-  return updateInterval * 1000;
+  return updateInterval;
 };
 
 const numberValue = (value) => typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -181,9 +224,9 @@ const transferSnapshot = (snapshot, previous) => {
 };
 
 class MetricsPollGroup {
-  constructor(endpoint, interval, key) {
+  constructor(endpoint, intervalSeconds, key) {
     this.endpoint = endpoint;
-    this.interval = interval;
+    this.intervalSeconds = intervalSeconds;
     this.key = key;
     this.subscribers = new Set();
     this.inFlight = false;
@@ -223,7 +266,7 @@ class MetricsPollGroup {
     this.timer = window.setTimeout(() => {
       this.timer = null;
       void this.refresh();
-    }, this.interval);
+    }, this.intervalSeconds * 1000);
   }
 
   unsubscribe(subscriber) {
@@ -264,20 +307,22 @@ class MetricsPollGroup {
     } finally {
       this.controller = null;
       this.inFlight = false;
-      if (this.subscribers.size) this.scheduleNext();
+      if (this.subscribers.size) {
+        if (this.needsRefresh) this.requestRefresh();
+        else this.scheduleNext();
+      }
     }
   }
 }
 
 export const systemMetricsManager = {
-  subscribe({ endpoint = "/api/system/metrics", interval, updateInterval, widgetId, family = "fast", fields = [], onSnapshot, onError }) {
-    const explicitInterval = interval !== undefined
-      ? intervalValue(interval)
-      : updateIntervalValue(updateInterval);
+  subscribe({ endpoint = "/api/system/metrics", updateInterval, widgetId, family = "fast", fields = [], onSnapshot, onError } = {}) {
+    rejectLegacyInterval(arguments[0]);
+    const explicitInterval = updateIntervalValue(updateInterval);
     const fallbackInterval = DEFAULT_INTERVALS[family] ?? DEFAULT_INTERVAL;
     const state = {
       active: true,
-      interval: explicitInterval ?? fallbackInterval,
+      updateIntervalSeconds: explicitInterval ?? fallbackInterval,
       group: null,
       unsubscribe: null,
     };
@@ -286,24 +331,24 @@ export const systemMetricsManager = {
       onSnapshot,
       onError,
     };
-    const join = (normalizedInterval, start = true) => {
-      const key = endpoint + "::" + normalizedInterval;
+    const join = (updateIntervalSeconds, start = true) => {
+      const key = endpoint + "::" + updateIntervalSeconds;
       let group = POLL_GROUPS.get(key);
       if (!group) {
-        group = new MetricsPollGroup(endpoint, normalizedInterval, key);
+        group = new MetricsPollGroup(endpoint, updateIntervalSeconds, key);
         POLL_GROUPS.set(key, group);
       }
-      state.interval = normalizedInterval;
+      state.updateIntervalSeconds = updateIntervalSeconds;
       state.group = group;
       state.unsubscribe = group.subscribe(subscriber, start);
     };
-    join(state.interval, explicitInterval !== undefined);
+    join(state.updateIntervalSeconds, explicitInterval !== undefined);
 
     if (explicitInterval === undefined) {
       void resolvedIntervals().then((intervals) => {
         if (!state.active) return;
         const configured = intervals.widgets?.[widgetId] ?? intervals[family] ?? fallbackInterval;
-        if (configured !== state.interval) {
+        if (configured !== state.updateIntervalSeconds) {
           state.unsubscribe?.();
           join(configured);
         } else {
@@ -341,54 +386,88 @@ export function createSystemWidget({
   type,
   className = "",
   endpoint = "/api/system/metrics",
-  interval,
   updateInterval,
   widgetId,
   family,
   fields = [],
   build,
   render,
+  subscribe = systemMetricsManager.subscribe,
+  onSnapshot: onSnapshotHook,
+  onError: onErrorHook,
+  onRuntime,
+  element: suppliedElement,
+  contentRoot: suppliedContentRoot,
+  rootType,
+  variant = "plain",
 } = {}) {
+  rejectLegacyInterval(arguments[0]);
   if (typeof build !== "function" || typeof render !== "function") {
     throw new TypeError("System widgets require build and render functions");
   }
 
-  const element = document.createElement("section");
+  const element = suppliedElement ?? document.createElement("section");
   const defaults = SYSTEM_WIDGET_CONFIG[type] ?? {};
   const resolvedWidgetId = widgetId ?? defaults.widgetId ?? (typeof type === "string" ? type + "-plain" : undefined);
   const resolvedFamily = family ?? defaults.family ?? "fast";
-  const explicitInterval = interval !== undefined ? interval : updateIntervalValue(updateInterval);
-  const widget = new Widget(element, { type: "system" });
-  element.className = ["webskin-system-widget", "webskin-system-widget--" + type, className]
-    .filter(Boolean)
-    .join(" ");
+  const widget = new Widget(element, { type: "system", variant });
+  element.className = classNames(
+    element.className,
+    "webskin-system-widget",
+    "webskin-system-widget--" + (rootType ?? type),
+    "webskin-system-widget--" + variant,
+    className,
+  );
   element.dataset.webskinSystemType = type;
   element.setAttribute("aria-live", "polite");
-  build(element);
+  const buildRoot = suppliedContentRoot ?? element;
+  build(buildRoot);
   element.append(createPart("status", "", "output"));
-  const content = element.querySelector('[data-webskin-system-part="content"]');
-  const renderRoot = content
-    ? { querySelector: (selector) => selector === '[data-webskin-system-part="content"]' ? content : element.querySelector(selector) }
-    : element;
+  const renderRoot = buildRoot;
+  widget.setState("initial", "system");
   render(renderRoot, null, { phase: "initial" });
 
   let hasSnapshot = false;
-  const unsubscribe = systemMetricsManager.subscribe({
-    endpoint,
-    interval: explicitInterval,
-    widgetId: resolvedWidgetId,
-    family: resolvedFamily,
-    fields,
-    onSnapshot: (snapshot) => {
-      hasSnapshot = true;
-      element.dataset.webskinSystemState = "ready";
-      render(renderRoot, snapshot, { phase: "ready" });
-    },
-    onError: (error) => {
-      element.dataset.webskinSystemState = "error";
-      if (!hasSnapshot) render(renderRoot, null, { phase: "error", error });
-    },
+  let activeUnsubscribe;
+  const startSubscription = () => {
+    if (activeUnsubscribe) return activeUnsubscribe;
+    let subscription;
+    const cancel = () => {
+      subscription?.();
+      if (activeUnsubscribe === cancel) activeUnsubscribe = undefined;
+    };
+    subscription = subscribe({
+      endpoint,
+      updateInterval,
+      widgetId: resolvedWidgetId,
+      family: resolvedFamily,
+      fields,
+      onSnapshot: (snapshot) => {
+        onSnapshotHook?.(snapshot);
+        hasSnapshot = true;
+        widget.setState("ready", "system");
+        render(renderRoot, snapshot, { phase: "ready" });
+        if (activeUnsubscribe?.once) activeUnsubscribe();
+      },
+      onError: (error) => {
+        onErrorHook?.(error);
+        widget.setState("error", "system");
+        if (!hasSnapshot) render(renderRoot, null, { phase: "error", error });
+        if (activeUnsubscribe?.once) activeUnsubscribe();
+      },
+    });
+    cancel.once = Boolean(subscription?.once);
+    activeUnsubscribe = cancel;
+    return cancel;
+  };
+  startSubscription();
+  widget.addCleanup(() => activeUnsubscribe?.());
+  onRuntime?.({
+    element,
+    widget,
+    renderRoot,
+    subscribe: startSubscription,
+    unsubscribe: () => activeUnsubscribe?.(),
   });
-  widget.addCleanup(unsubscribe);
   return element;
 }

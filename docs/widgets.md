@@ -19,6 +19,21 @@ Frame colors accept `color`, `backgroundColor`, `borderColor`, `subtextColor`,
 `iconFrameColor`, and `iconColor`. The same values remain customizable through
 the `--webskin-small-widget-*` CSS custom properties.
 
+## Widget contract
+
+All widget factories return one live DOM or SVG root. The root exposes
+`destroy()`, `data-webskin-widget`, `data-webskin-widget-variant`, and stable
+`data-webskin-*-part` hooks. Use `data-webskin-widget-state` for lifecycle state.
+System widgets also expose `data-webskin-system-state`; timers use
+`data-webskin-timer-state` for timer state.
+
+Plain widgets expose structure. Pre-styled widgets add visual treatment while
+sharing the plain renderer or controller. The returned outer root owns polling,
+listeners, child widgets, public methods, and cleanup. Pre-styled widgets do
+not keep detached live plain-widget roots.
+
+See [Widget conventions](widget-conventions.md) before adding a widget.
+
 ## Lifecycle
 
 The shared `Widget` class owns timers and listeners. Returned elements can
@@ -31,6 +46,11 @@ clock.destroy?.();
 ```
 
 ## Clocks
+
+The `/common/widgets/time/index.js` barrel re-exports clock, calendar, and
+timer factories. It also exposes `formatDuration`, `subscribeClock`,
+`subscribeCalendar`, `subscribeAnimation`, and `validateUpdateInterval` for
+themes that need documented shared time utilities.
 
 | Module | Import | Function |
 | --- | --- | --- |
@@ -112,17 +132,18 @@ widgets use local dates and do not convert them to UTC.
 
 Pre-styled cards are available from `/common/widgets/time/timers/countdown-prestyled.js`
 and `/common/widgets/time/timers/stopwatch-prestyled.js`. They use the same
-constructor names and expose the same timer methods, with frame controls enabled
-by default and disabled with `buttons: false`.
+constructor names and runtime behavior, with frame controls enabled by default
+and disabled with `buttons: false`.
 
 Timers render plain `HH:mm:ss` text by default. Pass `syntax` to customize the
 output with `HH` or `H` for total hours, `mm` or `m` for minutes, and `ss` or
 `s` for seconds. Other characters remain literal. For example,
 `syntax: "m:ss remaining"` renders `1:30 remaining`. Pass `buttons: true` to
 add four plain HTML controls underneath: Play, Restart, Resume, and Pause.
-Buttons stay hidden by default. Durations use integer milliseconds. Both constructors return paused
+Plain controls stay hidden by default; pre-styled frame controls show by
+default. Durations use integer milliseconds. Both constructors return paused
 timer elements with `start()`, `pause()`, `resume()`, `restart()`, and
-`setUpdateInterval(seconds)` methods.
+`setUpdateInterval(seconds)`.
 
 ```js
 import { createCountdown } from "/common/widgets/time/timers/countdown-plain.js";
@@ -140,6 +161,9 @@ Countdown options require `time`. `setTime(milliseconds)` replaces its value
 and pauses it. `restart()` restores the initial countdown value and pauses.
 Stopwatch `limit` is optional; `setLimit(millisecondsOrNull)` changes it.
 Reaching a limit stops the stopwatch. `restart()` clears that finished state.
+
+Countdown exposes `setTime()`; stopwatch exposes `setLimit()`. Each timer
+exposes only methods supported by its type.
 
 Timers use browser time for elapsed-time calculations. Active timers share
 `/api/system/time` polling, request an immediate sample when starting, and
@@ -197,14 +221,13 @@ Calendar pre-styled widgets use:
 
 System widgets live under `/common/widgets/system/` and read the
 privacy-filtered snapshot from `/api/system/metrics`. Constructors generally
-accept `className`, `endpoint`, and the legacy millisecond `interval`.
-Format-capable widgets also accept `format`. The time-style `updateInterval` option accepts
-positive integer seconds; when both are supplied, `interval` takes precedence.
-Without an explicit interval, system widgets use their configured polling
+accept `className`, `endpoint`, and `updateInterval` in positive integer seconds.
+Format-capable widgets also accept `format`. Without an explicit interval,
+system widgets use their configured polling
 family: fast telemetry defaults to five seconds, standard metrics to 30
 seconds, and slow metrics to 60 seconds.
 
-The metrics manager owns polling. Widgets with the same endpoint and interval
+The metrics manager owns polling. Widgets with the same endpoint and update interval
 share one request, and the request asks for the union of their fields. Destroy a
 widget with `element.destroy?.()` to unsubscribe it and stop its polling.
 

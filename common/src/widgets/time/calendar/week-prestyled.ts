@@ -66,7 +66,7 @@ const ensureStyles = () => {
 
 export function createWeek(options = {}) {
   ensureStyles();
-  const element = createPlainWeek({ ...options, widgetId: WIDGET_SETTINGS_ID });
+  const element = createPlainWeek({ ...options, widgetId: WIDGET_SETTINGS_ID, variant: "prestyled" });
   element.classList.add("webskin-calendar--week-prestyled");
   if (options.color) element.style.setProperty("--webskin-calendar-color", options.color);
   if (options.backgroundColor) element.style.setProperty("--webskin-calendar-background", options.backgroundColor);

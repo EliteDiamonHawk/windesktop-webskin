@@ -79,12 +79,16 @@ const installDom = () => {
 
 let plain;
 let prestyled;
+let plainWeek;
+let prestyledWeek;
 test.before(async () => {
   baseDocument = globalThis.document;
   baseWindow = globalThis.window;
   installDom();
   plain = await import("../src/widgets/time/calendar/month-plain.js?month-widget-test");
   prestyled = await import("../src/widgets/time/calendar/month-prestyled.js?month-widget-test");
+  plainWeek = await import("../src/widgets/time/calendar/week-plain.js?month-widget-test");
+  prestyledWeek = await import("../src/widgets/time/calendar/week-prestyled.js?month-widget-test");
   globalThis.document = baseDocument;
   globalThis.window = baseWindow;
 });
@@ -109,6 +113,9 @@ test("plain and pre-styled months render exact five- and six-row grids", () => {
       const five = createMonth({ date: "2026-04-15", maxWeeks: 5 });
       const six = createMonth({ date: "2026-04-15", maxWeeks: 6 });
 
+      assert.equal(five.dataset.webskinWidget, "calendar");
+      assert.equal(five.dataset.webskinWidgetState, "ready");
+      assert.equal(five.dataset.webskinWidgetVariant, createMonth === plain.createMonth ? "plain" : "prestyled");
       assert.equal(dateCells(five).length, 35);
       assert.equal(dateCells(six).length, 42);
     }
@@ -182,6 +189,35 @@ test("date rollover updates existing cells and destroy clears the watcher", () =
 
       month.destroy();
       assert.equal(clearedIntervals.length, 1);
+    } finally {
+      globalThis.Date = RealDate;
+    }
+  });
+});
+
+test("week rollover keeps seven cell nodes", () => {
+  withMonthDom(() => {
+    const RealDate = globalThis.Date;
+    let currentDate = "2026-04-15T12:00:00";
+    class ControlledDate extends RealDate {
+      constructor(...args) { super(...(args.length ? args : [currentDate])); }
+      static now() { return new RealDate(currentDate).getTime(); }
+    }
+
+    globalThis.Date = ControlledDate;
+    try {
+      for (const createWeek of [plainWeek.createWeek, prestyledWeek.createWeek]) {
+        const week = createWeek();
+        const cells = week.querySelectorAll('[data-webskin-calendar-part="date-cell"]');
+        const firstCell = cells[0];
+        assert.equal(cells.length, 7);
+
+        currentDate = "2026-04-22T12:00:00";
+        activeInterval();
+
+        assert.equal(week.querySelectorAll('[data-webskin-calendar-part="date-cell"]')[0], firstCell);
+        week.destroy();
+      }
     } finally {
       globalThis.Date = RealDate;
     }

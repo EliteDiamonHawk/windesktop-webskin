@@ -5,7 +5,7 @@
   "scripts": {
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-test-isolation=none --test tests/frames.test.js && node --experimental-test-isolation=none --test tests/system-widgets.test.js && node --experimental-test-isolation=none --test tests/calendar-data.test.js && node --experimental-test-isolation=none --test tests/month-widgets.test.js && node --experimental-test-isolation=none --test tests/time-scheduler.test.js && node --experimental-test-isolation=none --test tests/timers.test.js && node --experimental-test-isolation=none --test tests/static-image-composition.test.js",
+    "test": "node --experimental-test-isolation=none --loader ./tests/resolve-ts-loader.mjs --test tests/frames.test.js && node --experimental-test-isolation=none --loader ./tests/resolve-ts-loader.mjs --test tests/system-widgets.test.js && node --experimental-test-isolation=none --loader ./tests/resolve-ts-loader.mjs --test tests/calendar-data.test.js && node --experimental-test-isolation=none --loader ./tests/resolve-ts-loader.mjs --test tests/month-widgets.test.js && node --experimental-test-isolation=none --loader ./tests/resolve-ts-loader.mjs --test tests/time-scheduler.test.js && node --experimental-test-isolation=none --loader ./tests/resolve-ts-loader.mjs --test tests/timers.test.js && node --experimental-test-isolation=none --loader ./tests/resolve-ts-loader.mjs --test tests/static-image-composition.test.js",
     "dev": "vite build --watch"
   },
   "devDependencies": {

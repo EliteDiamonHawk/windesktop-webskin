@@ -1,3 +1,5 @@
+import { rejectLegacyInterval } from "../../dom.js";
+
 const DEFAULT_ENDPOINT = "/api/system/time";
 const DEFAULT_INTERVAL = 60;
 const POLL_GROUPS = new Map();
@@ -21,9 +23,9 @@ const requestSystemTime = async (endpoint, signal) => {
 };
 
 class TimerPollGroup {
-  constructor(endpoint, interval, key) {
+  constructor(endpoint, updateIntervalSeconds, key) {
     this.endpoint = endpoint;
-    this.interval = interval;
+    this.updateIntervalSeconds = updateIntervalSeconds;
     this.key = key;
     this.subscribers = new Set();
     this.inFlight = false;
@@ -53,7 +55,7 @@ class TimerPollGroup {
     this.timer = host().setTimeout(() => {
       this.timer = null;
       void this.refresh();
-    }, this.interval * 1000);
+    }, this.updateIntervalSeconds * 1000);
   }
 
   unsubscribe(subscriber) {
@@ -86,8 +88,9 @@ class TimerPollGroup {
 }
 
 export const timerTimeManager = {
-  subscribe({ endpoint = DEFAULT_ENDPOINT, interval = DEFAULT_INTERVAL, updateInterval, onTime, onError } = {}) {
-    const normalizedInterval = updateInterval ?? interval;
+  subscribe({ endpoint = DEFAULT_ENDPOINT, updateInterval = DEFAULT_INTERVAL, onTime, onError } = {}) {
+    rejectLegacyInterval(arguments[0]);
+    const normalizedInterval = updateInterval;
     if (!validInterval(normalizedInterval)) {
       throw new RangeError("updateInterval must be a positive integer number of seconds");
     }

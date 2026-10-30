@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 import { createClock as createPlainClock } from "./digital-plain.js";
 import { createDay as createPlainDay } from "../calendar/day-plain.js?v=calendar-date-5";
 
@@ -74,6 +75,7 @@ const ensureStyles = () => {
 };
 
 export function createClock(options = {}) {
+  rejectLegacyInterval(options);
   ensureStyles();
   const {
     date,
@@ -86,10 +88,8 @@ export function createClock(options = {}) {
   } = options;
 
   const element = document.createElement("section");
-  const widget = new Widget(element, { type: "clock" });
-  element.className = ["webskin-clock", "webskin-clock--digital-day", className]
-    .filter(Boolean)
-    .join(" ");
+  const widget = new Widget(element, { type: "clock", variant: "prestyled" });
+  element.className = classNames("webskin-clock", "webskin-clock--digital-day", "webskin-clock--prestyled", className);
   element.setAttribute("aria-label", "Current time and date");
   if (color) element.style.setProperty("--webskin-clock-color", color);
   if (backgroundColor) element.style.setProperty("--webskin-clock-background", backgroundColor);
@@ -107,5 +107,6 @@ export function createClock(options = {}) {
     minutes.destroy?.();
     day.destroy?.();
   });
+  widget.setState("ready");
   return element;
 }

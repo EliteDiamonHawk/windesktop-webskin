@@ -1,4 +1,5 @@
 import { Widget } from "../../widgets.js?v=calendar-date-5";
+import { classNames, rejectLegacyInterval } from "../../dom.js";
 import { validateUpdateInterval } from "../time-scheduler.js";
 import {
   calendarDateState,
@@ -69,6 +70,7 @@ const applyDateState = (element, date, highlightDate) => {
 
 class PlainDay extends Widget {
   constructor(options = {}) {
+    rejectLegacyInterval(options);
     ensureStyles();
     const {
       date: suppliedDate,
@@ -79,6 +81,7 @@ class PlainDay extends Widget {
       updateInterval,
       widgetId = WIDGET_SETTINGS_ID,
       className = "",
+      widgetVariant = "plain",
     } = options;
     validateUpdateInterval(updateInterval);
 
@@ -87,10 +90,8 @@ class PlainDay extends Widget {
     const formatters = createCalendarFormatters(locale);
     const highlightDate = resolveHighlightDate(suppliedDate, suppliedHighlightDate);
     const element = document.createElement("time");
-    super(element, { type: "calendar" });
-    element.className = ["webskin-calendar", "webskin-calendar--day-plain", className]
-      .filter(Boolean)
-      .join(" ");
+    super(element, { type: "calendar", variant: widgetVariant });
+    element.className = classNames("webskin-calendar", "webskin-calendar--day-plain", `webskin-calendar--${widgetVariant}`, className);
     element.dataset.webskinCalendarVariant = variant;
 
     let render;
@@ -138,6 +139,7 @@ class PlainDay extends Widget {
     }
 
     render(suppliedDate);
+    this.setState("ready");
     if (suppliedDate === undefined) {
       this.addCleanup(watchCurrentDate(render, { updateInterval, widgetId }));
     }
@@ -146,4 +148,8 @@ class PlainDay extends Widget {
 
 export function createDay(options = {}) {
   return new PlainDay(options).element;
+}
+
+export function createSingleDay(options = {}) {
+  return createDay({ ...options, variant: "single-day" });
 }

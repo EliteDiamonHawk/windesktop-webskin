@@ -23,7 +23,7 @@ Open the dashboard at `http://localhost:4321`. FastAPI listens at
 
 ## Repository layout
 
-- `frontend/`: Astro dashboard
+- `dashboard/`: Astro dashboard
 - `backend/`: FastAPI service
 - `common/`: shared browser modules and widgets
 - `themes/`: built-in theme source

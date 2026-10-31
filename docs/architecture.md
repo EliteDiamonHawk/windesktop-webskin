@@ -2,7 +2,7 @@
 
 ## Components
 
-- `frontend/` contains the Astro dashboard. It renders the built-in `dev` card and loads user themes through the API.
+- `dashboard/` contains the Astro dashboard. It renders the built-in `dev` card and loads user themes through the API.
 - `backend/` contains the FastAPI service. It owns settings, theme files, HTTP routes, and asset serving.
 - `common/` contains shared browser modules. Its Vite build writes `localdata/common/`.
 - `themes/` contains built-in theme source. Its Vite build writes `localdata/themes/dev/`.

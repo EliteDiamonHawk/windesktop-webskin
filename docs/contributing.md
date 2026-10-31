@@ -4,7 +4,7 @@
 
 Keep changes in the project that owns them:
 
-- `frontend/` contains the Astro dashboard.
+- `dashboard/` contains the Astro dashboard.
 - `backend/` contains FastAPI, settings, filesystem, and API code.
 - `common/` contains shared browser modules.
 - `themes/` contains built-in theme source.

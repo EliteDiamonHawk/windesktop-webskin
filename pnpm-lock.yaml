@@ -22,7 +22,7 @@ importers:
         specifier: ^8.3.1
         version: 8.3.1(@types/node@22.20.4)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
 
-  frontend:
+  dashboard:
     dependencies:
       '@astrojs/react':
         specifier: ^7.0.0

@@ -6,7 +6,7 @@ the detailed references.
 
 ## Boundaries
 
-- `frontend/` contains the Astro dashboard.
+- `dashboard/` contains the Astro dashboard.
 - `backend/` contains the FastAPI service, filesystem access, settings, API
   routes, and runtime asset serving.
 - `common/` and `themes/` contain Vite source projects. Their builds write

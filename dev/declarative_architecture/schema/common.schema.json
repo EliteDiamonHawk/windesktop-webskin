@@ -1,0 +1,652 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://windesktop-webskin.dev/schema/common.schema.json",
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]*$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "modulePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+\\.js$"
+    },
+    "moduleReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "export"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/modulePath"
+        },
+        "export": {
+          "type": "string",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+        }
+      }
+    },
+    "measure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "unit"
+      ],
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "px",
+            "percent",
+            "vw",
+            "vh",
+            "rem"
+          ]
+        }
+      }
+    },
+    "sizeValue": {
+      "oneOf": [
+        {
+          "const": "auto"
+        },
+        {
+          "$ref": "#/$defs/measure"
+        }
+      ]
+    },
+    "edges": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/measure"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "$ref": "#/$defs/measure"
+            },
+            "right": {
+              "$ref": "#/$defs/measure"
+            },
+            "bottom": {
+              "$ref": "#/$defs/measure"
+            },
+            "left": {
+              "$ref": "#/$defs/measure"
+            }
+          },
+          "minProperties": 1
+        }
+      ]
+    },
+    "point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "namedAnchor": {
+      "type": "string",
+      "enum": [
+        "top-left",
+        "top",
+        "top-right",
+        "left",
+        "center",
+        "right",
+        "bottom-left",
+        "bottom",
+        "bottom-right"
+      ]
+    },
+    "anchorPoint": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/namedAnchor"
+        },
+        {
+          "$ref": "#/$defs/point"
+        }
+      ]
+    },
+    "anchorPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "viewport"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/anchorPoint"
+        },
+        "viewport": {
+          "$ref": "#/$defs/anchorPoint"
+        }
+      }
+    },
+    "opacity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "designSize",
+        "fit",
+        "overflow"
+      ],
+      "properties": {
+        "designSize": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "width",
+            "height"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "fit": {
+          "type": "string",
+          "enum": [
+            "responsive",
+            "design-space",
+            "fixed"
+          ]
+        },
+        "overflow": {
+          "type": "string",
+          "enum": [
+            "hidden",
+            "visible",
+            "scroll"
+          ]
+        }
+      }
+    },
+    "screenProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "match"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "match": {
+          "$ref": "#/$defs/screenMatch"
+        }
+      }
+    },
+    "screenMatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "any": {
+          "const": true
+        },
+        "exact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "width",
+            "height"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "width": {
+          "$ref": "#/$defs/range"
+        },
+        "height": {
+          "$ref": "#/$defs/range"
+        },
+        "aspectRatio": {
+          "$ref": "#/$defs/range"
+        },
+        "orientation": {
+          "type": "string",
+          "enum": [
+            "landscape",
+            "portrait",
+            "square"
+          ]
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "any"
+          ]
+        },
+        {
+          "required": [
+            "exact"
+          ]
+        },
+        {
+          "required": [
+            "width"
+          ]
+        },
+        {
+          "required": [
+            "height"
+          ]
+        },
+        {
+          "required": [
+            "aspectRatio"
+          ]
+        },
+        {
+          "required": [
+            "orientation"
+          ]
+        }
+      ]
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "min": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "max": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "placement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "flow"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "x",
+            "y"
+          ],
+          "properties": {
+            "mode": {
+              "const": "absolute"
+            },
+            "x": {
+              "$ref": "#/$defs/measure"
+            },
+            "y": {
+              "$ref": "#/$defs/measure"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "source",
+            "target"
+          ],
+          "properties": {
+            "mode": {
+              "const": "anchor"
+            },
+            "source": {
+              "$ref": "#/$defs/anchorPoint"
+            },
+            "target": {
+              "$ref": "#/$defs/anchorPoint"
+            },
+            "offsetX": {
+              "$ref": "#/$defs/measure"
+            },
+            "offsetY": {
+              "$ref": "#/$defs/measure"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "edge"
+          ],
+          "properties": {
+            "mode": {
+              "const": "dock"
+            },
+            "edge": {
+              "$ref": "#/$defs/namedAnchor"
+            },
+            "offsetX": {
+              "$ref": "#/$defs/measure"
+            },
+            "offsetY": {
+              "$ref": "#/$defs/measure"
+            }
+          }
+        }
+      ]
+    },
+    "positionControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "fields"
+      ],
+      "properties": {
+        "enabled": {
+          "const": true
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "x",
+              "y",
+              "width",
+              "height"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "sizeControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "fields"
+      ],
+      "properties": {
+        "enabled": {
+          "const": true
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "width",
+              "height"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "scaleControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "defaultPercent",
+        "minPercent",
+        "maxPercent",
+        "anchor"
+      ],
+      "properties": {
+        "enabled": {
+          "const": true
+        },
+        "defaultPercent": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "minPercent": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxPercent": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "anchor": {
+          "$ref": "#/$defs/point"
+        }
+      }
+    },
+    "visibilityControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "const": true
+        }
+      }
+    },
+    "nodeControls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/positionControl"
+        },
+        "size": {
+          "$ref": "#/$defs/sizeControl"
+        },
+        "visibility": {
+          "$ref": "#/$defs/visibilityControl"
+        }
+      }
+    },
+    "groupControls": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/nodeControls"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "scale": {
+              "$ref": "#/$defs/scaleControl"
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "nodeBase": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "placement": {
+          "$ref": "#/$defs/placement"
+        },
+        "size": {
+          "$ref": "#/$defs/nodeSize"
+        },
+        "opacity": {
+          "$ref": "#/$defs/opacity"
+        },
+        "visible": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": "string"
+        },
+        "styleRef": {
+          "$ref": "#/$defs/identifier"
+        },
+        "userControls": {
+          "$ref": "#/$defs/nodeControls"
+        }
+      }
+    },
+    "groupBase": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "placement": {
+          "$ref": "#/$defs/placement"
+        },
+        "size": {
+          "$ref": "#/$defs/nodeSize"
+        },
+        "opacity": {
+          "$ref": "#/$defs/opacity"
+        },
+        "visible": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": "string"
+        },
+        "styleRef": {
+          "$ref": "#/$defs/identifier"
+        },
+        "userControls": {
+          "$ref": "#/$defs/groupControls"
+        }
+      }
+    },
+    "nodeSize": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "$ref": "#/$defs/sizeValue"
+        },
+        "height": {
+          "$ref": "#/$defs/sizeValue"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/measure"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/measure"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/measure"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/measure"
+        }
+      },
+      "minProperties": 1
+    },
+    "commonComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module",
+        "props"
+      ],
+      "properties": {
+        "module": {
+          "$ref": "#/$defs/moduleReference"
+        },
+        "props": {
+          "type": "object"
+        },
+        "bounds": {
+          "$ref": "#/$defs/nodeSize"
+        }
+      }
+    },
+    "transitionOutcome": {
+      "type": "string",
+      "enum": [
+        "screen-black",
+        "screen-white",
+        "opaque",
+        "transparent",
+        "stable",
+        "none",
+        "unknown",
+        "failed"
+      ]
+    }
+  }
+}

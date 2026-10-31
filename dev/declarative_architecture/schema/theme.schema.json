@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://windesktop-webskin.dev/schema/theme.schema.json",
+  "title": "WinDesktop WebSkin declarative theme",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "files",
+    "viewport",
+    "screenSupport",
+    "customization"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "./common.schema.json#/$defs/identifier"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scene"
+      ],
+      "properties": {
+        "scene": {
+          "$ref": "./common.schema.json#/$defs/relativePath"
+        },
+        "styles": {
+          "type": "array",
+          "items": {
+            "$ref": "./common.schema.json#/$defs/relativePath"
+          },
+          "uniqueItems": true
+        },
+        "entranceSuggestions": {
+          "$ref": "./common.schema.json#/$defs/relativePath"
+        }
+      }
+    },
+    "viewport": {
+      "$ref": "./common.schema.json#/$defs/viewport"
+    },
+    "screenSupport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profiles",
+        "fallbackProfile"
+      ],
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "./common.schema.json#/$defs/screenProfile"
+          },
+          "uniqueItems": true
+        },
+        "fallbackProfile": {
+          "$ref": "./common.schema.json#/$defs/identifier"
+        }
+      }
+    },
+    "customization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "settingsNamespace",
+        "invalidValuePolicy"
+      ],
+      "properties": {
+        "settingsNamespace": {
+          "const": "themes"
+        },
+        "invalidValuePolicy": {
+          "const": "use-default"
+        }
+      }
+    },
+    "transitions": {
+      "$ref": "#/$defs/transitions"
+    }
+  },
+  "$defs": {
+    "transitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entranceSuggestions": {
+          "$ref": "./common.schema.json#/$defs/relativePath"
+        },
+        "entrance": {
+          "$ref": "#/$defs/entrance"
+        },
+        "exit": {
+          "$ref": "#/$defs/exit"
+        }
+      }
+    },
+    "entrance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default",
+        "variants"
+      ],
+      "properties": {
+        "default": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$"
+        },
+        "variants": {
+          "$ref": "#/$defs/variantMap"
+        }
+      }
+    },
+    "exit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default",
+        "variants"
+      ],
+      "properties": {
+        "default": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$"
+        },
+        "variants": {
+          "$ref": "#/$defs/variantMap"
+        },
+        "report": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "enum": [
+                "on-completion",
+                "on-start",
+                "never"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "variantMap": {
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*$": {
+          "$ref": "#/$defs/variant"
+        }
+      },
+      "additionalProperties": false
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "css",
+            "common-module"
+          ]
+        },
+        "preset": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$"
+        },
+        "module": {
+          "$ref": "./common.schema.json#/$defs/moduleReference"
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reportsOutcome": {
+          "$ref": "./common.schema.json#/$defs/transitionOutcome"
+        }
+      }
+    }
+  }
+}

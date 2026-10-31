@@ -1,0 +1,508 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://windesktop-webskin.dev/schema/scene.schema.json",
+  "title": "WinDesktop WebSkin declarative scene",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "root"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "root": {
+      "$ref": "#/$defs/rootStack"
+    }
+  },
+  "$defs": {
+    "rootStack": {
+      "allOf": [
+        {
+          "$ref": "./common.schema.json#/$defs/groupBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "id",
+            "background",
+            "layers"
+          ],
+          "properties": {
+            "kind": {
+              "const": "stack"
+            },
+            "background": {
+              "$ref": "#/$defs/background"
+            },
+            "layers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/layer"
+              }
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "stack": {
+      "allOf": [
+        {
+          "$ref": "./common.schema.json#/$defs/groupBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "id",
+            "layers"
+          ],
+          "properties": {
+            "kind": {
+              "const": "stack"
+            },
+            "layers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/layer"
+              }
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id",
+        "zIndex",
+        "content"
+      ],
+      "properties": {
+        "kind": {
+          "const": "layer"
+        },
+        "id": {
+          "$ref": "./common.schema.json#/$defs/identifier"
+        },
+        "zIndex": {
+          "type": "integer"
+        },
+        "content": {
+          "$ref": "#/$defs/node"
+        },
+        "placement": {
+          "$ref": "./common.schema.json#/$defs/placement"
+        },
+        "size": {
+          "$ref": "./common.schema.json#/$defs/nodeSize"
+        },
+        "opacity": {
+          "$ref": "./common.schema.json#/$defs/opacity"
+        },
+        "visible": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": "string"
+        },
+        "styleRef": {
+          "$ref": "./common.schema.json#/$defs/identifier"
+        },
+        "clip": {
+          "enum": [
+            "none",
+            "bounds"
+          ]
+        },
+        "intentionalOcclusion": {
+          "type": "boolean"
+        },
+        "userControls": {
+          "$ref": "./common.schema.json#/$defs/groupControls"
+        }
+      }
+    },
+    "background": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id",
+        "composition"
+      ],
+      "properties": {
+        "kind": {
+          "const": "background"
+        },
+        "id": {
+          "const": "background"
+        },
+        "composition": {
+          "$ref": "#/$defs/composition"
+        },
+        "className": {
+          "type": "string"
+        },
+        "styleRef": {
+          "$ref": "./common.schema.json#/$defs/identifier"
+        }
+      }
+    },
+    "composition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "main",
+        "anchor",
+        "overlays"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "runtime",
+            "build"
+          ]
+        },
+        "main": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "src"
+          ],
+          "properties": {
+            "src": {
+              "$ref": "./common.schema.json#/$defs/relativePath"
+            }
+          }
+        },
+        "anchor": {
+          "$ref": "./common.schema.json#/$defs/anchorPair"
+        },
+        "overlays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/compositionOverlay"
+          }
+        }
+      }
+    },
+    "compositionOverlay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "src",
+        "x",
+        "y"
+      ],
+      "properties": {
+        "src": {
+          "$ref": "./common.schema.json#/$defs/relativePath"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "scale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1
+        },
+        "anchor": {
+          "$ref": "./common.schema.json#/$defs/point"
+        },
+        "rotation": {
+          "type": "number",
+          "default": 0
+        },
+        "opacity": {
+          "$ref": "./common.schema.json#/$defs/opacity"
+        },
+        "flipX": {
+          "type": "boolean"
+        },
+        "flipY": {
+          "type": "boolean"
+        }
+      }
+    },
+    "layout": {
+      "allOf": [
+        {
+          "$ref": "./common.schema.json#/$defs/groupBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "id",
+            "layout",
+            "children"
+          ],
+          "properties": {
+            "kind": {
+              "const": "layout"
+            },
+            "layout": {
+              "$ref": "#/$defs/layoutDefinition"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/node"
+              }
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "layoutDefinition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "h-stack",
+                "v-stack",
+                "center"
+              ]
+            },
+            "gap": {
+              "$ref": "./common.schema.json#/$defs/measure"
+            },
+            "padding": {
+              "$ref": "./common.schema.json#/$defs/edges"
+            },
+            "align": {
+              "enum": [
+                "start",
+                "center",
+                "end",
+                "stretch"
+              ]
+            },
+            "justify": {
+              "enum": [
+                "start",
+                "center",
+                "end",
+                "space-between",
+                "space-around",
+                "space-evenly"
+              ]
+            },
+            "wrap": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "columns",
+            "rows"
+          ],
+          "properties": {
+            "type": {
+              "const": "grid"
+            },
+            "columns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "rows": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "gap": {
+              "$ref": "./common.schema.json#/$defs/measure"
+            },
+            "padding": {
+              "$ref": "./common.schema.json#/$defs/edges"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "module"
+          ],
+          "properties": {
+            "type": {
+              "const": "custom"
+            },
+            "module": {
+              "$ref": "./common.schema.json#/$defs/moduleReference"
+            },
+            "options": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    },
+    "asset": {
+      "allOf": [
+        {
+          "$ref": "./common.schema.json#/$defs/nodeBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "id",
+            "src",
+            "media"
+          ],
+          "properties": {
+            "kind": {
+              "const": "asset"
+            },
+            "src": {
+              "$ref": "./common.schema.json#/$defs/relativePath"
+            },
+            "media": {
+              "enum": [
+                "image",
+                "animated-image",
+                "video"
+              ]
+            },
+            "fit": {
+              "enum": [
+                "contain",
+                "cover",
+                "fill",
+                "none"
+              ]
+            },
+            "alt": {
+              "type": "string"
+            },
+            "bounds": {
+              "$ref": "./common.schema.json#/$defs/nodeSize"
+            },
+            "declaredBounds": {
+              "$ref": "./common.schema.json#/$defs/nodeSize"
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "widget": {
+      "allOf": [
+        {
+          "$ref": "./common.schema.json#/$defs/nodeBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "id",
+            "module",
+            "props"
+          ],
+          "properties": {
+            "kind": {
+              "const": "widget"
+            },
+            "module": {
+              "$ref": "./common.schema.json#/$defs/moduleReference"
+            },
+            "props": {
+              "type": "object"
+            },
+            "declaredBounds": {
+              "$ref": "./common.schema.json#/$defs/nodeSize"
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "component": {
+      "allOf": [
+        {
+          "$ref": "./common.schema.json#/$defs/nodeBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "id",
+            "module",
+            "props"
+          ],
+          "properties": {
+            "kind": {
+              "const": "component"
+            },
+            "module": {
+              "$ref": "./common.schema.json#/$defs/moduleReference"
+            },
+            "props": {
+              "type": "object"
+            },
+            "role": {
+              "enum": [
+                "visual",
+                "interactive"
+              ]
+            },
+            "declaredBounds": {
+              "$ref": "./common.schema.json#/$defs/nodeSize"
+            }
+          },
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "node": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/stack"
+        },
+        {
+          "$ref": "#/$defs/layout"
+        },
+        {
+          "$ref": "#/$defs/asset"
+        },
+        {
+          "$ref": "#/$defs/widget"
+        },
+        {
+          "$ref": "#/$defs/component"
+        }
+      ]
+    }
+  }
+}

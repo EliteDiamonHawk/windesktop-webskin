@@ -2,7 +2,7 @@ packages:
   - dashboard
   - backend
   - common
-  - themes
+  - dev/themes
 
 allowBuilds:
   esbuild: true

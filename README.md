@@ -26,7 +26,7 @@ Open the dashboard at `http://localhost:4321`. FastAPI listens at
 - `dashboard/`: Astro dashboard
 - `backend/`: FastAPI service
 - `common/`: shared browser modules and widgets
-- `themes/`: built-in theme source
+- `dev/themes/`: built-in theme source
 - `localdata/`: generated runtime files and local data
 - `wv2wall/`: Windows and WebView2 host
 

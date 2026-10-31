@@ -3,7 +3,7 @@ import { extname, relative, resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 const themeRoot = resolve('dev');
-const outputRoot = resolve('../localdata/themes/dev');
+const outputRoot = resolve('../../localdata/themes/dev');
 
 function sourceFiles(directory = themeRoot) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

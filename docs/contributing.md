@@ -7,7 +7,7 @@ Keep changes in the project that owns them:
 - `dashboard/` contains the Astro dashboard.
 - `backend/` contains FastAPI, settings, filesystem, and API code.
 - `common/` contains shared browser modules.
-- `themes/` contains built-in theme source.
+- `dev/themes/` contains built-in theme source.
 - `wv2wall/` contains the Windows host.
 
 `wv2wall/` has its own Git history and build process. Update the root

@@ -384,7 +384,7 @@ function buildMaskPath(number, offset, roundness) {
 
 async function loadDigitAssets() {
   const requests = DIGITS.map(async (number) => {
-    const response = await fetch(`./assets/digits/${number}.svg`);
+    const response = await fetch(`../../../../common/public/assets/fonts/google-sans-flex-numerals-svgs/${number}.svg`);
     if (!response.ok) throw new Error(`Unable to load ${number}.svg`);
     const source = await response.text();
     const parsed = new DOMParser().parseFromString(source, "image/svg+xml");

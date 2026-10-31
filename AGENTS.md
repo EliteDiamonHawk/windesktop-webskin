@@ -9,7 +9,7 @@ the detailed references.
 - `dashboard/` contains the Astro dashboard.
 - `backend/` contains the FastAPI service, filesystem access, settings, API
   routes, and runtime asset serving.
-- `common/` and `themes/` contain Vite source projects. Their builds write
+- `common/` and `dev/themes/` contain Vite source projects. Their builds write
   browser files to `localdata/` during development.
 
 Use the page that matches your change:

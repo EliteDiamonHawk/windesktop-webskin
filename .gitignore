@@ -161,7 +161,8 @@ logs/
 /.uv-cache/
 /.uv-cache-local/
 /.uv-cache-task/
-/themes/dev/
-/temp/
+/dev/themes/dev/
+/dev/themes/.vite/
+/dev/temp/
 /reslink.toml
 /.agents/skills

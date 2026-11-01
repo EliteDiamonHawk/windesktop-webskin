@@ -74,7 +74,11 @@ app.add_middleware(
 )
 
 app.include_router(create_settings_router(settings_service))
-app.include_router(create_system_metrics_router(lambda requested_fields=None: app.state.system_metrics.collect(requested_fields)))
+app.include_router(create_system_metrics_router(
+    lambda requested_fields=None: app.state.system_metrics.collect(requested_fields),
+    subscription_manager=lambda: app.state.system_metrics.subscriptions,
+    allowed_origins=frontend_origins,
+))
 app.include_router(create_system_time_router())
 app.include_router(create_system_controls_router())
 app.include_router(create_themes_router())

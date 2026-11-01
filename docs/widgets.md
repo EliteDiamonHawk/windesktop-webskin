@@ -221,7 +221,9 @@ Calendar pre-styled widgets use:
 
 System widgets live under `/common/widgets/system/` and read the
 privacy-filtered snapshot from `/api/system/metrics`. Constructors generally
-accept `className`, `endpoint`, and `updateInterval` in positive integer seconds.
+accept `className`, `endpoint`, `updateInterval`, and `transport`.
+`transport` accepts `"polling"`, `"sse"`, or `"websocket"`; polling remains the
+default.
 Format-capable widgets also accept `format`. Without an explicit interval,
 system widgets use their configured polling
 family: fast telemetry defaults to five seconds, standard metrics to 30
@@ -231,11 +233,28 @@ The metrics manager owns polling. Widgets with the same endpoint and update inte
 share one request, and the request asks for the union of their fields. Destroy a
 widget with `element.destroy?.()` to unsubscribe it and stop its polling.
 
+SSE and WebSocket widgets use the same manager and share connections when their
+endpoint, transport, and interval match. The manager unions field selections,
+keeps one latest snapshot per subscriber group, reconnects while widgets remain
+active, and closes the connection after the last widget is destroyed.
+
+Use SSE for passive live monitoring:
+
+```js
+const memory = createMemory({ transport: "sse", updateInterval: 2 });
+```
+
+Use WebSocket when a theme needs a bidirectional connection:
+
+```js
+const cpu = createCpuUtilization({ transport: "websocket", updateInterval: 1 });
+```
+
 The browser resolves family and widget defaults once from
-`/api/settings/widgets/system-intervals`. Backend metric snapshots are cached
-briefly for identical field selections. Disk partition metadata is refreshed at
-most every 60 seconds and disk capacity data at most every 30 seconds; live disk
-I/O counters are not included in those longer caches.
+`/api/settings/widgets/system-intervals`. The backend caches source results and
+shares them across field selections and transports. Disk partition metadata is
+refreshed at most every 60 seconds and disk capacity data at most every 30
+seconds; live disk I/O counters are not included in those longer caches.
 
 Formats use named brace tokens. Literal labels, punctuation, whitespace, units,
 and percent signs remain literal. The escapes `\\n`, `\\r`, `\\t`, and

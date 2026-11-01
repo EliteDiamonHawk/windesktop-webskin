@@ -7,6 +7,7 @@ const TOKEN_PATTERN = /\{([a-z][a-z0-9-]*)\}/g;
 const LEGACY_TOKEN_PATTERN = /\<[^<>]*\>/;
 const ESCAPES = { n: "\n", r: "\r", t: "\t", "\\": "\\" };
 const POLL_GROUPS = new Map();
+const STREAM_GROUPS = new Map();
 let resolvedIntervalsPromise;
 const TOKEN_RENDERERS = new WeakMap();
 
@@ -187,6 +188,25 @@ const endpointWithFields = (endpoint, fields) => {
   return endpoint + separator + "fields=" + encodeURIComponent(fields.join(","));
 };
 
+const streamEndpoint = (endpoint, transport) => {
+  if (endpoint !== "/api/system/metrics") return endpoint;
+  return endpoint + (transport === "sse" ? "/events" : "/ws");
+};
+
+const sseEndpoint = (endpoint, fields, intervalSeconds) => {
+  const withFields = endpointWithFields(endpoint, fields);
+  return withFields + "&interval=" + encodeURIComponent(intervalSeconds);
+};
+
+const websocketEndpoint = (endpoint) => {
+  const baseUrl = typeof window !== "undefined" && window.location?.href
+    ? window.location.href
+    : "http://localhost/";
+  const value = new URL(endpoint, baseUrl);
+  value.protocol = value.protocol === "https:" ? "wss:" : "ws:";
+  return value.toString();
+};
+
 const updateIntervalValue = (updateInterval) => {
   if (updateInterval === undefined) return undefined;
   if (!validSeconds(updateInterval)) {
@@ -315,9 +335,170 @@ class MetricsPollGroup {
   }
 }
 
+class MetricsStreamGroup {
+  constructor(endpoint, transport, intervalSeconds, key) {
+    this.endpoint = endpoint;
+    this.transport = transport;
+    this.intervalSeconds = intervalSeconds;
+    this.key = key;
+    this.subscribers = new Set();
+    this.source = null;
+    this.connectedFields = "";
+    this.connecting = false;
+    this.retryTimer = null;
+    this.retryAttempt = 0;
+    this.pendingStart = false;
+    this.previousNetwork = null;
+  }
+
+  fields() {
+    return [...new Set([...this.subscribers].flatMap((subscriber) => subscriber.fields))].sort();
+  }
+
+  subscribe(subscriber, start = true) {
+    this.subscribers.add(subscriber);
+    if (start) this.requestConnect();
+    return () => this.unsubscribe(subscriber);
+  }
+
+  requestConnect() {
+    if (this.pendingStart || !this.subscribers.size) return;
+    this.pendingStart = true;
+    queueMicrotask(() => {
+      this.pendingStart = false;
+      if (this.subscribers.size) this.connect();
+    });
+  }
+
+  requestRefresh() {
+    this.requestConnect();
+  }
+
+  notifyError(error) {
+    [...this.subscribers].forEach((subscriber) => subscriber.onError?.(error));
+  }
+
+  notifySnapshot(rawSnapshot) {
+    const transferred = transferSnapshot(rawSnapshot, this.previousNetwork);
+    this.previousNetwork = transferred.previous;
+    [...this.subscribers].forEach((subscriber) => subscriber.onSnapshot(transferred.snapshot));
+  }
+
+  closeSource() {
+    if (this.source) {
+      this.source.onopen = null;
+      this.source.onmessage = null;
+      this.source.onerror = null;
+      this.source.onclose = null;
+      this.source.close?.();
+      this.source = null;
+    }
+    this.connecting = false;
+  }
+
+  scheduleRetry() {
+    if (!this.subscribers.size || this.retryTimer !== null) return;
+    const delay = Math.min(30_000, 1_000 * (2 ** this.retryAttempt));
+    this.retryAttempt += 1;
+    this.retryTimer = window.setTimeout(() => {
+      this.retryTimer = null;
+      this.connect();
+    }, delay);
+  }
+
+  connect() {
+    if (!this.subscribers.size) return;
+    const fields = this.fields();
+    const fieldKey = fields.join(",");
+    if (this.source && this.connectedFields === fieldKey && !this.connecting) return;
+    this.closeSource();
+    this.connectedFields = fieldKey;
+    this.connecting = true;
+    try {
+      if (this.transport === "sse") this.connectSse(fields);
+      else this.connectWebSocket(fields);
+    } catch (error) {
+      this.connecting = false;
+      this.notifyError(error);
+      this.scheduleRetry();
+    }
+  }
+
+  connectSse(fields) {
+    if (typeof EventSource !== "function") throw new Error("EventSource is unavailable");
+    const source = new EventSource(sseEndpoint(streamEndpoint(this.endpoint, this.transport), fields, this.intervalSeconds));
+    this.source = source;
+    this.connectedFields = fields.join(",");
+    const onMessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message?.type === "snapshot" && message.data) this.notifySnapshot(message.data);
+        else if (message?.type === "error") this.notifyError(new Error(message.message ?? "System metric stream failed"));
+      } catch (error) {
+        this.notifyError(error);
+      }
+    };
+    source.onopen = () => {
+      this.connecting = false;
+      this.retryAttempt = 0;
+    };
+    if (typeof source.addEventListener === "function") source.addEventListener("snapshot", onMessage);
+    else source.onmessage = onMessage;
+    source.onerror = (error) => {
+      this.notifyError(new Error("System metrics SSE connection failed"));
+      if (source.readyState === 2) {
+        this.closeSource();
+        this.scheduleRetry();
+      }
+      void error;
+    };
+  }
+
+  connectWebSocket(fields) {
+    if (typeof WebSocket !== "function") throw new Error("WebSocket is unavailable");
+    const socket = new WebSocket(websocketEndpoint(streamEndpoint(this.endpoint, this.transport)));
+    this.source = socket;
+    socket.onopen = () => {
+      this.connecting = false;
+      this.retryAttempt = 0;
+      socket.send(JSON.stringify({ type: "subscribe", fields, interval: this.intervalSeconds }));
+    };
+    socket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message?.type === "snapshot" && message.data) this.notifySnapshot(message.data);
+        else if (message?.type === "error") this.notifyError(new Error(message.message ?? "System metric stream failed"));
+      } catch (error) {
+        this.notifyError(error);
+      }
+    };
+    socket.onerror = () => this.notifyError(new Error("System metrics WebSocket connection failed"));
+    socket.onclose = () => {
+      this.source = null;
+      this.connecting = false;
+      this.scheduleRetry();
+    };
+  }
+
+  unsubscribe(subscriber) {
+    this.subscribers.delete(subscriber);
+    if (this.subscribers.size) {
+      this.requestConnect();
+      return;
+    }
+    if (this.retryTimer !== null) window.clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    this.closeSource();
+    STREAM_GROUPS.delete(this.key);
+  }
+}
+
 export const systemMetricsManager = {
-  subscribe({ endpoint = "/api/system/metrics", updateInterval, widgetId, family = "fast", fields = [], onSnapshot, onError } = {}) {
+  subscribe({ endpoint = "/api/system/metrics", updateInterval, widgetId, family = "fast", fields = [], transport = "polling", onSnapshot, onError } = {}) {
     rejectLegacyInterval(arguments[0]);
+    if (!["polling", "sse", "websocket"].includes(transport)) {
+      throw new RangeError("transport must be polling, sse, or websocket");
+    }
     const explicitInterval = updateIntervalValue(updateInterval);
     const fallbackInterval = DEFAULT_INTERVALS[family] ?? DEFAULT_INTERVAL;
     const state = {
@@ -332,11 +513,14 @@ export const systemMetricsManager = {
       onError,
     };
     const join = (updateIntervalSeconds, start = true) => {
-      const key = endpoint + "::" + updateIntervalSeconds;
-      let group = POLL_GROUPS.get(key);
+      const key = transport + "::" + endpoint + "::" + updateIntervalSeconds;
+      const groups = transport === "polling" ? POLL_GROUPS : STREAM_GROUPS;
+      let group = groups.get(key);
       if (!group) {
-        group = new MetricsPollGroup(endpoint, updateIntervalSeconds, key);
-        POLL_GROUPS.set(key, group);
+        group = transport === "polling"
+          ? new MetricsPollGroup(endpoint, updateIntervalSeconds, key)
+          : new MetricsStreamGroup(endpoint, transport, updateIntervalSeconds, key);
+        groups.set(key, group);
       }
       state.updateIntervalSeconds = updateIntervalSeconds;
       state.group = group;
@@ -387,6 +571,7 @@ export function createSystemWidget({
   className = "",
   endpoint = "/api/system/metrics",
   updateInterval,
+  transport = "polling",
   widgetId,
   family,
   fields = [],
@@ -439,6 +624,7 @@ export function createSystemWidget({
     subscription = subscribe({
       endpoint,
       updateInterval,
+      transport,
       widgetId: resolvedWidgetId,
       family: resolvedFamily,
       fields,

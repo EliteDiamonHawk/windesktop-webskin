@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -45,6 +48,17 @@ class SystemMetricsTests(unittest.TestCase):
         self.assertEqual(route.endpoint(fields="system.boot_time"), {"fields": {"system.boot_time"}})
         with self.assertRaises(HTTPException):
             route.endpoint(fields="system.uptime_seconds")
+
+    def test_metrics_router_exposes_stream_routes_and_validates_intervals(self) -> None:
+        router = create_system_metrics_router(
+            lambda requested_fields=None: {"fields": requested_fields},
+            subscription_manager=object(),
+        )
+        self.assertIn("/api/system/metrics/events", [route.path for route in router.routes])
+        self.assertIn("/api/system/metrics/ws", [route.path for route in router.routes])
+        events = next(route for route in router.routes if route.path.endswith("/events"))
+        with self.assertRaises(HTTPException):
+            asyncio.run(events.endpoint(interval=0))
 
     def test_selected_metrics_skip_unrequested_capability_calls(self) -> None:
         calls: list[str] = []
@@ -278,7 +292,7 @@ class SystemMetricsTests(unittest.TestCase):
         self.assertEqual(tracker.call("cpu_utilization", cpu_success), [10])
         self.assertEqual(cpu_calls, 1)
 
-    def test_system_metric_snapshots_are_cached_by_requested_fields(self) -> None:
+    def test_system_metric_sources_are_cached_independently_of_requested_fields(self) -> None:
         calls = 0
         now = 0.0
 
@@ -296,14 +310,97 @@ class SystemMetricsTests(unittest.TestCase):
         with patch("webskin.system_metrics.psutil", fake_psutil):
             first = service.collect({"memory.virtual.used_bytes"})
             second = service.collect({"memory.virtual.used_bytes"})
-            self.assertIs(first, second)
+            self.assertEqual(first["memory"]["virtual"]["used_bytes"], second["memory"]["virtual"]["used_bytes"])
             self.assertEqual(calls, 1)
             service.collect({"memory.virtual.percent"})
-            self.assertEqual(calls, 2)
+            self.assertEqual(calls, 1)
             now = 1.1
             service.collect({"memory.virtual.used_bytes"})
 
-        self.assertEqual(calls, 3)
+        self.assertEqual(calls, 2)
+
+    def test_concurrent_requests_share_one_in_flight_source_collection(self) -> None:
+        calls = 0
+        started = threading.Event()
+        release = threading.Event()
+
+        def virtual_memory():
+            nonlocal calls
+            calls += 1
+            started.set()
+            release.wait(1)
+            return SimpleNamespace(total=100, available=60, used=40, free=50, percent=40)
+
+        service = SystemMetricsService(
+            hardware_monitor=self._unavailable_hardware_monitor(),
+            clock=time.monotonic,
+        )
+        fake_psutil = SimpleNamespace(virtual_memory=virtual_memory)
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                first = executor.submit(service.collect, {"memory.virtual.used_bytes"})
+                self.assertTrue(started.wait(1))
+                second = executor.submit(service.collect, {"memory.virtual.percent"})
+                release.set()
+                first.result()
+                second.result()
+
+        self.assertEqual(calls, 1)
+
+    def test_overlapping_sensor_requests_share_one_hardware_refresh(self) -> None:
+        hardware_calls = 0
+
+        def read_hardware():
+            nonlocal hardware_calls
+            hardware_calls += 1
+            return {
+                "available": True,
+                "readings": [
+                    {
+                        "id": "gpu-temperature",
+                        "hardware_id": "gpu",
+                        "hardware_name": "GPU",
+                        "hardware_type": "gpu",
+                        "name": "Core",
+                        "type": "temperature",
+                        "value": 45,
+                        "unit": "Â°C",
+                        "minimum": None,
+                        "maximum": None,
+                        "warning": None,
+                        "critical": None,
+                        "source": "hardware_monitor",
+                    },
+                    {
+                        "id": "gpu-fan",
+                        "hardware_id": "gpu",
+                        "hardware_name": "GPU",
+                        "hardware_type": "gpu",
+                        "name": "Fan",
+                        "type": "fan",
+                        "value": 1200,
+                        "unit": "RPM",
+                        "minimum": None,
+                        "maximum": None,
+                        "warning": None,
+                        "critical": None,
+                        "source": "hardware_monitor",
+                    },
+                ],
+            }
+
+        fake_psutil = SimpleNamespace(
+            sensors_temperatures=lambda fahrenheit=False: (_ for _ in ()).throw(NotImplementedError()),
+            sensors_fans=lambda: (_ for _ in ()).throw(NotImplementedError()),
+        )
+        hardware_monitor = SimpleNamespace(read=read_hardware, close=lambda: None)
+        service = SystemMetricsService(hardware_monitor=hardware_monitor)
+        with patch("webskin.system_metrics.psutil", fake_psutil):
+            snapshot = service.collect({"sensors.temperatures", "sensors.fans"})
+
+        self.assertEqual(hardware_calls, 1)
+        self.assertEqual(snapshot["sensors"]["temperatures"][0]["current_c"], 45)
+        self.assertEqual(snapshot["sensors"]["fans"][0]["current_rpm"], 1200)
 
     def test_disk_inventory_and_usage_have_independent_ttls(self) -> None:
         now = 0.0

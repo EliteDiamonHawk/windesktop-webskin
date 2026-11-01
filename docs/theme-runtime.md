@@ -28,6 +28,12 @@ import { createClock } from "/common/widgets/time/clock/digital-plain.js";
 document.querySelector("#clock").append(createClock());
 ```
 
+Themes are developer-authored browser applications. A theme may use vanilla
+HTML, CSS, and JavaScript, import shared modules, or use its own framework and
+build tool. Installed themes do not pass through a declarative compiler. Vite
+builds remain useful for shared modules and built-in development themes, but
+the runtime serves each installed package as files.
+
 `metadata.json` and `index.html` form the package boundary. A package without
 either file stays off the theme list and returns 404 from asset routes.
 

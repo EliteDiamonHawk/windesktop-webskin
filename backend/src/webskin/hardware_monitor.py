@@ -110,17 +110,20 @@ class HardwareMonitorProvider:
         *,
         enabled: bool = True,
         cache_ttl: float = 1.0,
+        failure_cooldown: float = 30.0,
         factory: Callable[[], Any] | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._enabled = enabled
         self._cache_ttl = cache_ttl
+        self._failure_cooldown = failure_cooldown
         self._factory = factory
         self._clock = clock
         self._lock = threading.RLock()
         self._computer: Any | None = None
         self._initialization_attempted = False
         self._unavailable = False
+        self._unavailable_until = 0.0
         self._cached_at: float | None = None
         self._cached_readings: list[dict[str, Any]] = []
 
@@ -134,7 +137,10 @@ class HardwareMonitorProvider:
 
     def _ensure_computer(self) -> Any | None:
         if self._unavailable:
-            return None
+            if self._clock() < self._unavailable_until:
+                return None
+            self._unavailable = False
+            self._initialization_attempted = False
         if self._computer is not None:
             return self._computer
         if self._initialization_attempted:
@@ -150,6 +156,7 @@ class HardwareMonitorProvider:
             return self._computer
         except Exception:
             self._unavailable = True
+            self._unavailable_until = self._clock() + self._failure_cooldown
             logger.warning("HardwareMonitor could not be initialized", exc_info=True)
             return None
 
@@ -176,6 +183,7 @@ class HardwareMonitorProvider:
                 ]
             except Exception:
                 self._unavailable = True
+                self._unavailable_until = self._clock() + self._failure_cooldown
                 logger.warning("HardwareMonitor sensor update failed", exc_info=True)
                 return {"available": False, "readings": []}
 

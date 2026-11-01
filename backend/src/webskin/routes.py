@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import asyncio
+import json
 from typing import Any
 
-from fastapi import APIRouter, Body, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Body, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi.responses import FileResponse, StreamingResponse
 
 from .persistence import SettingsStorageError
+from .metrics_streams import DEFAULT_INTERVAL, MAX_FIELDS, MAX_INTERVAL, MIN_INTERVAL
 from .paths import get_theme_paths, safe_asset_path
 from .settings import SettingNotFoundError, SettingsService
 from .system_controls import SYSTEM_CONTROL_COMMANDS, SystemControlError, execute_system_control
@@ -208,74 +211,16 @@ def create_theme_assets_router(storage: UserThemeStorage | None = None) -> APIRo
     return router
 
 
-def create_system_metrics_router(collector=collect_system_metrics) -> APIRouter:
+def create_system_metrics_router(
+    collector=collect_system_metrics,
+    *,
+    subscription_manager=None,
+    allowed_origins: list[str] | None = None,
+) -> APIRouter:
     router = APIRouter(prefix="/api/system/metrics")
-    allowed_fields = {
-        "system.boot_time",
-        "cpu.utilization",
-        "cpu.utilization.overall",
-        "cpu.utilization.per_core",
-        "cpu.cores",
-        "cpu.cores.physical",
-        "cpu.cores.logical",
-        "cpu.frequencies",
-        "cpu.frequencies.current_mhz",
-        "cpu.frequencies.minimum_mhz",
-        "cpu.frequencies.maximum_mhz",
-        "cpu.frequencies.per_core",
-        "cpu.frequencies.per_core.current_mhz",
-        "cpu.frequencies.per_core.minimum_mhz",
-        "cpu.frequencies.per_core.maximum_mhz",
-        "cpu.telemetry",
-        "cpu.telemetry.interrupts",
-        "cpu.telemetry.system_calls",
-        "cpu.telemetry.context_switches",
-        "cpu.load_average",
-        "cpu.load_average.one_minute",
-        "cpu.load_average.five_minutes",
-        "cpu.load_average.fifteen_minutes",
-        "memory.virtual",
-        "memory.virtual.total_bytes",
-        "memory.virtual.available_bytes",
-        "memory.virtual.used_bytes",
-        "memory.virtual.free_bytes",
-        "memory.virtual.percent",
-        "memory.swap",
-        "memory.swap.total_bytes",
-        "memory.swap.used_bytes",
-        "memory.swap.free_bytes",
-        "memory.swap.percent",
-        "disks.partitions",
-        "disks.partitions.mount_point",
-        "disks.partitions.filesystem",
-        "disks.partitions.mount_options",
-        "disks.usage",
-        "disks.usage.mount_point",
-        "disks.usage.total_bytes",
-        "disks.usage.used_bytes",
-        "disks.usage.free_bytes",
-        "disks.usage.percent",
-        "disks.io",
-        "disks.io.read_count",
-        "disks.io.write_count",
-        "disks.io.read_bytes",
-        "disks.io.write_bytes",
-        "disks.io.read_time_ms",
-        "disks.io.write_time_ms",
-        "disks.io.busy_time_ms",
-        "network",
-        "network.bytes_sent",
-        "network.bytes_received",
-        "network.packets_dropped",
-        "network.transmission_errors",
-        "sensors.temperatures",
-        "sensors.fans",
-        "sensors.battery",
-        "sensors.battery.percent",
-        "sensors.battery.seconds_left",
-        "sensors.battery.power_plugged",
-        "sensors.readings",
-    }
+    from .system_metrics import SUPPORTED_METRIC_FIELDS
+
+    allowed_fields = set(SUPPORTED_METRIC_FIELDS)
 
     def parse_fields(raw_fields: str | None) -> set[str] | None:
         if raw_fields is None:
@@ -289,10 +234,187 @@ def create_system_metrics_router(collector=collect_system_metrics) -> APIRouter:
             raise HTTPException(status_code=422, detail=f"Unsupported system metric field: {invalid[0]}")
         return fields
 
+    def parse_stream_fields(raw_fields: str | None) -> set[str] | None:
+        if raw_fields is not None and not raw_fields.strip():
+            raise HTTPException(status_code=422, detail="Metric fields cannot be empty")
+        fields = parse_fields(raw_fields)
+        if fields is not None and (not fields or len(fields) > MAX_FIELDS):
+            raise HTTPException(status_code=422, detail="Metric field selection is invalid")
+        return fields
+
+    def parse_interval(interval: int | None) -> int:
+        value = DEFAULT_INTERVAL if interval is None else interval
+        if isinstance(value, bool) or not isinstance(value, int) or not MIN_INTERVAL <= value <= MAX_INTERVAL:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Interval must be an integer from {MIN_INTERVAL} through {MAX_INTERVAL}",
+            )
+        return value
+
+    def resolve_subscription_manager():
+        if callable(subscription_manager):
+            return subscription_manager()
+        return subscription_manager
+
     @router.get("")
     def get_metrics(fields: str | None = None) -> dict[str, Any]:
         requested_fields = parse_fields(fields)
         return collector() if requested_fields is None else collector(requested_fields=requested_fields)
+
+    @router.get("/events")
+    async def metric_events(fields: str | None = None, interval: int | None = None) -> StreamingResponse:
+        manager = resolve_subscription_manager()
+        if manager is None:
+            raise HTTPException(status_code=503, detail="System metric streaming is unavailable")
+        requested_fields = parse_stream_fields(fields)
+        update_interval = parse_interval(interval)
+        try:
+            subscription = await manager.subscribe(requested_fields, update_interval)
+        except (RuntimeError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        async def stream():
+            try:
+                while True:
+                    try:
+                        message = await asyncio.wait_for(subscription.receive(), timeout=15.0)
+                    except asyncio.TimeoutError:
+                        yield ": heartbeat\n\n"
+                        continue
+                    if message is None:
+                        return
+                    event_name = message.get("type", "message")
+                    payload = json.dumps(message, separators=(",", ":"), ensure_ascii=False)
+                    yield f"event: {event_name}\ndata: {payload}\n\n"
+            finally:
+                subscription.close()
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+        )
+
+    @router.websocket("/ws")
+    async def metric_websocket(websocket: WebSocket) -> None:
+        origin = websocket.headers.get("origin")
+        if allowed_origins is not None and origin and origin not in allowed_origins:
+            await websocket.close(code=1008, reason="Origin is not allowed")
+            return
+        manager = resolve_subscription_manager()
+        if manager is None:
+            await websocket.close(code=1013, reason="System metric streaming is unavailable")
+            return
+        await websocket.accept()
+        subscription = None
+        sender_task: asyncio.Task[None] | None = None
+
+        async def stop_subscription() -> None:
+            nonlocal subscription, sender_task
+            if subscription is not None:
+                subscription.close()
+                subscription = None
+            if sender_task is not None:
+                sender_task.cancel()
+                try:
+                    await sender_task
+                except asyncio.CancelledError:
+                    pass
+                sender_task = None
+
+        async def send_updates(active_subscription) -> None:
+            while True:
+                message = await active_subscription.receive()
+                if message is None:
+                    return
+                await websocket.send_json(message)
+
+        async def send_error(code: str, message: str) -> None:
+            await websocket.send_json({"type": "error", "code": code, "message": message})
+
+        def message_fields(message: dict[str, Any]) -> set[str] | None:
+            if "fields" not in message:
+                return None
+            raw_fields = message["fields"]
+            if not isinstance(raw_fields, list) or not raw_fields or len(raw_fields) > MAX_FIELDS:
+                raise ValueError(f"fields must be a non-empty list of up to {MAX_FIELDS} supported metric fields")
+            if any(not isinstance(field, str) for field in raw_fields):
+                raise ValueError("fields must contain strings")
+            parsed = {field.strip() for field in raw_fields if field.strip()}
+            if len(parsed) != len(raw_fields):
+                raise ValueError("fields must contain unique, non-empty values")
+            invalid = sorted(parsed - allowed_fields)
+            if invalid:
+                raise ValueError(f"Unsupported system metric field: {invalid[0]}")
+            return parsed
+
+        try:
+            while True:
+                raw_message = await websocket.receive_text()
+                if len(raw_message.encode("utf-8")) > 64 * 1024:
+                    await websocket.close(code=1009, reason="Message is too large")
+                    return
+                try:
+                    message = json.loads(raw_message)
+                except json.JSONDecodeError:
+                    await send_error("invalid_message", "Message must contain valid JSON")
+                    continue
+                if not isinstance(message, dict) or not isinstance(message.get("type"), str):
+                    await send_error("invalid_message", "Message must be an object with a type")
+                    continue
+
+                operation = message["type"]
+                if operation == "subscribe":
+                    try:
+                        requested_fields = message_fields(message)
+                        raw_interval = message.get("interval", DEFAULT_INTERVAL)
+                        if isinstance(raw_interval, bool) or not isinstance(raw_interval, int) or not MIN_INTERVAL <= raw_interval <= MAX_INTERVAL:
+                            raise ValueError(f"interval must be an integer from {MIN_INTERVAL} through {MAX_INTERVAL}")
+                        await stop_subscription()
+                        subscription = await manager.subscribe(requested_fields, raw_interval)
+                    except (RuntimeError, ValueError) as exc:
+                        await send_error("invalid_subscription", str(exc))
+                        continue
+                    await websocket.send_json({
+                        "type": "subscribed",
+                        "fields": None if requested_fields is None else sorted(requested_fields),
+                        "interval": raw_interval,
+                    })
+                    sender_task = asyncio.create_task(send_updates(subscription))
+                    continue
+
+                if operation == "unsubscribe":
+                    if subscription is None:
+                        await websocket.send_json({"type": "unsubscribed", "fields": []})
+                        continue
+                    try:
+                        remove_fields = message_fields(message)
+                    except ValueError as exc:
+                        await send_error("invalid_subscription", str(exc))
+                        continue
+                    if remove_fields is None:
+                        removed = None if subscription.fields is None else sorted(subscription.fields)
+                        await stop_subscription()
+                        await websocket.send_json({"type": "unsubscribed", "fields": removed})
+                        continue
+                    current_fields = set(allowed_fields) if subscription.fields is None else set(subscription.fields)
+                    current_interval = subscription.interval
+                    remaining = current_fields - remove_fields
+                    await stop_subscription()
+                    await websocket.send_json({"type": "unsubscribed", "fields": sorted(remove_fields)})
+                    if remaining:
+                        subscription = await manager.subscribe(remaining, current_interval)
+                        sender_task = asyncio.create_task(send_updates(subscription))
+                    continue
+
+                if operation == "ping":
+                    await websocket.send_json({"type": "pong"})
+                    continue
+                await send_error("unsupported_operation", "Unsupported metric WebSocket operation")
+        except WebSocketDisconnect:
+            return
+        finally:
+            await stop_subscription()
 
     return router
 

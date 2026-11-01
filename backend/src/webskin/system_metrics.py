@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import concurrent.futures
+import copy
+import logging
 import threading
 import time
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
@@ -11,6 +16,8 @@ import psutil
 
 from .hardware_monitor import HardwareMonitorProvider
 
+
+logger = logging.getLogger(__name__)
 
 _UNAVAILABLE = object()
 _PSUTIL_FAILURES = (AttributeError, OSError, RuntimeError, TypeError, ValueError, NotImplementedError)
@@ -51,30 +58,51 @@ def _field_requested(requested_fields: set[str] | None, path: str) -> bool:
 class PsutilCapabilityTracker:
     """Disable repeatedly failing psutil capabilities for this process."""
 
-    def __init__(self, failure_threshold: int = 3) -> None:
+    def __init__(self, failure_threshold: int = 3, failure_cooldown: float = 30.0, clock=time.monotonic) -> None:
         self.failure_threshold = failure_threshold
+        self.failure_cooldown = failure_cooldown
+        self.clock = clock
         self.failures: dict[str, int] = {}
         self.unavailable: set[str] = set()
+        self.unavailable_until: dict[str, float] = {}
+        self._locks_lock = threading.Lock()
+        self._capability_locks: dict[str, threading.Lock] = {}
+
+    def _lock_for(self, capability: str) -> threading.Lock:
+        with self._locks_lock:
+            lock = self._capability_locks.get(capability)
+            if lock is None:
+                lock = threading.Lock()
+                self._capability_locks[capability] = lock
+            return lock
 
     def call(self, capability: str, operation, *, empty_is_failure: bool = False) -> Any:
-        if capability in self.unavailable:
-            return _UNAVAILABLE
-        try:
-            result = operation()
-        except _PSUTIL_FAILURES:
-            failures = self.failures.get(capability, 0) + 1
-            self.failures[capability] = failures
-            if failures >= self.failure_threshold:
-                self.unavailable.add(capability)
-            return _UNAVAILABLE
-        if empty_is_failure and not result:
-            failures = self.failures.get(capability, 0) + 1
-            self.failures[capability] = failures
-            if failures >= self.failure_threshold:
-                self.unavailable.add(capability)
-            return _UNAVAILABLE
-        self.failures.pop(capability, None)
-        return result
+        with self._lock_for(capability):
+            if capability in self.unavailable:
+                if self.clock() < self.unavailable_until.get(capability, 0.0):
+                    return _UNAVAILABLE
+                self.unavailable.discard(capability)
+                self.failures.pop(capability, None)
+            try:
+                result = operation()
+            except _PSUTIL_FAILURES:
+                failures = self.failures.get(capability, 0) + 1
+                self.failures[capability] = failures
+                if failures >= self.failure_threshold:
+                    self.unavailable.add(capability)
+                    self.unavailable_until[capability] = self.clock() + self.failure_cooldown
+                return _UNAVAILABLE
+            if empty_is_failure and not result:
+                failures = self.failures.get(capability, 0) + 1
+                self.failures[capability] = failures
+                if failures >= self.failure_threshold:
+                    self.unavailable.add(capability)
+                    self.unavailable_until[capability] = self.clock() + self.failure_cooldown
+                return _UNAVAILABLE
+            self.failures.pop(capability, None)
+            self.unavailable.discard(capability)
+            self.unavailable_until.pop(capability, None)
+            return result
 
 
 class DiskMetricsCache:
@@ -90,47 +118,50 @@ class DiskMetricsCache:
         self.partition_ttl = partition_ttl
         self.usage_ttl = usage_ttl
         self.clock = clock
+        self._lock = threading.RLock()
         self.partitions_at: float | None = None
         self.partitions: list[dict[str, str]] = []
         self.usage: dict[str, tuple[float, Any]] = {}
 
     def get_partitions(self, tracker: PsutilCapabilityTracker) -> list[dict[str, str]] | object:
-        now = self.clock()
-        if self.partitions_at is not None and now - self.partitions_at < self.partition_ttl:
+        with self._lock:
+            now = self.clock()
+            if self.partitions_at is not None and now - self.partitions_at < self.partition_ttl:
+                return self.partitions
+
+            raw_partitions = tracker.call("disk_partitions", lambda: psutil.disk_partitions(all=False))
+            if raw_partitions is _UNAVAILABLE:
+                return _UNAVAILABLE
+
+            self.partitions = [
+                {
+                    "mount_point": str(partition.mountpoint),
+                    "filesystem": str(partition.fstype),
+                    "mount_options": str(partition.opts),
+                }
+                for partition in raw_partitions
+                if _is_local_mountpoint(str(partition.mountpoint))
+            ]
+            self.partitions_at = now
+            active_mounts = {partition["mount_point"] for partition in self.partitions}
+            self.usage = {
+                mount_point: value
+                for mount_point, value in self.usage.items()
+                if mount_point in active_mounts
+            }
             return self.partitions
 
-        raw_partitions = tracker.call("disk_partitions", lambda: psutil.disk_partitions(all=False))
-        if raw_partitions is _UNAVAILABLE:
-            return _UNAVAILABLE
-
-        self.partitions = [
-            {
-                "mount_point": str(partition.mountpoint),
-                "filesystem": str(partition.fstype),
-                "mount_options": str(partition.opts),
-            }
-            for partition in raw_partitions
-            if _is_local_mountpoint(str(partition.mountpoint))
-        ]
-        self.partitions_at = now
-        active_mounts = {partition["mount_point"] for partition in self.partitions}
-        self.usage = {
-            mount_point: value
-            for mount_point, value in self.usage.items()
-            if mount_point in active_mounts
-        }
-        return self.partitions
-
     def get_usage(self, mount_point: str, tracker: PsutilCapabilityTracker) -> Any:
-        now = self.clock()
-        cached = self.usage.get(mount_point)
-        if cached is not None and now - cached[0] < self.usage_ttl:
-            return cached[1]
+        with self._lock:
+            now = self.clock()
+            cached = self.usage.get(mount_point)
+            if cached is not None and now - cached[0] < self.usage_ttl:
+                return cached[1]
 
-        value = tracker.call("disk_usage", lambda: psutil.disk_usage(mount_point))
-        if value is not _UNAVAILABLE:
-            self.usage[mount_point] = (now, value)
-        return value
+            value = tracker.call("disk_usage", lambda: psutil.disk_usage(mount_point))
+            if value is not _UNAVAILABLE:
+                self.usage[mount_point] = (now, value)
+            return value
 
 
 def _cpu(tracker: PsutilCapabilityTracker, requested_fields: set[str] | None = None) -> dict[str, Any]:
@@ -585,53 +616,678 @@ def _sensors(
     }
 
 
+@dataclass(frozen=True)
+class _SourceResult:
+    fragment: dict[str, Any]
+    provided_fields: frozenset[str]
+    success: bool = True
+
+
+@dataclass(frozen=True)
+class _SourceCacheEntry:
+    fragment: dict[str, Any]
+    provided_fields: frozenset[str]
+    collected_at: float
+
+
+_SOURCE_FIELDS: dict[str, frozenset[str]] = {
+    "system_boot": frozenset({"system.boot_time"}),
+    "cpu_utilization_overall": frozenset({"cpu.utilization.overall"}),
+    "cpu_utilization_per_core": frozenset({"cpu.utilization.overall", "cpu.utilization.per_core"}),
+    "cpu_cores": frozenset({"cpu.cores.physical", "cpu.cores.logical"}),
+    "cpu_frequency_overall": frozenset({
+        "cpu.frequencies.current_mhz",
+        "cpu.frequencies.minimum_mhz",
+        "cpu.frequencies.maximum_mhz",
+    }),
+    "cpu_frequency_per_core": frozenset({
+        "cpu.frequencies.current_mhz",
+        "cpu.frequencies.minimum_mhz",
+        "cpu.frequencies.maximum_mhz",
+        "cpu.frequencies.per_core.current_mhz",
+        "cpu.frequencies.per_core.minimum_mhz",
+        "cpu.frequencies.per_core.maximum_mhz",
+    }),
+    "cpu_telemetry": frozenset({
+        "cpu.telemetry.interrupts",
+        "cpu.telemetry.system_calls",
+        "cpu.telemetry.context_switches",
+    }),
+    "cpu_load_average": frozenset({
+        "cpu.load_average.one_minute",
+        "cpu.load_average.five_minutes",
+        "cpu.load_average.fifteen_minutes",
+    }),
+    "memory_virtual": frozenset({
+        "memory.virtual.total_bytes",
+        "memory.virtual.available_bytes",
+        "memory.virtual.used_bytes",
+        "memory.virtual.free_bytes",
+        "memory.virtual.percent",
+    }),
+    "memory_swap": frozenset({
+        "memory.swap.total_bytes",
+        "memory.swap.used_bytes",
+        "memory.swap.free_bytes",
+        "memory.swap.percent",
+    }),
+    "disk_partitions": frozenset({
+        "disks.partitions.mount_point",
+        "disks.partitions.filesystem",
+        "disks.partitions.mount_options",
+    }),
+    "disk_io": frozenset({
+        "disks.io.read_count",
+        "disks.io.write_count",
+        "disks.io.read_bytes",
+        "disks.io.write_bytes",
+        "disks.io.read_time_ms",
+        "disks.io.write_time_ms",
+        "disks.io.busy_time_ms",
+    }),
+    "network_io": frozenset({
+        "network.bytes_sent",
+        "network.bytes_received",
+        "network.packets_dropped",
+        "network.transmission_errors",
+    }),
+    "sensor_temperatures": frozenset({"sensors.temperatures"}),
+    "sensor_fans": frozenset({"sensors.fans"}),
+    "sensor_battery": frozenset({
+        "sensors.battery.percent",
+        "sensors.battery.seconds_left",
+        "sensors.battery.power_plugged",
+    }),
+    "sensor_readings": frozenset({
+        "sensors.temperatures",
+        "sensors.fans",
+        "sensors.battery.percent",
+        "sensors.battery.seconds_left",
+        "sensors.battery.power_plugged",
+        "sensors.readings",
+    }),
+}
+
+_SOURCE_TTLS: dict[str, float] = {
+    "system_boot": 3600.0,
+    "cpu_utilization_overall": 1.0,
+    "cpu_utilization_per_core": 1.0,
+    "cpu_cores": 3600.0,
+    "cpu_frequency_overall": 2.0,
+    "cpu_frequency_per_core": 2.0,
+    "cpu_telemetry": 5.0,
+    "cpu_load_average": 5.0,
+    "memory_virtual": 2.0,
+    "memory_swap": 2.0,
+    "disk_partitions": 60.0,
+    "disk_io": 2.0,
+    "network_io": 2.0,
+    "sensor_temperatures": 2.0,
+    "sensor_fans": 2.0,
+    "sensor_battery": 10.0,
+    "sensor_readings": 2.0,
+}
+
+_DISK_USAGE_FIELDS = frozenset({
+    "disks.usage.mount_point",
+    "disks.usage.total_bytes",
+    "disks.usage.used_bytes",
+    "disks.usage.free_bytes",
+    "disks.usage.percent",
+})
+
+SUPPORTED_METRIC_FIELDS = frozenset({
+    "system.boot_time",
+    "cpu.utilization",
+    "cpu.cores",
+    "cpu.frequencies",
+    "cpu.frequencies.per_core",
+    "cpu.telemetry",
+    "cpu.load_average",
+    "memory.virtual",
+    "memory.swap",
+    "disks.partitions",
+    "disks.usage",
+    "disks.io",
+    "network",
+    "sensors.temperatures",
+    "sensors.fans",
+    "sensors.battery",
+    "sensors.readings",
+} | {
+    field
+    for fields in _SOURCE_FIELDS.values()
+    for field in fields
+} | set(_DISK_USAGE_FIELDS))
+
+
+def _empty_metrics_snapshot(
+    tracker: PsutilCapabilityTracker,
+    hardware_monitor: HardwareMonitorProvider,
+    disk_cache: DiskMetricsCache,
+) -> dict[str, Any]:
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "system": _system(tracker, set()),
+        "cpu": _cpu(tracker, set()),
+        "memory": _memory(tracker, set()),
+        "disks": _disks(tracker, set(), disk_cache),
+        "network": _network(tracker, set()),
+        "sensors": _sensors(tracker, hardware_monitor, set()),
+    }
+
+
+def _merge_fragment(snapshot: dict[str, Any], fragment: dict[str, Any]) -> None:
+    for group_name, group_value in fragment.items():
+        if not isinstance(group_value, dict):
+            snapshot[group_name] = copy.deepcopy(group_value)
+            continue
+        target = snapshot.setdefault(group_name, {})
+        for key, value in group_value.items():
+            if isinstance(value, dict) and isinstance(target.get(key), dict):
+                target[key].update(copy.deepcopy(value))
+            elif isinstance(value, list) and isinstance(target.get(key), list):
+                if key in {"usage", "readings"}:
+                    target[key].extend(copy.deepcopy(value))
+                else:
+                    target[key] = copy.deepcopy(value)
+            elif key == "available":
+                target[key] = bool(target.get(key)) or bool(value)
+            else:
+                target[key] = copy.deepcopy(value)
+
+
+def _mask_snapshot(snapshot: dict[str, Any], requested_fields: set[str] | None) -> dict[str, Any]:
+    if requested_fields is None:
+        return snapshot
+
+    system = snapshot["system"]
+    if not _field_requested(requested_fields, "system.boot_time"):
+        system["boot_time"] = None
+
+    cpu = snapshot["cpu"]
+    utilization = cpu["utilization"]
+    if not _field_requested(requested_fields, "cpu.utilization.overall"):
+        utilization["overall"] = None
+    if not _field_requested(requested_fields, "cpu.utilization.per_core"):
+        utilization["per_core"] = []
+    cores = cpu["cores"]
+    if not _field_requested(requested_fields, "cpu.cores.physical"):
+        cores["physical"] = None
+    if not _field_requested(requested_fields, "cpu.cores.logical"):
+        cores["logical"] = None
+    frequencies = cpu["frequencies"]
+    for field, key in (
+        ("cpu.frequencies.current_mhz", "current_mhz"),
+        ("cpu.frequencies.minimum_mhz", "minimum_mhz"),
+        ("cpu.frequencies.maximum_mhz", "maximum_mhz"),
+    ):
+        if not _field_requested(requested_fields, field):
+            frequencies[key] = None
+    if not _field_requested(requested_fields, "cpu.frequencies.per_core"):
+        frequencies["per_core"] = []
+    else:
+        for record in frequencies["per_core"]:
+            for field, key in (
+                ("cpu.frequencies.per_core.current_mhz", "current_mhz"),
+                ("cpu.frequencies.per_core.minimum_mhz", "minimum_mhz"),
+                ("cpu.frequencies.per_core.maximum_mhz", "maximum_mhz"),
+            ):
+                if not _field_requested(requested_fields, field):
+                    record[key] = None
+    telemetry = cpu["telemetry"]
+    for field, key in (
+        ("cpu.telemetry.interrupts", "interrupts"),
+        ("cpu.telemetry.system_calls", "system_calls"),
+        ("cpu.telemetry.context_switches", "context_switches"),
+    ):
+        if not _field_requested(requested_fields, field):
+            telemetry[key] = None
+    load_average = cpu["load_average"]
+    for field, key in (
+        ("cpu.load_average.one_minute", "one_minute"),
+        ("cpu.load_average.five_minutes", "five_minutes"),
+        ("cpu.load_average.fifteen_minutes", "fifteen_minutes"),
+    ):
+        if not _field_requested(requested_fields, field):
+            load_average[key] = None
+
+    memory = snapshot["memory"]
+    virtual = memory["virtual"]
+    for field, key in (
+        ("memory.virtual.total_bytes", "total_bytes"),
+        ("memory.virtual.available_bytes", "available_bytes"),
+        ("memory.virtual.used_bytes", "used_bytes"),
+        ("memory.virtual.free_bytes", "free_bytes"),
+        ("memory.virtual.percent", "percent"),
+    ):
+        if not _field_requested(requested_fields, field):
+            virtual[key] = None
+    swap = memory["swap"]
+    for field, key in (
+        ("memory.swap.total_bytes", "total_bytes"),
+        ("memory.swap.used_bytes", "used_bytes"),
+        ("memory.swap.free_bytes", "free_bytes"),
+        ("memory.swap.percent", "percent"),
+    ):
+        if not _field_requested(requested_fields, field):
+            swap[key] = None
+
+    disks = snapshot["disks"]
+    if _field_requested(requested_fields, "disks.partitions"):
+        for partition in disks["partitions"]:
+            for field, key in (
+                ("disks.partitions.mount_point", "mount_point"),
+                ("disks.partitions.filesystem", "filesystem"),
+                ("disks.partitions.mount_options", "mount_options"),
+            ):
+                if not _field_requested(requested_fields, field):
+                    partition[key] = None
+    else:
+        disks["partitions"] = []
+    if _field_requested(requested_fields, "disks.usage"):
+        for usage in disks["usage"]:
+            for field, key in (
+                ("disks.usage.total_bytes", "total_bytes"),
+                ("disks.usage.used_bytes", "used_bytes"),
+                ("disks.usage.free_bytes", "free_bytes"),
+                ("disks.usage.percent", "percent"),
+            ):
+                if not _field_requested(requested_fields, field):
+                    usage[key] = None
+    else:
+        disks["usage"] = []
+    io = disks["io"]
+    for field, key in (
+        ("disks.io.read_count", "read_count"),
+        ("disks.io.write_count", "write_count"),
+        ("disks.io.read_bytes", "read_bytes"),
+        ("disks.io.write_bytes", "write_bytes"),
+        ("disks.io.read_time_ms", "read_time_ms"),
+        ("disks.io.write_time_ms", "write_time_ms"),
+        ("disks.io.busy_time_ms", "busy_time_ms"),
+    ):
+        if not _field_requested(requested_fields, field):
+            io[key] = None
+
+    network = snapshot["network"]
+    for field, key in (
+        ("network.bytes_sent", "bytes_sent"),
+        ("network.bytes_received", "bytes_received"),
+        ("network.packets_dropped", "packets_dropped"),
+        ("network.transmission_errors", "transmission_errors"),
+    ):
+        if not _field_requested(requested_fields, field):
+            network[key] = None
+
+    sensors = snapshot["sensors"]
+    readings_requested = _field_requested(requested_fields, "sensors.readings")
+    if not readings_requested and not _field_requested(requested_fields, "sensors.temperatures"):
+        sensors["temperatures"] = []
+    if not readings_requested and not _field_requested(requested_fields, "sensors.fans"):
+        sensors["fans"] = []
+    if not _field_requested(requested_fields, "sensors.battery"):
+        sensors["battery"] = {
+            "available": False,
+            "percent": None,
+            "seconds_left": None,
+            "power_plugged": None,
+            "source": None,
+        }
+    if not readings_requested:
+        sensors["readings"] = []
+    return snapshot
+
+
+class _CachedHardwareMonitor:
+    def __init__(self, service: "SystemMetricsService") -> None:
+        self._service = service
+
+    def read(self) -> dict[str, Any]:
+        return self._service._read_hardware_snapshot()
+
+
 class SystemMetricsService:
-    """Central system metrics service with process-lifetime provider state."""
+    """Unified source registry, cache, collector, and subscription owner."""
 
     def __init__(
         self,
         hardware_monitor: HardwareMonitorProvider | None = None,
         *,
         hardware_monitor_enabled: bool = True,
-        cache_ttl: float = 1.0,
+        cache_ttl: float | None = None,
         clock=time.monotonic,
     ) -> None:
-        self._lock = threading.RLock()
-        self._tracker = PsutilCapabilityTracker()
-        self._cache_ttl = cache_ttl
+        self._tracker = PsutilCapabilityTracker(clock=clock)
         self._clock = clock
-        self._snapshot_cache: dict[frozenset[str] | None, tuple[float, dict[str, Any]]] = {}
-        self._disk_cache = DiskMetricsCache(clock=clock)
+        self._cache_ttl_override = cache_ttl
+        self._ttl_overrides = {key: cache_ttl for key in _SOURCE_TTLS} if cache_ttl is not None else {}
+        self._disk_cache = DiskMetricsCache(
+            partition_ttl=cache_ttl if cache_ttl is not None else 60.0,
+            usage_ttl=cache_ttl if cache_ttl is not None else 30.0,
+            clock=clock,
+        )
         self._hardware_monitor = (
             hardware_monitor
             if hardware_monitor is not None
             else HardwareMonitorProvider(enabled=hardware_monitor_enabled)
         )
+        self._hardware_cache_lock = threading.Lock()
+        self._hardware_cached_at: float | None = None
+        self._hardware_cached_snapshot: dict[str, Any] | None = None
+        self._sensor_monitor = _CachedHardwareMonitor(self)
+        self._cache_lock = threading.RLock()
+        self._source_cache: dict[str, _SourceCacheEntry] = {}
+        self._inflight: dict[str, concurrent.futures.Future[_SourceResult]] = {}
+        self._failure_until: dict[str, float] = {}
+        self._failure_cooldown = 30.0
+        self._cache_limit = 256
+        self._source_executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=8,
+            thread_name_prefix="webskin-metric-source",
+        )
+        self._orchestration_executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=4,
+            thread_name_prefix="webskin-metric-request",
+        )
+        from .metrics_streams import MetricsSubscriptionManager
 
-    def collect(self, requested_fields: set[str] | None = None) -> dict[str, Any]:
-        with self._lock:
-            cache_key = None if requested_fields is None else frozenset(requested_fields)
+        self.subscriptions = MetricsSubscriptionManager(self)
+
+    def _read_hardware_snapshot(self) -> dict[str, Any]:
+        with self._hardware_cache_lock:
             now = self._clock()
-            cached = self._snapshot_cache.get(cache_key)
-            if cached is not None and now - cached[0] < self._cache_ttl:
-                return cached[1]
-
-            snapshot = {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "system": _system(self._tracker, requested_fields),
-                "cpu": _cpu(self._tracker, requested_fields),
-                "memory": _memory(self._tracker, requested_fields),
-                "disks": _disks(self._tracker, requested_fields, self._disk_cache),
-                "network": _network(self._tracker, requested_fields),
-                "sensors": _sensors(self._tracker, self._hardware_monitor, requested_fields),
-            }
-            self._snapshot_cache[cache_key] = (now, snapshot)
+            if (
+                self._hardware_cached_snapshot is not None
+                and self._hardware_cached_at is not None
+                and now - self._hardware_cached_at < self._source_ttl("sensor_readings")
+            ):
+                return self._hardware_cached_snapshot
+            snapshot = self._hardware_monitor.read()
+            self._hardware_cached_snapshot = snapshot
+            self._hardware_cached_at = now
             return snapshot
 
+    def _source_fields(self, key: str) -> frozenset[str]:
+        if key.startswith("disk_usage:"):
+            return _DISK_USAGE_FIELDS
+        return _SOURCE_FIELDS[key]
+
+    def _source_ttl(self, key: str) -> float:
+        if key.startswith("disk_usage:"):
+            return self._cache_ttl_override if self._cache_ttl_override is not None else 30.0
+        return self._ttl_overrides.get(key, _SOURCE_TTLS[key])
+
+    def _source_keys(self, requested_fields: set[str] | None) -> set[str]:
+        if requested_fields is None:
+            keys = set(_SOURCE_FIELDS)
+            keys.difference_update({"sensor_temperatures", "sensor_fans", "sensor_battery"})
+            keys.difference_update({"cpu_utilization_overall", "cpu_frequency_overall"})
+            return keys
+        if not requested_fields:
+            return set()
+        keys = {
+            key
+            for key, fields in _SOURCE_FIELDS.items()
+            if any(_field_requested(requested_fields, field) for field in fields)
+        }
+        if _field_requested(requested_fields, "sensors.readings"):
+            keys.difference_update({"sensor_temperatures", "sensor_fans", "sensor_battery"})
+            keys.add("sensor_readings")
+        if _field_requested(requested_fields, "cpu.utilization.per_core"):
+            keys.discard("cpu_utilization_overall")
+        elif _field_requested(requested_fields, "cpu.utilization.overall"):
+            keys.discard("cpu_utilization_per_core")
+        if _field_requested(requested_fields, "cpu.frequencies.per_core"):
+            keys.discard("cpu_frequency_overall")
+        elif any(_field_requested(requested_fields, field) for field in (
+            "cpu.frequencies.current_mhz",
+            "cpu.frequencies.minimum_mhz",
+            "cpu.frequencies.maximum_mhz",
+        )):
+            keys.discard("cpu_frequency_per_core")
+        if _field_requested(requested_fields, "disks.usage"):
+            keys.add("disk_partitions")
+        return keys
+
+    def _fresh(self, key: str, entry: _SourceCacheEntry, now: float) -> bool:
+        if now < entry.collected_at or now - entry.collected_at >= self._source_ttl(key):
+            return False
+        return self._source_fields(key).issubset(entry.provided_fields)
+
+    def _failure_result(self, key: str) -> _SourceResult:
+        return _SourceResult({}, self._source_fields(key), success=False)
+
+    def _acquire_source(self, key: str) -> _SourceResult | concurrent.futures.Future[_SourceResult]:
+        now = self._clock()
+        with self._cache_lock:
+            entry = self._source_cache.get(key)
+            if entry is not None and self._fresh(key, entry, now):
+                return _SourceResult(entry.fragment, entry.provided_fields)
+            alternate = {
+                "cpu_utilization_overall": "cpu_utilization_per_core",
+                "cpu_frequency_overall": "cpu_frequency_per_core",
+            }.get(key)
+            if alternate is not None:
+                alternate_entry = self._source_cache.get(alternate)
+                if alternate_entry is not None and self._fresh(key, alternate_entry, now):
+                    return _SourceResult(alternate_entry.fragment, alternate_entry.provided_fields)
+            if now < self._failure_until.get(key, 0.0):
+                return self._failure_result(key)
+            future = self._inflight.get(key)
+            if future is None:
+                future = self._source_executor.submit(self._run_source, key)
+                self._inflight[key] = future
+                future.add_done_callback(lambda completed: self._complete_source(key, completed))
+            return future
+
+    def _complete_source(self, key: str, future: concurrent.futures.Future[_SourceResult]) -> None:
+        try:
+            result = future.result()
+        except Exception:
+            result = self._failure_result(key)
+        now = self._clock()
+        with self._cache_lock:
+            if self._inflight.get(key) is future:
+                self._inflight.pop(key, None)
+            if result.success:
+                self._source_cache[key] = _SourceCacheEntry(
+                    result.fragment,
+                    result.provided_fields,
+                    now,
+                )
+                self._failure_until.pop(key, None)
+            else:
+                self._failure_until[key] = now + self._failure_cooldown
+                self._source_cache.pop(key, None)
+
+    def _run_source(self, key: str) -> _SourceResult:
+        try:
+            return self._collect_source(key)
+        except Exception:
+            logger.warning("System metric source failed: %s", key, exc_info=True)
+            return self._failure_result(key)
+
+    def _collect_source(self, key: str) -> _SourceResult:
+        fields = self._source_fields(key)
+        if key == "system_boot":
+            value = _system(self._tracker, fields)
+            return _SourceResult({"system": value}, fields, value["available"])
+        if key == "cpu_utilization_overall":
+            value = _cpu(self._tracker, fields)["utilization"]
+            return _SourceResult({"cpu": {"utilization": value}}, fields, value["available"])
+        if key == "cpu_utilization_per_core":
+            value = _cpu(self._tracker, fields)["utilization"]
+            return _SourceResult({"cpu": {"utilization": value}}, fields, value["available"])
+        if key == "cpu_cores":
+            value = _cpu(self._tracker, fields)["cores"]
+            return _SourceResult({"cpu": {"cores": value}}, fields, value["available"])
+        if key == "cpu_frequency_overall":
+            value = _cpu(self._tracker, fields)["frequencies"]
+            return _SourceResult({"cpu": {"frequencies": value}}, fields, value["available"])
+        if key == "cpu_frequency_per_core":
+            value = _cpu(self._tracker, fields)["frequencies"]
+            return _SourceResult({"cpu": {"frequencies": value}}, fields, value["available"])
+        if key == "cpu_telemetry":
+            value = _cpu(self._tracker, fields)["telemetry"]
+            return _SourceResult({"cpu": {"telemetry": value}}, fields, value["available"])
+        if key == "cpu_load_average":
+            value = _cpu(self._tracker, fields)["load_average"]
+            return _SourceResult({"cpu": {"load_average": value}}, fields, value["available"])
+        if key == "memory_virtual":
+            value = _memory(self._tracker, fields)["virtual"]
+            return _SourceResult({"memory": {"virtual": value}}, fields, value["available"])
+        if key == "memory_swap":
+            value = _memory(self._tracker, fields)["swap"]
+            return _SourceResult({"memory": {"swap": value}}, fields, value["available"])
+        if key == "disk_partitions":
+            raw_partitions = self._disk_cache.get_partitions(self._tracker)
+            if raw_partitions is _UNAVAILABLE:
+                return self._failure_result(key)
+            partitions = [
+                {
+                    "mount_point": partition["mount_point"],
+                    "filesystem": partition["filesystem"],
+                    "mount_options": partition["mount_options"],
+                }
+                for partition in raw_partitions
+            ]
+            return _SourceResult({"disks": {"partitions": partitions}}, fields)
+        if key == "disk_io":
+            value = _disks(self._tracker, fields, self._disk_cache)["io"]
+            return _SourceResult({"disks": {"io": value}}, fields, value["available"])
+        if key == "network_io":
+            value = _network(self._tracker, fields)
+            return _SourceResult({"network": value}, fields, value["available"])
+        if key == "sensor_temperatures":
+            value = _sensors(self._tracker, self._sensor_monitor, fields)
+            return _SourceResult({"sensors": {"temperatures": value["temperatures"]}}, fields, value["available"])
+        if key == "sensor_fans":
+            value = _sensors(self._tracker, self._sensor_monitor, fields)
+            return _SourceResult({"sensors": {"fans": value["fans"]}}, fields, value["available"])
+        if key == "sensor_battery":
+            value = _sensors(self._tracker, self._sensor_monitor, fields)
+            return _SourceResult({"sensors": {"battery": value["battery"]}}, fields, value["available"])
+        if key == "sensor_readings":
+            value = _sensors(self._tracker, self._sensor_monitor, fields)
+            return _SourceResult({"sensors": {
+                "temperatures": value["temperatures"],
+                "fans": value["fans"],
+                "battery": value["battery"],
+                "readings": value["readings"],
+            }}, fields, value["available"])
+        if key.startswith("disk_usage:"):
+            mount_point = key.split(":", 1)[1]
+            value = self._disk_cache.get_usage(mount_point, self._tracker)
+            if value is _UNAVAILABLE:
+                return self._failure_result(key)
+            usage = {
+                "available": True,
+                "mount_point": mount_point,
+                "total_bytes": _number(value.total),
+                "used_bytes": _number(value.used),
+                "free_bytes": _number(value.free),
+                "percent": _number(value.percent),
+            }
+            return _SourceResult({"disks": {"usage": [usage]}}, fields)
+        raise KeyError(key)
+
+    def _cleanup_cache(self) -> None:
+        now = self._clock()
+        with self._cache_lock:
+            for key, entry in list(self._source_cache.items()):
+                if key.startswith("disk_usage:") and now - entry.collected_at >= self._source_ttl(key):
+                    self._source_cache.pop(key, None)
+            dynamic = [
+                (entry.collected_at, key)
+                for key, entry in self._source_cache.items()
+                if key.startswith("disk_usage:")
+            ]
+            for _, key in sorted(dynamic)[:-self._cache_limit]:
+                self._source_cache.pop(key, None)
+
+    @staticmethod
+    def _resolve_sources(
+        pending: dict[str, concurrent.futures.Future[_SourceResult]],
+        results: dict[str, _SourceResult],
+    ) -> None:
+        for key, future in pending.items():
+            try:
+                results[key] = future.result()
+            except Exception:
+                results[key] = _SourceResult({}, _SOURCE_FIELDS.get(key, _DISK_USAGE_FIELDS), success=False)
+
+    def collect(self, requested_fields: set[str] | None = None) -> dict[str, Any]:
+        requested = None if requested_fields is None else set(requested_fields)
+        self._cleanup_cache()
+        keys = self._source_keys(requested)
+        pending: dict[str, concurrent.futures.Future[_SourceResult]] = {}
+        results: dict[str, _SourceResult] = {}
+        for key in keys:
+            result = self._acquire_source(key)
+            if isinstance(result, concurrent.futures.Future):
+                pending[key] = result
+            else:
+                results[key] = result
+        self._resolve_sources(pending, results)
+
+        if _field_requested(requested, "disks.usage"):
+            partition_result = results.get("disk_partitions")
+            partitions = partition_result.fragment.get("disks", {}).get("partitions", []) if partition_result else []
+            pending = {}
+            for partition in partitions:
+                mount_point = partition.get("mount_point")
+                if mount_point:
+                    key = f"disk_usage:{mount_point}"
+                    result = self._acquire_source(key)
+                    if isinstance(result, concurrent.futures.Future):
+                        pending[key] = result
+                    else:
+                        results[key] = result
+            self._resolve_sources(pending, results)
+
+        snapshot = _empty_metrics_snapshot(self._tracker, self._hardware_monitor, self._disk_cache)
+        for result in results.values():
+            if result.success:
+                _merge_fragment(snapshot, result.fragment)
+        snapshot["disks"]["available"] = bool(
+            snapshot["disks"]["partitions"]
+            or snapshot["disks"]["usage"]
+            or snapshot["disks"]["io"]["available"]
+        )
+        snapshot["sensors"]["available"] = bool(
+            snapshot["sensors"]["temperatures"]
+            or snapshot["sensors"]["fans"]
+            or snapshot["sensors"]["readings"]
+            or snapshot["sensors"]["battery"]["available"]
+        )
+        snapshot["memory"]["available"] = bool(
+            snapshot["memory"]["virtual"]["available"]
+            or snapshot["memory"]["swap"]["available"]
+        )
+        snapshot["timestamp"] = datetime.now(timezone.utc).isoformat()
+        return _mask_snapshot(snapshot, requested)
+
+    async def collect_async(self, requested_fields: set[str] | None = None) -> dict[str, Any]:
+        loop = asyncio.get_running_loop()
+        requested = None if requested_fields is None else set(requested_fields)
+        return await loop.run_in_executor(self._orchestration_executor, self.collect, requested)
+
+    def project_snapshot(self, snapshot: dict[str, Any], requested_fields: set[str] | None) -> dict[str, Any]:
+        return _mask_snapshot(copy.deepcopy(snapshot), requested_fields)
+
     def close(self) -> None:
-        with self._lock:
-            self._snapshot_cache.clear()
-            self._hardware_monitor.close()
+        self.subscriptions.close()
+        self._source_executor.shutdown(wait=True, cancel_futures=True)
+        self._orchestration_executor.shutdown(wait=True, cancel_futures=True)
+        with self._cache_lock:
+            self._source_cache.clear()
+            self._inflight.clear()
+            self._failure_until.clear()
+        with self._hardware_cache_lock:
+            self._hardware_cached_at = None
+            self._hardware_cached_snapshot = None
+        self._hardware_monitor.close()
 
 
 def collect_system_metrics(
@@ -641,7 +1297,11 @@ def collect_system_metrics(
     requested_fields: set[str] | None = None,
 ) -> dict[str, Any]:
     """Return local aggregate telemetry safe for browser widgets."""
-    return SystemMetricsService(
+    service = SystemMetricsService(
         hardware_monitor=hardware_monitor,
         hardware_monitor_enabled=hardware_monitor_enabled,
-    ).collect(requested_fields)
+    )
+    try:
+        return service.collect(requested_fields)
+    finally:
+        service.close()

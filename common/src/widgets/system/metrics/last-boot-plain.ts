@@ -32,13 +32,14 @@ export function createLastBoot(options = {}) {
     }, { fallback: phase === "initial" ? "-" : "n/a" });
   };
 
-  const subscribeOnce = ({ endpoint, updateInterval: updateIntervalSeconds, fields, onSnapshot, onError }) => {
+  const subscribeOnce = ({ endpoint, updateInterval: updateIntervalSeconds, transport, fields, onSnapshot, onError }) => {
     let unsubscribe;
     const cancel = () => unsubscribe?.();
     cancel.once = true;
     unsubscribe = systemMetricsManager.subscribe({
       endpoint,
       updateInterval: updateIntervalSeconds,
+      transport,
       fields,
       onSnapshot: (snapshot) => {
         onSnapshot(snapshot);

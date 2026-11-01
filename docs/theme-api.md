@@ -15,6 +15,8 @@ port `8000` during development.
 | Method | Path | Result |
 | --- | --- | --- |
 | `GET` | `/api/system/metrics` | Privacy-filtered CPU, memory, disk, aggregate network, and sensor data |
+| `GET` | `/api/system/metrics/events` | Server-Sent Events for selected system metrics |
+| `WS` | `/api/system/metrics/ws` | WebSocket access to selected system metrics |
 | `GET` | `/api/system/time` | Current host time as `{ "epochMilliseconds": ... }` |
 
 Add a comma-separated `fields` query parameter to request a subset:
@@ -71,6 +73,46 @@ unavailable while FastAPI keeps running.
 
 Network data contains aggregate byte, drop, and error counters. It does not
 contain addresses, interface IDs, hostnames, or other network identity data.
+
+### Live metric streams
+
+SSE accepts the same comma-separated `fields` selection as HTTP polling and an
+optional integer `interval` in seconds:
+
+```text
+/api/system/metrics/events?fields=cpu.utilization.overall,memory.virtual.percent&interval=2
+```
+
+The default interval is 5 seconds. Valid intervals range from 1 through 3600
+seconds. Omitting `fields` requests the full snapshot. The server emits named
+`snapshot` events. Each event contains the existing snapshot under `data`:
+
+```text
+event: snapshot
+data: {"type":"snapshot","data":{"timestamp":"...","cpu":{}}}
+```
+
+Heartbeat comments keep idle connections open and do not collect metrics.
+Browser `EventSource` reconnects receive a new initial snapshot.
+
+WebSocket clients connect to `/api/system/metrics/ws` and send JSON messages:
+
+```json
+{
+  "type": "subscribe",
+  "fields": ["cpu.utilization.overall", "memory.virtual.percent"],
+  "interval": 2
+}
+```
+
+`subscribe` replaces the current subscription. Omitting `fields` requests all
+fields; an empty list is invalid. `unsubscribe` accepts a field list or clears
+the subscription when `fields` is omitted. Server messages use `subscribed`,
+`unsubscribed`, `snapshot`, and `error` types. Invalid operations return a
+structured error. Messages larger than 64 KiB are rejected.
+
+All stream fields use the same validation, privacy rules, units, fallback
+behavior, and snapshot shape as HTTP polling.
 
 ## Theme routes
 

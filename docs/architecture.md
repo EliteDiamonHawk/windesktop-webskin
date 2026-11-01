@@ -29,7 +29,10 @@ CSS.
 - `persistence.py` reads and writes versioned namespace JSON plus per-widget files.
 - `themes.py` manages theme packages and previews.
 - `paths.py` selects runtime roots and rejects asset escapes.
-- `system_metrics.py` collects the privacy-filtered system snapshot.
+- `system_metrics.py` owns the unified metric source registry, cache, collection
+  coordination, and privacy-filtered snapshot assembly.
+- `metrics_streams.py` schedules SSE and WebSocket subscriptions without
+  creating one collection loop per client.
 - `hardware_monitor.py` reads optional LibreHardwareMonitor sensors.
 
 ## Runtime roots

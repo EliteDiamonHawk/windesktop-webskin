@@ -111,6 +111,7 @@ let timers = [];
 let timerDelays = [];
 let settingsRequests = 0;
 let created = [];
+let streamSources = [];
 
 const installDom = () => {
   const head = new FakeElement("head");
@@ -160,10 +161,13 @@ test.beforeEach(() => {
   timers = [];
   timerDelays = [];
   created = [];
+  streamSources = [];
 });
 
 test.afterEach(() => {
   created.splice(0).forEach((element) => element.destroy?.());
+  delete globalThis.EventSource;
+  delete globalThis.WebSocket;
 });
 
 test("formats dynamic values, preserves literals, and requests only referenced fields", async () => {
@@ -344,6 +348,74 @@ test("uses independent polling families and supports update interval overrides",
   assert.ok(timerDelays.includes(30000));
   assert.ok(timerDelays.includes(2000));
   assert.ok(timerDelays.includes(12000));
+});
+
+test("shares SSE connections and parses snapshot envelopes", async () => {
+  class FakeEventSource {
+    constructor(url) {
+      this.url = url;
+      this.readyState = 0;
+      this.listeners = new Map();
+      this.closed = false;
+      streamSources.push(this);
+    }
+
+    addEventListener(type, listener) { this.listeners.set(type, listener); }
+    open() { this.readyState = 1; this.onopen?.(); }
+    emit(type, data) { this.listeners.get(type)?.({ data: JSON.stringify(data) }); }
+    close() { this.closed = true; this.readyState = 2; }
+  }
+
+  globalThis.EventSource = FakeEventSource;
+  const first = widgets.createMemory({ transport: "sse", updateInterval: 2 });
+  const second = widgets.createMemory({ transport: "sse", updateInterval: 2 });
+  created.push(first, second);
+  await waitForPoll();
+
+  assert.equal(streamSources.length, 1);
+  assert.equal(new URL(streamSources[0].url, "http://localhost").searchParams.get("interval"), "2");
+  streamSources[0].open();
+  streamSources[0].emit("snapshot", { type: "snapshot", data: snapshot });
+  assert.equal(rowsText(first)[0], "Total: 4 KiB");
+  assert.equal(rowsText(second)[0], "Total: 4 KiB");
+
+  first.destroy();
+  assert.equal(streamSources[0].closed, false);
+  second.destroy();
+  assert.equal(streamSources[0].closed, true);
+});
+
+test("opens WebSocket subscriptions with the shared metric envelope", async () => {
+  class FakeWebSocket {
+    constructor(url) {
+      this.url = url;
+      this.sent = [];
+      this.closed = false;
+      streamSources.push(this);
+    }
+
+    open() { this.onopen?.(); }
+    emit(data) { this.onmessage?.({ data: JSON.stringify(data) }); }
+    send(data) { this.sent.push(JSON.parse(data)); }
+    close() { this.closed = true; this.onclose?.(); }
+  }
+
+  globalThis.WebSocket = FakeWebSocket;
+  const cpu = widgets.createCpuUtilization({ transport: "websocket", updateInterval: 1 });
+  created.push(cpu);
+  await waitForPoll();
+
+  assert.equal(streamSources.length, 1);
+  streamSources[0].open();
+  assert.deepEqual(streamSources[0].sent[0], {
+    type: "subscribe",
+    fields: ["cpu.utilization.overall"],
+    interval: 1,
+  });
+  streamSources[0].emit({ type: "snapshot", data: snapshot });
+  assert.equal(rowsText(cpu)[0], "12.5 %");
+  cpu.destroy();
+  assert.equal(streamSources[0].closed, true);
 });
 
 test("rejects legacy millisecond interval option", () => {

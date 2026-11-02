@@ -95,6 +95,7 @@ export const createTimerWidget = ({
   let unsubscribeTime;
   let destroyed = false;
   let controls = controlsRoot;
+  const managedControls = Boolean(controls && typeof element.setButtons === "function");
   let controlsListeners = [];
 
   const logicalNow = () => Date.now() + clockOffset;
@@ -245,17 +246,31 @@ export const createTimerWidget = ({
   };
 
   const clearControls = () => {
+    if (managedControls) {
+      element.setButtons([]);
+      return;
+    }
     controlsListeners.splice(0).forEach(({ button, action }) => button.removeEventListener("click", action));
     controls?.replaceChildren();
   };
   function renderControls() {
-    if (!controls) return;
-    clearControls();
+    if (!controls && !managedControls) return;
     const definitions = compactControls
       ? (state === "paused" && element.dataset.webskinTimerStarted !== "true"
         ? controlDefinitions.initial
         : controlDefinitions[state])
       : [["Play", "start"], ["Restart", "restart"], ["Resume", "resume"], ["Pause", "pause"]];
+    if (managedControls) {
+      element.setButtons(definitions.map(([label, method]) => ({
+        text: label,
+        onClick: () => element[method](),
+      })));
+      Array.from(element.parts.actions.children).forEach((button, index) => {
+        button.dataset.webskinTimerControl = definitions[index][1];
+      });
+      return;
+    }
+    clearControls();
     definitions.forEach(([label, method]) => {
       const button = document.createElement("button");
       button.type = "button";

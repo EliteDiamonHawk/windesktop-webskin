@@ -11,6 +11,26 @@ const COLOR_OPTIONS = {
   iconColor: "--webskin-small-widget-icon-color",
 };
 
+const MAX_BUTTONS = 2;
+
+const normalizeButtons = (buttons) => {
+  if (buttons === undefined) return [];
+  if (!Array.isArray(buttons)) throw new TypeError("smallWidgetFrame buttons must be an array");
+  if (buttons.length > MAX_BUTTONS) throw new RangeError("smallWidgetFrame supports at most two buttons");
+  return buttons.map((button, index) => {
+    if (!button || typeof button !== "object") {
+      throw new TypeError("smallWidgetFrame button " + index + " must be an object");
+    }
+    if (typeof button.text !== "string") {
+      throw new TypeError("smallWidgetFrame button " + index + " text must be a string");
+    }
+    if (typeof button.onClick !== "function") {
+      throw new TypeError("smallWidgetFrame button " + index + " onClick must be a function");
+    }
+    return { text: button.text, onClick: button.onClick };
+  });
+};
+
 const ensureStyles = () => {
   ensureStyle(STYLE_ID, `
     .webskin-frame--small-widget {
@@ -31,6 +51,8 @@ const ensureStyles = () => {
       --webskin-small-widget-content-top: 55.46875%;
       --webskin-small-widget-content-bottom: 14.84375%;
       --webskin-small-widget-content-gap: 0cqw;
+      --webskin-small-widget-button-color: color-mix(in srgb, var(--webskin-small-widget-background) 87.5%, white 12.5%);
+      --webskin-small-widget-button-text-color: color-mix(in srgb, var(--webskin-small-widget-color) 75%, white 25%);
       aspect-ratio: 11 / 10;
       background: var(--webskin-small-widget-background);
       border: 1px solid var(--webskin-small-widget-border);
@@ -128,10 +150,29 @@ const ensureStyles = () => {
 
     .webskin-frame--small-widget [data-webskin-frame-part="actions"] {
       display: grid;
-      gap: .35rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      margin-top: .25rem;
-      width: 100%;
+      flex-shrink: 0;
+      gap: 7.10227cqw;
+      grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+      width: calc(100% - var(--webskin-small-widget-content-left) + var(--webskin-small-widget-padding));
+    }
+
+    .webskin-frame--small-widget [data-webskin-frame-part="actions"] > button {
+      appearance: none;
+      background: var(--webskin-small-widget-button-color);
+      border: 1px solid var(--webskin-small-widget-button-color);
+      border-radius: 999px;
+      box-sizing: border-box;
+      color: var(--webskin-small-widget-button-text-color);
+      flex-shrink: 0;
+      font: inherit;
+      font-size: .75rem;
+      font-weight: 600;
+      height: 1.35rem;
+      min-width: 0;
+      overflow: hidden;
+      padding: 0 .3rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .webskin-frame--small-widget [data-webskin-frame-part="value"]:empty,
@@ -171,6 +212,7 @@ export function smallWidgetFrame(options = {}) {
   const value = createPart("value", "span");
   const subtext = createPart("subtext", "span");
   const actions = createPart("actions");
+  const buttonStates = [];
 
   if (options.iconFrame !== undefined && options.iconFrame !== null) {
     iconFrame.append(options.iconFrame);
@@ -185,6 +227,50 @@ export function smallWidgetFrame(options = {}) {
   content.append(value, subtext, actions);
   element.append(iconArea, content);
 
+  const setButtons = (buttons) => {
+    const definitions = normalizeButtons(buttons);
+    const nextButtons = definitions.map((definition, index) => {
+      const button = buttonStates[index]?.element ?? document.createElement("button");
+      const previous = buttonStates[index];
+      if (previous) button.removeEventListener("click", previous.handler);
+      button.type = "button";
+      button.textContent = definition.text;
+      const handler = (event) => definition.onClick(event, element);
+      button.addEventListener("click", handler);
+      buttonStates[index] = { element: button, handler, text: definition.text, onClick: definition.onClick };
+      return button;
+    });
+    for (let index = definitions.length; index < buttonStates.length; index += 1) {
+      buttonStates[index].element.removeEventListener("click", buttonStates[index].handler);
+    }
+    buttonStates.splice(definitions.length);
+    actions.replaceChildren(...nextButtons);
+    return element;
+  };
+
+  const updateButton = (index, patch) => {
+    if (!Number.isInteger(index) || index < 0 || index >= buttonStates.length) {
+      throw new RangeError("smallWidgetFrame button index is out of range");
+    }
+    if (!patch || typeof patch !== "object") {
+      throw new TypeError("smallWidgetFrame button update must be an object");
+    }
+    const state = buttonStates[index];
+    if (patch.text !== undefined) {
+      if (typeof patch.text !== "string") throw new TypeError("smallWidgetFrame button text must be a string");
+      state.text = patch.text;
+      state.element.textContent = patch.text;
+    }
+    if (patch.onClick !== undefined) {
+      if (typeof patch.onClick !== "function") throw new TypeError("smallWidgetFrame button onClick must be a function");
+      state.element.removeEventListener("click", state.handler);
+      state.onClick = patch.onClick;
+      state.handler = (event) => state.onClick(event, element);
+      state.element.addEventListener("click", state.handler);
+    }
+    return element;
+  };
+
   for (const [optionName, propertyName] of Object.entries(COLOR_OPTIONS)) {
     if (options[optionName] !== undefined) {
       element.style.setProperty(propertyName, String(options[optionName]));
@@ -196,6 +282,10 @@ export function smallWidgetFrame(options = {}) {
     enumerable: true,
     value: Object.freeze({ value, subtext, icon, iconFrame, actions }),
   });
+
+  Object.defineProperty(element, "setButtons", { configurable: true, value: setButtons });
+  Object.defineProperty(element, "updateButton", { configurable: true, value: updateButton });
+  setButtons(options.buttons);
 
   return element;
 }

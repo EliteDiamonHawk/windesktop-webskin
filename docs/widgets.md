@@ -12,8 +12,20 @@ and exposes `element.parts.value`, `element.parts.subtext`,
 
 `value` and `subtext` provide initial text only. The owning widget updates those
 nodes directly with `textContent`. Pass prepared DOM nodes through `icon` and
-`iconFrame`. Append up to two widget-owned controls to `parts.actions`; the
-frame does not create or manage buttons.
+`iconFrame`. Optional `buttons` entries create up to two managed buttons:
+
+```js
+const frame = smallWidgetFrame({
+  buttons: [
+    { text: "Apply", onClick: (event, owner) => owner.setButtons([]) },
+  ],
+});
+```
+
+Use `frame.setButtons(buttons)` to replace the button list or
+`frame.updateButton(index, { text, onClick })` to mutate one entry. Button
+callbacks receive the click event and frame. Managed buttons own the children
+of `parts.actions` and reuse their DOM nodes by index when possible.
 
 Frame colors accept `color`, `backgroundColor`, `borderColor`, `subtextColor`,
 `iconFrameColor`, and `iconColor`. The same values remain customizable through

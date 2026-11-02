@@ -139,11 +139,11 @@ test("pre-styled timers use assets and state-based controls", () => {
   assert.deepEqual(timer.parts.actions.children.map((button) => button.textContent), ["Play", "Restart"]);
   assert.equal(
     timer.parts.icon.children[0].style.getPropertyValue("mask-image"),
-    'url("/assets/icons/hourglass-half-svgrepo-com.svg")',
+    'url("/common/assets/icons/hourglass-half-svgrepo-com.svg")',
   );
   assert.equal(
     timer.parts.iconFrame.children[0].style.getPropertyValue("mask-image"),
-    'url("/assets/shapes/soft-burst.svg")',
+    'url("/common/assets/shapes/soft-burst.svg")',
   );
 
   timer.parts.actions.children[0].click();

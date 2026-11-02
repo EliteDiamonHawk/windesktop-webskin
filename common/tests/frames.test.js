@@ -17,9 +17,28 @@ class FakeElement {
     this.className = "";
     this.id = "";
     this.textContent = "";
+    this.type = "";
+    this.listeners = new Map();
   }
 
-  append(...children) { this.children.push(...children); }
+  append(...children) {
+    children.forEach((child) => {
+      if (child && typeof child === "object") child.parentNode = this;
+      this.children.push(child);
+    });
+  }
+  replaceChildren(...children) {
+    this.children.forEach((child) => {
+      if (child?.parentNode === this) child.parentNode = null;
+    });
+    this.children = [];
+    this.append(...children);
+  }
+  addEventListener(name, listener) { this.listeners.set(name, listener); }
+  removeEventListener(name, listener) {
+    if (this.listeners.get(name) === listener) this.listeners.delete(name);
+  }
+  click() { return this.listeners.get("click")?.({ type: "click", target: this }); }
 }
 
 const installDom = () => {
@@ -63,6 +82,10 @@ test("creates 11:10 frame with optional parts and current greyscale defaults", (
   assert.match(document.head.children[0].textContent, /--webskin-small-widget-content-gap: 0cqw/);
   assert.match(document.head.children[0].textContent, /font-size: 20cqw/);
   assert.match(document.head.children[0].textContent, /font-size: 12cqw/);
+  assert.match(document.head.children[0].textContent, /grid-template-columns: repeat\(auto-fit, minmax\(0, 1fr\)\)/);
+  assert.match(document.head.children[0].textContent, /gap: 7\.10227cqw/);
+  assert.match(document.head.children[0].textContent, /border-radius: 999px/);
+  assert.match(document.head.children[0].textContent, /color-mix\(in srgb/);
   assert.match(document.head.children[0].textContent, /#2e2e2e/);
   assert.match(document.head.children[0].textContent, /#d6d6d6/);
 });
@@ -96,6 +119,46 @@ test("inserts widget-owned icon nodes and leaves actions for widget controls", (
   frame.parts.actions.append(buttonOne, buttonTwo);
   assert.deepEqual(frame.parts.actions.children, [buttonOne, buttonTwo]);
   assert.equal(frame.querySelector, undefined);
+});
+
+test("manages up to two buttons and updates button state in place", () => {
+  const calls = [];
+  const frame = smallWidgetFrame({
+    buttons: [
+      { text: "One", onClick: (event, owner) => calls.push([event.type, owner]) },
+      { text: "Two", onClick: () => calls.push(["two"]) },
+    ],
+  });
+  const first = frame.parts.actions.children[0];
+
+  assert.equal(frame.parts.actions.children.length, 2);
+  assert.equal(first.type, "button");
+  assert.equal(first.textContent, "One");
+  first.click();
+  assert.deepEqual(calls[0], ["click", frame]);
+
+  frame.updateButton(0, {
+    text: "Updated",
+    onClick: () => calls.push(["updated"]),
+  });
+  assert.equal(frame.parts.actions.children[0], first);
+  assert.equal(first.textContent, "Updated");
+  first.click();
+  assert.deepEqual(calls[1], ["updated"]);
+
+  frame.setButtons([{ text: "Only", onClick: () => {} }]);
+  assert.equal(frame.parts.actions.children.length, 1);
+  assert.equal(frame.parts.actions.children[0], first);
+  frame.setButtons([]);
+  assert.equal(frame.parts.actions.children.length, 0);
+  assert.throws(
+    () => frame.setButtons([
+      { text: "One", onClick: () => {} },
+      { text: "Two", onClick: () => {} },
+      { text: "Three", onClick: () => {} },
+    ]),
+    RangeError,
+  );
 });
 
 test("maps color options to public CSS custom properties", () => {

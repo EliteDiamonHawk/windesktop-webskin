@@ -63,9 +63,10 @@ The final returned root must own:
 - documented imperative methods
 - documented `data-*` hooks
 
-Use `smallWidgetFrame()` for small cards. Update `parts.value`,
-`parts.subtext`, and `parts.actions` directly. Use shared masked-asset helpers
-for icons and shape masks.
+Use `smallWidgetFrame()` for small cards. Update `parts.value` and
+`parts.subtext` directly. Use `setButtons()` and `updateButton()` for managed
+frame buttons; `parts.actions` exposes their container. Use shared
+masked-asset helpers for icons and shape masks.
 
 ## Polling and time
 

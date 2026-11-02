@@ -2,27 +2,11 @@ import { smallWidgetFrame } from "../../../frames/small-widget-frame.js";
 import { classNames, ensureStyle, maskedAsset } from "../../dom.js";
 import { createTimerWidget } from "./timer-runtime.js";
 
-const ICON_ROOT = "/assets/icons/";
-const SHAPE_ROOT = "/assets/shapes/";
+const ICON_ROOT = "/common/assets/icons/";
+const SHAPE_ROOT = "/common/assets/shapes/";
 
 const ensureStyles = () => ensureStyle("webskin-prestyled-timer-styles", `
   .webskin-timer--prestyled [data-webskin-frame-part="value"] { font-variant-numeric: tabular-nums; }
-  .webskin-timer--prestyled [data-webskin-frame-part="actions"] { gap: .3rem; margin-top: .2rem; }
-  .webskin-timer--prestyled [data-webskin-frame-part="actions"] button {
-    background: var(--webskin-small-widget-color);
-    border: 0;
-    border-radius: .3rem;
-    box-sizing: border-box;
-    color: var(--webskin-small-widget-background);
-    font: inherit;
-    font-size: clamp(.55rem, 7cqw, .75rem);
-    height: 1.35rem;
-    min-width: 0;
-    overflow: hidden;
-    padding: 0 .3rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 `);
 
 export function createCountdown(options = {}) {

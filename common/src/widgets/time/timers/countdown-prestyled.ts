@@ -10,7 +10,11 @@ const MINUTE = 60 * 1000;
 const timerHost = () => (typeof window === "undefined" ? globalThis : window);
 
 const ensureStyles = () => ensureStyle("webskin-prestyled-timer-styles", `
-  .webskin-timer--prestyled [data-webskin-frame-part="value"] { font-variant-numeric: tabular-nums; }
+  .webskin-frame--small-widget.webskin-timer--prestyled [data-webskin-frame-part="value"] {
+    --webskin-prestyled-timer-value-scale: .8;
+    font-size: calc(20cqw * var(--webskin-prestyled-timer-value-scale));
+    font-variant-numeric: tabular-nums;
+  }
 `);
 
 export function createCountdown(options = {}) {

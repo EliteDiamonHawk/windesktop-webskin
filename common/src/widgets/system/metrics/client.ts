@@ -1,5 +1,6 @@
 import { Widget } from "../../widgets.js";
 import { classNames, rejectLegacyInterval } from "../../dom.js";
+import { validateDigitLimit } from "./formatters.js";
 
 export const DEFAULT_INTERVAL = 5;
 export const DEFAULT_INTERVALS = Object.freeze({ fast: 5, standard: 30, slow: 60 });
@@ -572,6 +573,7 @@ export function createSystemWidget({
   endpoint = "/api/system/metrics",
   updateInterval,
   transport = "polling",
+  digitLimit,
   widgetId,
   family,
   fields = [],
@@ -588,6 +590,7 @@ export function createSystemWidget({
   variant = "plain",
 } = {}) {
   rejectLegacyInterval(arguments[0]);
+  validateDigitLimit(digitLimit);
   if (typeof build !== "function" || typeof render !== "function") {
     throw new TypeError("System widgets require build and render functions");
   }

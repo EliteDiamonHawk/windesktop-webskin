@@ -14,6 +14,7 @@ const TOKEN_FIELDS = {
 
 export function createCpuTelemetry(options = {}) {
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "CPU telemetry");
+  const digitLimit = options.digitLimit;
   return createSystemWidget({
     ...options,
     fields: fieldsForFormat(format, TOKEN_FIELDS),
@@ -22,12 +23,12 @@ export function createCpuTelemetry(options = {}) {
     render: (root, snapshot, { phase }) => {
       const telemetry = snapshot?.cpu?.telemetry;
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
-        ints: formatInteger(telemetry?.interrupts, phase),
-        interrupts: formatInteger(telemetry?.interrupts, phase),
-        syscall: formatInteger(telemetry?.system_calls, phase),
-        "system-calls": formatInteger(telemetry?.system_calls, phase),
-        "cont-switch": formatInteger(telemetry?.context_switches, phase),
-        "context-switches": formatInteger(telemetry?.context_switches, phase),
+        ints: formatInteger(telemetry?.interrupts, phase, digitLimit),
+        interrupts: formatInteger(telemetry?.interrupts, phase, digitLimit),
+        syscall: formatInteger(telemetry?.system_calls, phase, digitLimit),
+        "system-calls": formatInteger(telemetry?.system_calls, phase, digitLimit),
+        "cont-switch": formatInteger(telemetry?.context_switches, phase, digitLimit),
+        "context-switches": formatInteger(telemetry?.context_switches, phase, digitLimit),
       }, { fallback: phase === "initial" ? "-" : "n/a" });
     },
   });

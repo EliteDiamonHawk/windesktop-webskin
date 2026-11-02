@@ -21,6 +21,7 @@ const TOKEN_FIELDS = {
 export function createDiskPartitions(options = {}) {
   if (options.mountPoint !== undefined) requireNonEmptyString(options, "mountPoint");
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "disk partitions");
+  const digitLimit = options.digitLimit;
   const fields = new Set(fieldsForFormat(format, TOKEN_FIELDS));
   fields.add("disks.partitions.mount_point");
   if (["total", "total-unit", "used", "used-unit", "free", "free-unit", "usage", "percent"]
@@ -41,9 +42,9 @@ export function createDiskPartitions(options = {}) {
       const usage = selected && Array.isArray(usages)
         ? usages.find((item) => item?.mount_point === selected.mount_point)
         : undefined;
-      const total = formatBytes(usage?.total_bytes, phase);
-      const used = formatBytes(usage?.used_bytes, phase);
-      const free = formatBytes(usage?.free_bytes, phase);
+      const total = formatBytes(usage?.total_bytes, phase, digitLimit);
+      const used = formatBytes(usage?.used_bytes, phase, digitLimit);
+      const free = formatBytes(usage?.free_bytes, phase, digitLimit);
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
         "mount-point": formatText(selected?.mount_point, phase),
         filesystem: formatText(selected?.filesystem, phase),
@@ -54,8 +55,8 @@ export function createDiskPartitions(options = {}) {
         "used-unit": used.unit,
         free: free.value,
         "free-unit": free.unit,
-        usage: formatNumber(usage?.percent, phase),
-        percent: formatNumber(usage?.percent, phase),
+        usage: formatNumber(usage?.percent, phase, 1, digitLimit),
+        percent: formatNumber(usage?.percent, phase, 1, digitLimit),
       }, { fallback: phase === "initial" ? "-" : "n/a" });
     },
   });

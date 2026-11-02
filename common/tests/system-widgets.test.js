@@ -215,7 +215,7 @@ test("renders single-value cards with icon and shape assets", async () => {
   assert.equal(cpu.parts.subtext.textContent, "CPU");
 });
 
-test("moves long prestyled units into subtext and fixes GPU degree units", async () => {
+test("keeps prestyled units in value and fixes GPU degree units", async () => {
   const originalNow = Date.now;
   let now = 1000;
   Date.now = () => now;
@@ -236,7 +236,7 @@ test("moves long prestyled units into subtext and fixes GPU degree units", async
     timers[0]?.();
     await waitForPoll();
     assert.equal(textOf(network.parts.value), "2");
-    assert.equal(network.parts.subtext.textContent, "Download KiB/s");
+    assert.equal(textOf(network.parts.subtext), "Download KiB/s");
 
     const frequency = widgets.createCpuFrequencyPrestyled({ updateInterval: 21 });
     const swap = widgets.createSwapMemoryPrestyled({ metric: "used", updateInterval: 23 });
@@ -244,9 +244,9 @@ test("moves long prestyled units into subtext and fixes GPU degree units", async
     created.push(frequency, swap, gpu);
     await waitForPoll();
     assert.equal(textOf(frequency.parts.value), "2,400");
-    assert.equal(frequency.parts.subtext.textContent, "CPU MHz");
-    assert.equal(textOf(swap.parts.value), "1");
-    assert.equal(swap.parts.subtext.textContent, "Swap KiB");
+    assert.equal(frequency.parts.subtext.textContent, "CPU");
+    assert.equal(textOf(swap.parts.value), "1 KiB");
+    assert.equal(swap.parts.subtext.textContent, "Swap");
     assert.equal(textOf(gpu.parts.value), "47.5 °C");
     assert.equal(gpu.parts.subtext.textContent, "GPU");
   } finally {
@@ -254,7 +254,7 @@ test("moves long prestyled units into subtext and fixes GPU degree units", async
   }
 });
 
-test("keeps short units inline until six digits and caps unitless values at nine digits", async () => {
+test("applies default prestyled digit limits without moving units", async () => {
   const originalNow = Date.now;
   Date.now = () => 1_700_000_000_000 + 7_654_321_000;
   responseSnapshot = {
@@ -270,13 +270,38 @@ test("keeps short units inline until six digits and caps unitless values at nine
 
   try {
     await waitForPoll();
-    assert.equal(textOf(uptime.parts.value), "7,654,321");
-    assert.equal(uptime.parts.subtext.textContent, "Uptime s");
-    assert.equal(textOf(load.parts.value), "123456789");
+    assert.equal(textOf(uptime.parts.value), "76543 s");
+    assert.equal(uptime.parts.subtext.textContent, "Uptime");
+    assert.equal(textOf(load.parts.value), "12345");
     assert.equal(load.parts.subtext.textContent, "Load");
   } finally {
     Date.now = originalNow;
   }
+});
+
+test("supports configurable digit limits on plain and prestyled metrics", async () => {
+  responseSnapshot = {
+    ...snapshot,
+    cpu: {
+      ...snapshot.cpu,
+      load_average: { ...snapshot.cpu.load_average, one_minute: 1234567890 },
+    },
+  };
+  const plain = widgets.createCpuLoadAverage({ format: "{one}", updateInterval: 27 });
+  const limitedPlain = widgets.createCpuLoadAverage({ format: "{one}", digitLimit: 3, updateInterval: 28 });
+  const limitedPrestyled = widgets.createCpuLoadAveragePrestyled({ digitLimit: 2, updateInterval: 29 });
+  created.push(plain, limitedPlain, limitedPrestyled);
+
+  await waitForPoll();
+  assert.equal(rowsText(plain)[0], "1,234,567,890");
+  assert.equal(rowsText(limitedPlain)[0], "123");
+  assert.equal(textOf(limitedPrestyled.parts.value), "12");
+  assert.equal(limitedPrestyled.parts.subtext.textContent, "Load");
+});
+
+test("rejects invalid digit limits", () => {
+  assert.throws(() => widgets.createMemory({ digitLimit: 0 }), /digitLimit must be a positive integer/);
+  assert.throws(() => widgets.createNetworkPrestyled({ digitLimit: 1.5 }), /digitLimit must be a positive integer/);
 });
 
 test("prestylized last-boot wraps plain lifecycle and destroys it", async () => {

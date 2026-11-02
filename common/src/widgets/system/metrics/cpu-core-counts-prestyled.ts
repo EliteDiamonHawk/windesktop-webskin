@@ -14,6 +14,7 @@ export function createCpuCoreCountsPrestyled(options = {}) {
     plainOptions: {
       ...options,
       format: coreType === "physical" ? "{physical}" : "{logical}",
+      digitLimit: options.digitLimit ?? 5,
     },
     label: options.label ?? (coreType === "physical" ? "Physical cores" : "Logical cores"),
     icon: iconAsset("microchip-svgrepo-com.svg"),

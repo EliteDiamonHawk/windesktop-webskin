@@ -8,7 +8,7 @@ export function createLastBootPrestyled(options = {}) {
     type: "last-boot-prestyled",
     widgetId: "last-boot-prestyled",
     createPlain: createPlainLastBoot,
-    plainOptions: { ...options, format: "{uptime} s", updateInterval },
+    plainOptions: { ...options, format: "{uptime} s", updateInterval, digitLimit: options.digitLimit ?? 5 },
     proxyMethods: ["subscribeBootTime", "unsubscribeBootTime"],
     label: options.label ?? "Uptime",
     icon: iconAsset("clock-eight-svgrepo-com.svg"),

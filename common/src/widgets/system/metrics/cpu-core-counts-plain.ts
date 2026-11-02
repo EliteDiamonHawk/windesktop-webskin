@@ -12,6 +12,7 @@ const TOKEN_FIELDS = {
 
 export function createCpuCoreCounts(options = {}) {
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "CPU core counts");
+  const digitLimit = options.digitLimit;
   return createSystemWidget({
     ...options,
     fields: fieldsForFormat(format, TOKEN_FIELDS),
@@ -21,10 +22,10 @@ export function createCpuCoreCounts(options = {}) {
       root.querySelector('[data-webskin-system-part="content"]'),
       format,
       {
-        physical: formatInteger(snapshot?.cpu?.cores?.physical, phase),
-        phys: formatInteger(snapshot?.cpu?.cores?.physical, phase),
-        logical: formatInteger(snapshot?.cpu?.cores?.logical, phase),
-        logi: formatInteger(snapshot?.cpu?.cores?.logical, phase),
+        physical: formatInteger(snapshot?.cpu?.cores?.physical, phase, digitLimit),
+        phys: formatInteger(snapshot?.cpu?.cores?.physical, phase, digitLimit),
+        logical: formatInteger(snapshot?.cpu?.cores?.logical, phase, digitLimit),
+        logi: formatInteger(snapshot?.cpu?.cores?.logical, phase, digitLimit),
       },
       { fallback: phase === "initial" ? "-" : "n/a" },
     ),

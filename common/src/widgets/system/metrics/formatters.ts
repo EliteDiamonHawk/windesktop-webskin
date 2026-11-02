@@ -2,12 +2,39 @@ export const isNumber = (value) => typeof value === "number" && Number.isFinite(
 
 export const unavailable = (phase = "ready") => phase === "initial" ? "-" : "n/a";
 
-export const formatNumber = (value, phase = "ready", digits = 1) => {
-  if (!isNumber(value)) return unavailable(phase);
-  return new Intl.NumberFormat(undefined, { maximumFractionDigits: digits }).format(value);
+const numericDigits = (value) => (value.match(/\d/g) ?? []).length;
+
+const trimNumeric = (value, limit) => {
+  if (numericDigits(value) <= limit) return value;
+  const sign = /^[+-]/.test(value) ? value[0] : "";
+  const unsigned = value.slice(sign.length).replace(/,/g, "");
+  const [integer, fraction = ""] = unsigned.split(".");
+  const digits = integer + fraction;
+  const kept = digits.slice(0, limit);
+  if (integer.length >= limit) return sign + kept;
+  const keptFraction = kept.slice(integer.length);
+  return sign + kept.slice(0, integer.length) + (keptFraction ? "." + keptFraction : "");
 };
 
-export const formatInteger = (value, phase = "ready") => formatNumber(value, phase, 0);
+export const validateDigitLimit = (digitLimit) => {
+  if (digitLimit !== undefined && (!Number.isInteger(digitLimit) || digitLimit <= 0)) {
+    throw new RangeError("digitLimit must be a positive integer");
+  }
+};
+
+const applyDigitLimit = (value, digitLimit) => {
+  validateDigitLimit(digitLimit);
+  return digitLimit === undefined ? value : trimNumeric(value, digitLimit);
+};
+
+export const formatNumber = (value, phase = "ready", digits = 1, digitLimit) => {
+  validateDigitLimit(digitLimit);
+  if (!isNumber(value)) return unavailable(phase);
+  const formatted = new Intl.NumberFormat(undefined, { maximumFractionDigits: digits }).format(value);
+  return applyDigitLimit(formatted, digitLimit);
+};
+
+export const formatInteger = (value, phase = "ready", digitLimit) => formatNumber(value, phase, 0, digitLimit);
 
 export const formatBoolean = (value, phase = "ready") => {
   if (typeof value !== "boolean") return unavailable(phase);
@@ -19,9 +46,10 @@ export const formatText = (value, phase = "ready") => {
   return String(value);
 };
 
-export const formatBytes = (value, phase = "ready") => {
+export const formatBytes = (value, phase = "ready", digitLimit) => {
+  validateDigitLimit(digitLimit);
   if (!isNumber(value)) return { value: unavailable(phase), unit: unavailable(phase) };
-  if (value < 1024) return { value: String(value), unit: "B" };
+  if (value < 1024) return { value: applyDigitLimit(String(value), digitLimit), unit: "B" };
   const units = ["KiB", "MiB", "GiB", "TiB", "PiB"];
   let scaled = value;
   let index = -1;
@@ -30,7 +58,7 @@ export const formatBytes = (value, phase = "ready") => {
     index += 1;
   }
   return {
-    value: new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(scaled),
+    value: applyDigitLimit(new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(scaled), digitLimit),
     unit: units[index],
   };
 };

@@ -20,6 +20,7 @@ const uptimeSeconds = (bootTime, now) => {
 export function createLastBoot(options = {}) {
   rejectLegacyInterval(options);
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "last boot");
+  const digitLimit = options.digitLimit;
   const updateInterval = options.updateInterval ?? DEFAULT_UPDATE_INTERVAL;
   validateUpdateInterval(updateInterval);
   let bootTime = null;
@@ -28,7 +29,7 @@ export function createLastBoot(options = {}) {
   const renderValues = (root, phase = bootTimeLoaded ? "ready" : "initial", now = Date.now()) => {
     renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
       "boot-time": formatText(bootTime, phase),
-      uptime: formatInteger(bootTime ? uptimeSeconds(bootTime, now) : null, phase, 0),
+      uptime: formatInteger(bootTime ? uptimeSeconds(bootTime, now) : null, phase, digitLimit),
     }, { fallback: phase === "initial" ? "-" : "n/a" });
   };
 

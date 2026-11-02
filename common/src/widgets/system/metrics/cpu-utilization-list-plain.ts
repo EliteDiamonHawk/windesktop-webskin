@@ -12,6 +12,7 @@ const TOKEN_FIELDS = {
 export function createCpuUtilizationList(options = {}) {
   if (options.limit !== undefined && options.limit !== null) requireInteger(options, "limit");
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "CPU utilization list");
+  const digitLimit = options.digitLimit;
   return createSystemWidget({
     ...options,
     fields: fieldsForFormat(format, TOKEN_FIELDS),
@@ -20,7 +21,7 @@ export function createCpuUtilizationList(options = {}) {
     render: (root, snapshot, { phase }) => {
       const utilization = snapshot?.cpu?.utilization;
       const cores = Array.isArray(utilization?.per_core) ? utilization.per_core : [];
-      const rows = [{ label: "Overall", value: formatNumber(utilization?.overall, phase) }];
+      const rows = [{ label: "Overall", value: formatNumber(utilization?.overall, phase, 1, digitLimit) }];
       const zeroIndex = Boolean(options.zeroIndex);
       const limited = options.limit === undefined || options.limit === null || options.limit <= 0
         ? cores
@@ -28,7 +29,7 @@ export function createCpuUtilizationList(options = {}) {
       limited.forEach((value, index) => {
         rows.push({
           label: "Core " + (zeroIndex ? index : index + 1),
-          value: formatNumber(value, phase),
+          value: formatNumber(value, phase, 1, digitLimit),
         });
       });
       renderRepeatedFormat(root.querySelector('[data-webskin-system-part="content"]'), format, rows, {

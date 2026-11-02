@@ -9,7 +9,7 @@ export function createDiskUsagePrestyled(options = {}) {
     type: "disk-usage-prestyled",
     widgetId: "disk-usage-prestyled",
     createPlain: createPlainDiskPartitions,
-    plainOptions: { ...options, format: "{usage}%" },
+    plainOptions: { ...options, format: "{usage}%", digitLimit: options.digitLimit ?? 5 },
     label: options.label ?? "Disk",
     icon: iconAsset("floppy-disk-svgrepo-com.svg"),
     iconFrame: iconFrameAsset("soft-burst.svg"),

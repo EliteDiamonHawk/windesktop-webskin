@@ -15,6 +15,7 @@ export function createSwapMemoryPrestyled(options = {}) {
       ...options,
       metric,
       format: metric === "usage" ? "{value}%" : "{value} {unit}",
+      digitLimit: options.digitLimit ?? 5,
     },
     label: options.label ?? "Swap",
     icon: iconAsset("microchip-svgrepo-com.svg"),

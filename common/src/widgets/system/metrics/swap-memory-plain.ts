@@ -21,6 +21,7 @@ const SCALAR_FIELDS = {
 
 export function createSwapMemory(options = {}) {
   const metric = options.metric;
+  const digitLimit = options.digitLimit;
   const validMetrics = ["total", "used", "free", "usage"];
   if (metric !== undefined && !validMetrics.includes(metric)) {
     throw new TypeError("Unsupported swap metric: " + String(metric));
@@ -46,16 +47,16 @@ export function createSwapMemory(options = {}) {
       const swap = snapshot?.memory?.swap;
       if (scalar) {
         const raw = metric === "usage" ? swap?.percent : swap?.[metric + "_bytes"];
-        const bytes = metric === "usage" ? null : formatBytes(raw, phase);
+        const bytes = metric === "usage" ? null : formatBytes(raw, phase, digitLimit);
         renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
-          value: metric === "usage" ? formatNumber(raw, phase) : bytes.value,
+          value: metric === "usage" ? formatNumber(raw, phase, 1, digitLimit) : bytes.value,
           unit: metric === "usage" ? "%" : bytes.unit,
         }, { fallback: phase === "initial" ? "-" : "n/a" });
         return;
       }
-      const total = formatBytes(swap?.total_bytes, phase);
-      const used = formatBytes(swap?.used_bytes, phase);
-      const free = formatBytes(swap?.free_bytes, phase);
+      const total = formatBytes(swap?.total_bytes, phase, digitLimit);
+      const used = formatBytes(swap?.used_bytes, phase, digitLimit);
+      const free = formatBytes(swap?.free_bytes, phase, digitLimit);
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
         total: total.value,
         "total-unit": total.unit,
@@ -63,8 +64,8 @@ export function createSwapMemory(options = {}) {
         "used-unit": used.unit,
         free: free.value,
         "free-unit": free.unit,
-        usage: formatNumber(swap?.percent, phase),
-        percent: formatNumber(swap?.percent, phase),
+        usage: formatNumber(swap?.percent, phase, 1, digitLimit),
+        percent: formatNumber(swap?.percent, phase, 1, digitLimit),
       }, { fallback: phase === "initial" ? "-" : "n/a" });
     },
   });

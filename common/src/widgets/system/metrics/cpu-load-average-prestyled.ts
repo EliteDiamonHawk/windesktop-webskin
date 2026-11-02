@@ -16,7 +16,7 @@ export function createCpuLoadAveragePrestyled(options = {}) {
     type: "cpu-load-average-prestyled",
     widgetId: "cpu-load-average-prestyled",
     createPlain: createPlainCpuLoadAverage,
-    plainOptions: { ...options, format: "{" + token + "}", digits: 2 },
+    plainOptions: { ...options, format: "{" + token + "}", digits: 2, digitLimit: options.digitLimit ?? 5 },
     label: options.label ?? "Load",
     icon: iconAsset("wave-pulse-svgrepo-com.svg"),
     iconFrame: iconFrameAsset("burst.svg"),

@@ -17,6 +17,7 @@ const CORE_FIELDS = {
 export function createCpuUtilization(options = {}) {
   const core = options.core === undefined ? -1 : requireInteger(options, "core");
   const defaultFormat = core < 0 ? "{value} %" : "{core}: {value} %";
+  const digitLimit = options.digitLimit;
   const fields = fieldsForFormat(resolveFormat(options.format, defaultFormat, TOKENS, "CPU utilization"), core < 0 ? OVERALL_FIELDS : CORE_FIELDS);
   const format = resolveFormat(options.format, defaultFormat, TOKENS, "CPU utilization");
   return createSystemWidget({
@@ -29,7 +30,7 @@ export function createCpuUtilization(options = {}) {
         ? snapshot?.cpu?.utilization?.overall
         : snapshot?.cpu?.utilization?.per_core?.[core];
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
-        value: formatNumber(value, phase),
+        value: formatNumber(value, phase, 1, digitLimit),
         core: core < 0 ? "-1" : String(core + 1),
         "zeroed-core": String(core),
       }, { fallback: phase === "initial" ? "-" : "n/a" });

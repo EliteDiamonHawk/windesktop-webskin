@@ -11,6 +11,7 @@ const TOKEN_FIELDS = {
 
 export function createBattery(options = {}) {
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "battery");
+  const digitLimit = options.digitLimit;
   return createSystemWidget({
     ...options,
     fields: fieldsForFormat(format, TOKEN_FIELDS),
@@ -22,9 +23,9 @@ export function createBattery(options = {}) {
         ? battery.seconds_left
         : null;
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
-        value: formatNumber(battery?.percent, phase),
+        value: formatNumber(battery?.percent, phase, 1, digitLimit),
         plugged: formatBoolean(battery?.power_plugged, phase),
-        "time-left": formatNumber(seconds, phase, 0),
+        "time-left": formatNumber(seconds, phase, 0, digitLimit),
       }, { fallback: phase === "initial" ? "-" : "n/a" });
     },
   });

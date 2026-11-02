@@ -18,6 +18,7 @@ const TOKEN_FIELDS = {
 
 export function createNetworkTelemetry(options = {}) {
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "network telemetry");
+  const digitLimit = options.digitLimit;
   return createSystemWidget({
     ...options,
     fields: fieldsForFormat(format, TOKEN_FIELDS),
@@ -25,8 +26,8 @@ export function createNetworkTelemetry(options = {}) {
     build: (root) => root.append(createPart("content", "", "div")),
     render: (root, snapshot, { phase }) => {
       const network = snapshot?.network;
-      const sent = formatBytes(network?.bytes_sent, phase);
-      const received = formatBytes(network?.bytes_received, phase);
+      const sent = formatBytes(network?.bytes_sent, phase, digitLimit);
+      const received = formatBytes(network?.bytes_received, phase, digitLimit);
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
         sent: sent.value,
         "bytes-sent": sent.value,
@@ -34,10 +35,10 @@ export function createNetworkTelemetry(options = {}) {
         received: received.value,
         "bytes-received": received.value,
         "received-unit": received.unit,
-        dropped: formatInteger(network?.packets_dropped, phase),
-        "packets-dropped": formatInteger(network?.packets_dropped, phase),
-        errors: formatInteger(network?.transmission_errors, phase),
-        "transmission-errors": formatInteger(network?.transmission_errors, phase),
+        dropped: formatInteger(network?.packets_dropped, phase, digitLimit),
+        "packets-dropped": formatInteger(network?.packets_dropped, phase, digitLimit),
+        errors: formatInteger(network?.transmission_errors, phase, digitLimit),
+        "transmission-errors": formatInteger(network?.transmission_errors, phase, digitLimit),
       }, { fallback: phase === "initial" ? "-" : "n/a" });
     },
   });

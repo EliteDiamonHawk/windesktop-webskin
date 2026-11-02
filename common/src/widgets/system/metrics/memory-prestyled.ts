@@ -7,7 +7,7 @@ export function createMemoryPrestyled(options = {}) {
     type: "memory-prestyled",
     widgetId: "memory-prestyled",
     createPlain: createPlainMemory,
-    plainOptions: { ...options, format: "{usage}%" },
+    plainOptions: { ...options, format: "{usage}%", digitLimit: options.digitLimit ?? 5 },
     label: options.label ?? "RAM",
     icon: iconAsset("microchip-svgrepo-com.svg"),
     iconFrame: iconFrameAsset("clover-4-leaf.svg"),

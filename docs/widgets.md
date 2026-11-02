@@ -280,6 +280,16 @@ and percent signs remain literal. The escapes `\\n`, `\\r`, `\\t`, and
 `\\\\` work in format strings. Dynamic tokens become elements with
 `data-webskin-system-format-part`; literals remain text nodes.
 
+Numeric formatters accept optional positive-integer `digitLimit`. It caps
+numeric digits after locale formatting and leaves units unchanged. Plain
+widgets have no cap unless you pass one; prestyled system metrics default to
+five digits. For example:
+
+```js
+const compactMemory = createMemory({ digitLimit: 4 });
+const compactCpu = createCpuUtilizationPrestyled({ digitLimit: 3 });
+```
+
 Before the first successful poll, tokens render as `-`. Missing, unsupported,
 or unavailable values render as `n/a`. Boolean values render as `true` or
 `false`.

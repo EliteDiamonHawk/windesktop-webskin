@@ -10,7 +10,7 @@ export function createGpuTemperaturePrestyled(options = {}) {
     type: "gpu-temperature-prestyled",
     widgetId: "gpu-temperature-prestyled",
     createPlain: createPlainGpuThermalFan,
-    plainOptions: { ...options, format: "{core-temperature} \u00b0C" },
+    plainOptions: { ...options, format: "{core-temperature} \u00b0C", digitLimit: options.digitLimit ?? 5 },
     label: options.label ?? "GPU",
     icon: iconAsset("microchip-svgrepo-com.svg"),
     iconFrame: iconFrameAsset("puffy-diamond.svg"),

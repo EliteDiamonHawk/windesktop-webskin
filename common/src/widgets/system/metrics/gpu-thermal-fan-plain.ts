@@ -31,6 +31,7 @@ const pick = (records, predicate) => records.find(predicate);
 
 export function createGpuThermalFan(options = {}) {
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "GPU thermal and fan sensors");
+  const digitLimit = options.digitLimit;
   return createSystemWidget({
     ...options,
     fields: fieldsForFormat(format, { ...Object.fromEntries(TOKENS.map((token) => [token, "sensors.readings"])) }),
@@ -44,7 +45,7 @@ export function createGpuThermalFan(options = {}) {
       const critical = pick(records, (record) => record?.critical !== undefined && record?.critical !== null) ?? core ?? hotSpot;
       const fan = pick(records, (record) => record?.type === "fan");
       const gpuName = records[0]?.hardware_name;
-      const temperature = (record) => formatNumber(record?.value, phase);
+      const temperature = (record) => formatNumber(record?.value, phase, 1, digitLimit);
       const values = {
         "core-temperature": temperature(core),
         "core-temp": temperature(core),
@@ -54,8 +55,8 @@ export function createGpuThermalFan(options = {}) {
         warning: temperature(warning?.warning ?? warning?.value),
         "critical-temperature": temperature(critical?.critical),
         critical: temperature(critical?.critical),
-        "fan-speed": formatNumber(fan?.value, phase, 0),
-        fan: formatNumber(fan?.value, phase, 0),
+        "fan-speed": formatNumber(fan?.value, phase, 0, digitLimit),
+        fan: formatNumber(fan?.value, phase, 0, digitLimit),
         gpu: formatText(gpuName, phase),
       };
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, values, {

@@ -9,7 +9,7 @@ export function createCpuUtilizationPrestyled(options = {}) {
     type: "cpu-utilization-prestyled",
     widgetId: "cpu-utilization-prestyled",
     createPlain: createPlainCpuUtilization,
-    plainOptions: { ...options, format: "{value}%" },
+    plainOptions: { ...options, format: "{value}%", digitLimit: options.digitLimit ?? 5 },
     label: options.label ?? "CPU",
     icon: iconAsset("wave-pulse-svgrepo-com.svg"),
     iconFrame: iconFrameAsset("flower.svg"),

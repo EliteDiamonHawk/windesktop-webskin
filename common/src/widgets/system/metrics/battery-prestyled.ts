@@ -7,7 +7,7 @@ export function createBatteryPrestyled(options = {}) {
     type: "battery-prestyled",
     widgetId: "battery-prestyled",
     createPlain: createPlainBattery,
-    plainOptions: { ...options, format: "{value}%" },
+    plainOptions: { ...options, format: "{value}%", digitLimit: options.digitLimit ?? 5 },
     label: options.label ?? "Battery",
     icon: iconAsset("battery-bolt-svgrepo-com.svg"),
     iconFrame: iconFrameAsset("puffy.svg"),

@@ -20,6 +20,7 @@ const TOKEN_FIELDS = {
 
 export function createMemory(options = {}) {
   const format = resolveFormat(options.format, DEFAULT_FORMAT, TOKENS, "memory");
+  const digitLimit = options.digitLimit;
   return createSystemWidget({
     ...options,
     fields: fieldsForFormat(format, TOKEN_FIELDS),
@@ -27,10 +28,10 @@ export function createMemory(options = {}) {
     build: (root) => root.append(createPart("content", "", "div")),
     render: (root, snapshot, { phase }) => {
       const memory = snapshot?.memory?.virtual;
-      const total = formatBytes(memory?.total_bytes, phase);
-      const available = formatBytes(memory?.available_bytes, phase);
-      const used = formatBytes(memory?.used_bytes, phase);
-      const free = formatBytes(memory?.free_bytes, phase);
+      const total = formatBytes(memory?.total_bytes, phase, digitLimit);
+      const available = formatBytes(memory?.available_bytes, phase, digitLimit);
+      const used = formatBytes(memory?.used_bytes, phase, digitLimit);
+      const free = formatBytes(memory?.free_bytes, phase, digitLimit);
       renderTokenFormat(root.querySelector('[data-webskin-system-part="content"]'), format, {
         total: total.value,
         "total-unit": total.unit,
@@ -42,8 +43,8 @@ export function createMemory(options = {}) {
         "used-unit": used.unit,
         free: free.value,
         "free-unit": free.unit,
-        usage: formatNumber(memory?.percent, phase),
-        percent: formatNumber(memory?.percent, phase),
+        usage: formatNumber(memory?.percent, phase, 1, digitLimit),
+        percent: formatNumber(memory?.percent, phase, 1, digitLimit),
       }, { fallback: phase === "initial" ? "-" : "n/a" });
     },
   });

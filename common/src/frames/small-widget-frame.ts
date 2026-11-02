@@ -25,10 +25,12 @@ const ensureStyles = () => {
       --webskin-small-widget-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       --webskin-small-widget-width: 11rem;
       --webskin-small-widget-padding: .9rem;
+      --webskin-small-widget-content-left: 10.6534cqw;
+      --webskin-small-widget-icon-right: 10.6534cqw;
       --webskin-small-widget-icon-top: 10.9375%;
       --webskin-small-widget-content-top: 55.46875%;
       --webskin-small-widget-content-bottom: 14.84375%;
-      --webskin-small-widget-content-gap: 4.26136cqw;
+      --webskin-small-widget-content-gap: 0cqw;
       aspect-ratio: 11 / 10;
       background: var(--webskin-small-widget-background);
       border: 1px solid var(--webskin-small-widget-border);
@@ -49,7 +51,7 @@ const ensureStyles = () => {
     .webskin-frame--small-widget [data-webskin-frame-part="icon-area"] {
       aspect-ratio: 1;
       position: absolute;
-      right: var(--webskin-small-widget-padding);
+      right: var(--webskin-small-widget-icon-right);
       top: var(--webskin-small-widget-icon-top);
       width: 27%;
     }
@@ -93,15 +95,15 @@ const ensureStyles = () => {
       display: flex;
       flex-direction: column;
       gap: var(--webskin-small-widget-content-gap);
-      left: var(--webskin-small-widget-padding);
+      left: var(--webskin-small-widget-content-left);
       max-width: calc(100% - (var(--webskin-small-widget-padding) * 2));
       position: absolute;
       right: var(--webskin-small-widget-padding);
-      top: var(--webskin-small-widget-content-top);
     }
 
     .webskin-frame--small-widget [data-webskin-frame-part="value"],
     .webskin-frame--small-widget [data-webskin-frame-part="subtext"] {
+      flex-shrink: 0;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -110,14 +112,14 @@ const ensureStyles = () => {
 
     .webskin-frame--small-widget [data-webskin-frame-part="value"] {
       color: var(--webskin-small-widget-color);
-      font-size: 13.5cqw;
+      font-size: 20cqw;
       font-weight: 700;
       line-height: 1;
     }
 
     .webskin-frame--small-widget [data-webskin-frame-part="subtext"] {
       color: var(--webskin-small-widget-subtext-color);
-      font-size: 9.25cqw;
+      font-size: 12cqw;
       line-height: 1;
       opacity: .72;
     }

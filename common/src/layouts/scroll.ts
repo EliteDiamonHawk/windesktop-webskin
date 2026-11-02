@@ -1,7 +1,8 @@
-import type { LayoutDescriptor, LayoutInput, LayoutResult } from "./types.js";
-import { childGeometry, createDescriptor, validateInput } from "./internal/geometry.js";
+import type { LayoutDomOptions, LayoutInput, LayoutResult, LayoutWrapper } from "./types.js";
+import { childGeometry, validateInput } from "./internal/geometry.js";
+import { createLayoutWrapper } from "./wrapper.js";
 
-export type ScrollOptions = {
+export type ScrollOptions = LayoutDomOptions & {
   direction?: "horizontal" | "vertical" | "both";
   scrollbar?: "auto" | "scroll" | "hidden";
   clip?: boolean;
@@ -9,38 +10,32 @@ export type ScrollOptions = {
   initialScrollTop?: number;
 };
 
-export type ScrollDescriptor = LayoutDescriptor & {
+export type ScrollDescriptor = LayoutWrapper & {
   createElement: () => HTMLDivElement;
-  apply: (element: HTMLElement) => void;
 };
 
 const overflowValue = (scrollbar: ScrollOptions["scrollbar"]) => scrollbar ?? "auto";
 
 export function createScroll(options: ScrollOptions = {}): ScrollDescriptor {
   const direction = options.direction ?? "vertical";
-  const descriptor: ScrollDescriptor = {
-    type: "scroll",
-    calculate: (input: LayoutInput): LayoutResult => {
+  const wrapper = createLayoutWrapper("scroll", options, (input: LayoutInput): LayoutResult => {
       validateInput(input);
       return Object.fromEntries(input.children.map((child) => [child.id, childGeometry(child)]));
-    },
-    apply: (element) => {
-    const scrollbar = overflowValue(options.scrollbar);
-    element.style.overflowX = direction === "vertical" ? "hidden" : scrollbar;
-    element.style.overflowY = direction === "horizontal" ? "hidden" : scrollbar;
-    if (options.clip !== false) element.style.clipPath = "inset(0)";
-    else element.style.removeProperty("clip-path");
-    if (options.initialScrollLeft !== undefined) element.scrollLeft = options.initialScrollLeft;
-    if (options.initialScrollTop !== undefined) element.scrollTop = options.initialScrollTop;
-    },
-    createElement: () => {
-      if (typeof document === "undefined") throw new Error("Scroll elements require a document");
-      const element = document.createElement("div");
-      element.dataset.webskinLayout = "scroll";
-      descriptor.apply(element);
-      return element;
-    },
-  };
-  return descriptor;
+    }, {
+      container: () => {
+        const scrollbar = overflowValue(options.scrollbar);
+        return {
+          overflowX: direction === "vertical" ? "hidden" : scrollbar,
+          overflowY: direction === "horizontal" ? "hidden" : scrollbar,
+          clipPath: options.clip === false ? undefined : "inset(0)",
+        };
+      },
+      onApply: (element) => {
+        if (options.initialScrollLeft !== undefined) element.scrollLeft = options.initialScrollLeft;
+        if (options.initialScrollTop !== undefined) element.scrollTop = options.initialScrollTop;
+      },
+    }) as ScrollDescriptor;
+  wrapper.createElement = () => wrapper.element;
+  return wrapper;
 }
 

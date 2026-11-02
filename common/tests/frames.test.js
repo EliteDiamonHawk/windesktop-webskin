@@ -54,6 +54,13 @@ test("creates 11:10 frame with optional parts and current greyscale defaults", (
   assert.equal(frame.parts.iconFrame.children.length, 0);
   assert.equal(frame.parts.actions.children.length, 0);
   assert.match(document.head.children[0].textContent, /aspect-ratio: 11 \/ 10/);
+  assert.match(document.head.children[0].textContent, /--webskin-small-widget-icon-top: 10\.9375%/);
+  assert.match(document.head.children[0].textContent, /width: 27%/);
+  assert.match(document.head.children[0].textContent, /--webskin-small-widget-content-top: 55\.46875%/);
+  assert.match(document.head.children[0].textContent, /--webskin-small-widget-content-bottom: 14\.84375%/);
+  assert.match(document.head.children[0].textContent, /--webskin-small-widget-content-gap: 4\.26136cqw/);
+  assert.match(document.head.children[0].textContent, /font-size: 13\.5cqw/);
+  assert.match(document.head.children[0].textContent, /font-size: 9\.25cqw/);
   assert.match(document.head.children[0].textContent, /#2e2e2e/);
   assert.match(document.head.children[0].textContent, /#d6d6d6/);
 });

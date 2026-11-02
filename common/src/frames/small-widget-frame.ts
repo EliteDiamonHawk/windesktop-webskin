@@ -25,6 +25,10 @@ const ensureStyles = () => {
       --webskin-small-widget-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
       --webskin-small-widget-width: 11rem;
       --webskin-small-widget-padding: .9rem;
+      --webskin-small-widget-icon-top: 10.9375%;
+      --webskin-small-widget-content-top: 55.46875%;
+      --webskin-small-widget-content-bottom: 14.84375%;
+      --webskin-small-widget-content-gap: 4.26136cqw;
       aspect-ratio: 11 / 10;
       background: var(--webskin-small-widget-background);
       border: 1px solid var(--webskin-small-widget-border);
@@ -46,8 +50,8 @@ const ensureStyles = () => {
       aspect-ratio: 1;
       position: absolute;
       right: var(--webskin-small-widget-padding);
-      top: var(--webskin-small-widget-padding);
-      width: 30%;
+      top: var(--webskin-small-widget-icon-top);
+      width: 27%;
     }
 
     .webskin-frame--small-widget [data-webskin-frame-part="icon"],
@@ -85,14 +89,15 @@ const ensureStyles = () => {
     }
 
     .webskin-frame--small-widget [data-webskin-frame-part="content"] {
-      bottom: var(--webskin-small-widget-padding);
+      bottom: var(--webskin-small-widget-content-bottom);
       display: flex;
       flex-direction: column;
-      gap: .12rem;
+      gap: var(--webskin-small-widget-content-gap);
       left: var(--webskin-small-widget-padding);
       max-width: calc(100% - (var(--webskin-small-widget-padding) * 2));
       position: absolute;
       right: var(--webskin-small-widget-padding);
+      top: var(--webskin-small-widget-content-top);
     }
 
     .webskin-frame--small-widget [data-webskin-frame-part="value"],
@@ -105,15 +110,15 @@ const ensureStyles = () => {
 
     .webskin-frame--small-widget [data-webskin-frame-part="value"] {
       color: var(--webskin-small-widget-color);
-      font-size: clamp(1.25rem, 15cqw, 2.2rem);
+      font-size: 13.5cqw;
       font-weight: 700;
       line-height: 1;
     }
 
     .webskin-frame--small-widget [data-webskin-frame-part="subtext"] {
       color: var(--webskin-small-widget-subtext-color);
-      font-size: clamp(.8rem, 8cqw, 1.2rem);
-      line-height: 1.1;
+      font-size: 9.25cqw;
+      line-height: 1;
       opacity: .72;
     }
 

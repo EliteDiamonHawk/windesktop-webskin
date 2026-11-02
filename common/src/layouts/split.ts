@@ -1,12 +1,13 @@
-import type { Axis, LayoutDescriptor, LayoutInput, LayoutResult, Padding } from "./types.js";
+import type { Axis, LayoutDomOptions, LayoutInput, LayoutResult, LayoutWrapper, Padding } from "./types.js";
 import {
-  createDescriptor,
   innerBounds,
   normalizePadding,
   nonNegative,
   setResult,
   validateInput,
 } from "./internal/geometry.js";
+import { childSizeStyles, paddingStyles, px } from "./internal/css.js";
+import { createLayoutWrapper } from "./wrapper.js";
 
 export type SplitRegion = {
   id?: string;
@@ -14,7 +15,7 @@ export type SplitRegion = {
   ratio?: number;
 };
 
-export type SplitOptions = {
+export type SplitOptions = LayoutDomOptions & {
   direction?: Axis;
   regions?: readonly SplitRegion[];
   gap?: number;
@@ -45,7 +46,23 @@ const calculate = (input: LayoutInput, options: SplitOptions): LayoutResult => {
   return result;
 };
 
-export function createSplit(options: SplitOptions = {}): LayoutDescriptor {
-  return createDescriptor("split", (input) => calculate(input, options));
+export function createSplit(options: SplitOptions = {}): LayoutWrapper {
+  return createLayoutWrapper("split", options, (input) => calculate(input, options), {
+    container: (layoutOptions) => ({
+      display: "flex",
+      flexDirection: layoutOptions.direction === "vertical" ? "column" : "row",
+      gap: px(layoutOptions.gap ?? 0),
+      ...paddingStyles(layoutOptions.padding),
+    }),
+    child: (childOptions, index) => {
+      const region = options.regions?.[index] ?? { ratio: 1 };
+      const basis = region.size === undefined ? "0%" : `${region.size}px`;
+      const grow = region.size === undefined ? Math.max(0, region.ratio ?? 0) : 0;
+      return {
+        ...childSizeStyles(childOptions),
+        flex: `${grow} 1 ${basis}`,
+      };
+    },
+  });
 }
 

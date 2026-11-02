@@ -1,13 +1,15 @@
-import type { LayoutDescriptor, LayoutInput, LayoutResult, Padding } from "./types.js";
-import { alignOffset, constrainedSize, createDescriptor, innerBounds, normalizePadding, setResult, validateInput } from "./internal/geometry.js";
+import type { LayoutDomOptions, LayoutInput, LayoutResult, LayoutWrapper, Padding } from "./types.js";
+import { alignOffset, constrainedSize, innerBounds, normalizePadding, setResult, validateInput } from "./internal/geometry.js";
+import { absoluteBaseStyles, paddingStyles, px } from "./internal/css.js";
+import { createLayoutWrapper } from "./wrapper.js";
 
-export type CenterOptions = {
+export type CenterOptions = LayoutDomOptions & {
   axis?: "horizontal" | "vertical" | "both";
   padding?: Padding;
 };
 
-export function createCenter(options: CenterOptions = {}): LayoutDescriptor {
-  return createDescriptor("center", (input: LayoutInput): LayoutResult => {
+export function createCenter(options: CenterOptions = {}): LayoutWrapper {
+  return createLayoutWrapper("center", options, (input: LayoutInput): LayoutResult => {
     validateInput(input);
     const bounds = innerBounds(input, normalizePadding(options.padding));
     const axis = options.axis ?? "both";
@@ -19,6 +21,16 @@ export function createCenter(options: CenterOptions = {}): LayoutDescriptor {
       setResult(result, child, { x: centerX, y: centerY, width: size.width, height: size.height, zIndex: child.zIndex });
     }
     return result;
+  }, {
+    container: (layoutOptions) => ({
+      position: "relative",
+      ...paddingStyles(layoutOptions.padding),
+    }),
+    child: (childOptions) => ({
+      ...absoluteBaseStyles(childOptions),
+      left: childOptions.offsetX === undefined ? undefined : px(childOptions.offsetX),
+      top: childOptions.offsetY === undefined ? undefined : px(childOptions.offsetY),
+    }),
   });
 }
 

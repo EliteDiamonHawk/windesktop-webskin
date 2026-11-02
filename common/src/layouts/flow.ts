@@ -1,7 +1,7 @@
-import type { Alignment, Axis, Distribution, LayoutDescriptor, Padding } from "./types.js";
+import type { Alignment, Axis, Distribution, LayoutDomOptions, Padding, LayoutWrapper } from "./types.js";
 import { createLinearDescriptor } from "./internal/linear.js";
 
-export type FlowOptions = {
+export type FlowOptions = LayoutDomOptions & {
   direction?: Axis;
   gap?: number;
   distribution?: Distribution;
@@ -10,7 +10,7 @@ export type FlowOptions = {
   maxLineSize?: number;
 };
 
-export function createFlow(options: FlowOptions = {}): LayoutDescriptor {
+export function createFlow(options: FlowOptions = {}): LayoutWrapper {
   const direction = options.direction ?? "horizontal";
   const maxLineSize = options.maxLineSize;
   return createLinearDescriptor("flow", {

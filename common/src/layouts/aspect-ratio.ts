@@ -1,7 +1,9 @@
-import type { LayoutDescriptor, LayoutInput, LayoutResult, Padding } from "./types.js";
-import { alignOffset, constrainedSize, createDescriptor, innerBounds, normalizePadding, positive, setResult, validateInput } from "./internal/geometry.js";
+import type { LayoutDomOptions, LayoutInput, LayoutResult, LayoutWrapper, Padding } from "./types.js";
+import { alignOffset, constrainedSize, innerBounds, normalizePadding, positive, setResult, validateInput } from "./internal/geometry.js";
+import { absoluteBaseStyles, paddingStyles, px } from "./internal/css.js";
+import { createLayoutWrapper } from "./wrapper.js";
 
-export type AspectRatioOptions = {
+export type AspectRatioOptions = LayoutDomOptions & {
   ratio: number;
   fit?: "contain" | "cover" | "width" | "height" | "manual";
   padding?: Padding;
@@ -9,9 +11,9 @@ export type AspectRatioOptions = {
   verticalAlign?: "start" | "center" | "end";
 };
 
-export function createAspectRatio(options: AspectRatioOptions): LayoutDescriptor {
+export function createAspectRatio(options: AspectRatioOptions): LayoutWrapper {
   positive(options.ratio, "ratio");
-  return createDescriptor("aspect-ratio", (input: LayoutInput): LayoutResult => {
+  return createLayoutWrapper("aspect-ratio", options, (input: LayoutInput): LayoutResult => {
     validateInput(input);
     const bounds = innerBounds(input, normalizePadding(options.padding));
     const result: LayoutResult = {};
@@ -46,6 +48,27 @@ export function createAspectRatio(options: AspectRatioOptions): LayoutDescriptor
       });
     }
     return result;
+  }, {
+    container: (layoutOptions) => ({
+      position: "relative",
+      ...paddingStyles(layoutOptions.padding),
+    }),
+    child: (childOptions) => {
+      const fit = options.fit ?? "contain";
+      const alignment = `${options.horizontalAlign ?? "center"} ${options.verticalAlign ?? "center"}`;
+      return {
+        ...absoluteBaseStyles(childOptions),
+        aspectRatio: String(options.ratio),
+        inset: alignment === "center center" ? "0" : undefined,
+        margin: alignment === "center center" ? "auto" : undefined,
+        width: fit === "height" ? "auto" : fit === "cover" ? "100%" : px(childOptions.width) ?? "100%",
+        height: fit === "width" ? "auto" : fit === "cover" ? "100%" : px(childOptions.height) ?? "auto",
+        maxWidth: fit === "cover" ? undefined : "100%",
+        maxHeight: fit === "cover" ? undefined : "100%",
+        justifySelf: options.horizontalAlign === "end" ? "end" : options.horizontalAlign === "start" ? "start" : "center",
+        alignSelf: options.verticalAlign === "end" ? "end" : options.verticalAlign === "start" ? "start" : "center",
+      };
+    },
   });
 }
 

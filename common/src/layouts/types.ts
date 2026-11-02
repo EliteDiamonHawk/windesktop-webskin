@@ -85,6 +85,15 @@ export type LayoutChild = {
   children?: readonly LayoutChild[];
 };
 
+export type LayoutRenderable = HTMLElement | { element: HTMLElement };
+
+export type LayoutChildOptions = Omit<LayoutChild, "id" | "width" | "height"> & Partial<Pick<LayoutChild, "width" | "height">>;
+
+export type LayoutDomOptions = {
+  element?: HTMLDivElement;
+  className?: string;
+};
+
 export type LayoutInput = Size & {
   children: readonly LayoutChild[];
 };
@@ -94,6 +103,27 @@ export type LayoutResult = Record<string, Geometry>;
 export type LayoutDescriptor = {
   readonly type: string;
   calculate(input: LayoutInput): LayoutResult;
+};
+
+export type LayoutStyleMap = Record<string, string | number | undefined | null>;
+
+export type LayoutStyleProvider = {
+  getContainerStyles(): LayoutStyleMap;
+  getChildStyles(options: LayoutChildOptions, index: number, id: string): LayoutStyleMap;
+};
+
+export type LayoutWrapper = LayoutDescriptor & LayoutStyleProvider & {
+  readonly element: HTMLDivElement;
+  mount(parent: Node): this;
+  add(id: string, child: LayoutRenderable, options?: LayoutChildOptions): HTMLElement;
+  setChildOptions(id: string, options: LayoutChildOptions): this;
+  getChildOptions(id: string): LayoutChildOptions | undefined;
+  remove(id: string): boolean;
+  get(id: string): HTMLElement | undefined;
+  children(): Map<string, HTMLElement>;
+  apply(): this;
+  applyGeometry(result: LayoutResult): this;
+  dispose(): void;
 };
 
 export type SpacerSpec = Pick<LayoutChild, "flex" | "minWidth" | "maxWidth" | "minHeight" | "maxHeight"> & {

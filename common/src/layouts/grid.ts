@@ -1,8 +1,7 @@
-import type { Alignment, LayoutChild, LayoutDescriptor, LayoutInput, LayoutResult, Padding } from "./types.js";
+import type { Alignment, LayoutChild, LayoutDomOptions, LayoutInput, LayoutResult, LayoutWrapper, Padding } from "./types.js";
 import {
   alignOffset,
   constrainedSize,
-  createDescriptor,
   innerBounds,
   integer,
   normalizePadding,
@@ -10,8 +9,10 @@ import {
   setResult,
   validateInput,
 } from "./internal/geometry.js";
+import { childSizeStyles, paddingStyles, px } from "./internal/css.js";
+import { createLayoutWrapper } from "./wrapper.js";
 
-export type GridOptions = {
+export type GridOptions = LayoutDomOptions & {
   columns?: number;
   rows?: number;
   cellWidth?: number;
@@ -119,7 +120,27 @@ const calculate = (input: LayoutInput, options: GridOptions): LayoutResult => {
   return result;
 };
 
-export function createGrid(options: GridOptions = {}): LayoutDescriptor {
-  return createDescriptor("grid", (input) => calculate(input, options));
+export function createGrid(options: GridOptions = {}): LayoutWrapper {
+  return createLayoutWrapper("grid", options, (input) => calculate(input, options), {
+    container: (layoutOptions) => ({
+      display: "grid",
+      gridTemplateColumns: layoutOptions.columns
+        ? `repeat(${layoutOptions.columns}, minmax(0, 1fr))`
+        : layoutOptions.cellWidth === undefined ? undefined : `repeat(auto-fit, minmax(${layoutOptions.cellWidth}px, 1fr))`,
+      gridTemplateRows: layoutOptions.rows ? `repeat(${layoutOptions.rows}, minmax(0, 1fr))` : undefined,
+      gridAutoColumns: layoutOptions.cellSizing === "natural" ? "max-content" : undefined,
+      gridAutoRows: layoutOptions.cellSizing === "natural" ? "max-content" : undefined,
+      columnGap: px(layoutOptions.columnGap ?? layoutOptions.gap ?? 0),
+      rowGap: px(layoutOptions.rowGap ?? layoutOptions.gap ?? 0),
+      justifyItems: layoutOptions.horizontalAlign === "center" ? "center" : layoutOptions.horizontalAlign === "end" ? "end" : "stretch",
+      alignItems: layoutOptions.verticalAlign === "center" ? "center" : layoutOptions.verticalAlign === "end" ? "end" : "stretch",
+      ...paddingStyles(layoutOptions.padding),
+    }),
+    child: (childOptions) => ({
+      ...childSizeStyles(childOptions),
+      gridRow: childOptions.gridRow === undefined ? undefined : `${childOptions.gridRow} / span ${childOptions.rowSpan ?? 1}`,
+      gridColumn: childOptions.gridColumn === undefined ? undefined : `${childOptions.gridColumn} / span ${childOptions.columnSpan ?? 1}`,
+    }),
+  });
 }
 

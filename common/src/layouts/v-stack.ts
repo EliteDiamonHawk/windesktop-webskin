@@ -1,7 +1,7 @@
-import type { Alignment, Distribution, Padding, LayoutDescriptor } from "./types.js";
+import type { Alignment, Distribution, Padding, LayoutDomOptions, LayoutWrapper } from "./types.js";
 import { createLinearDescriptor } from "./internal/linear.js";
 
-export type VStackOptions = {
+export type VStackOptions = LayoutDomOptions & {
   gap?: number;
   distribution?: Distribution;
   align?: Alignment;
@@ -10,7 +10,7 @@ export type VStackOptions = {
   childSizing?: "natural" | "stretch";
 };
 
-export function createVStack(options: VStackOptions = {}): LayoutDescriptor {
+export function createVStack(options: VStackOptions = {}): LayoutWrapper {
   return createLinearDescriptor("v-stack", { axis: "vertical", ...options });
 }
 

@@ -1,5 +1,5 @@
 export * from "./types.js";
-export * from "./static-image-composition.js";
+export * from "./wrapper.js";
 export * from "./h-stack.js";
 export * from "./v-stack.js";
 export * from "./z-stack.js";

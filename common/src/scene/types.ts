@@ -10,6 +10,12 @@ export type GeometryEntry = {
 
 export type SceneRenderable = HTMLElement | { element: HTMLElement };
 
+export type SceneWrapper = {
+  readonly element: HTMLDivElement;
+  mount(parent: Node): this;
+  dispose(): void;
+};
+
 export type LayerOptions = {
   element?: HTMLDivElement;
   className?: string;

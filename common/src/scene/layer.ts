@@ -31,6 +31,14 @@ export class Layer {
     return element;
   }
 
+  mount(parent: Node) {
+    if (!parent || typeof (parent as Node & { append?: unknown }).append !== "function") {
+      throw new TypeError("layer parent must support append");
+    }
+    parent.append(this.element);
+    return this;
+  }
+
   remove(id: string) {
     const element = this.#children.get(id);
     if (!element) return false;
@@ -67,6 +75,10 @@ export class Layer {
     if (zIndex === undefined) this.element.style.removeProperty("z-index");
     else this.element.style.zIndex = String(zIndex);
     return this;
+  }
+
+  dispose() {
+    this.#children.clear();
   }
 }
 

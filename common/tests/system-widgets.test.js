@@ -202,16 +202,81 @@ test("renders single-value cards with icon and shape assets", async () => {
   assert.equal(liveContent.dataset.webskinSystemPart, "content");
   assert.equal(
     cpu.parts.icon.children[0].style.getPropertyValue("mask-image"),
-    'url("/assets/icons/wave-pulse-svgrepo-com.svg")',
+    'url("/common/assets/icons/wave-pulse-svgrepo-com.svg")',
   );
   assert.equal(
     cpu.parts.iconFrame.children[0].style.getPropertyValue("mask-image"),
-    'url("/assets/shapes/flower.svg")',
+    'url("/common/assets/shapes/flower.svg")',
   );
   await waitForPoll();
   assert.equal(cpu.dataset.webskinSystemState, "ready");
   assert.equal(cpu.parts.value.children[0], liveContent);
   assert.equal(textOf(cpu.parts.value), "12.5%");
+  assert.equal(cpu.parts.subtext.textContent, "CPU");
+});
+
+test("moves long prestyled units into subtext and fixes GPU degree units", async () => {
+  const originalNow = Date.now;
+  let now = 1000;
+  Date.now = () => now;
+  responseSnapshot = {
+    ...snapshot,
+    network: { ...snapshot.network, bytes_sent: 1024, bytes_received: 2048 },
+  };
+  const network = widgets.createNetworkPrestyled({ updateInterval: 22 });
+  created.push(network);
+
+  try {
+    await waitForPoll();
+    responseSnapshot = {
+      ...snapshot,
+      network: { ...snapshot.network, bytes_sent: 2048, bytes_received: 4096 },
+    };
+    now = 2000;
+    timers[0]?.();
+    await waitForPoll();
+    assert.equal(textOf(network.parts.value), "2");
+    assert.equal(network.parts.subtext.textContent, "Download KiB/s");
+
+    const frequency = widgets.createCpuFrequencyPrestyled({ updateInterval: 21 });
+    const swap = widgets.createSwapMemoryPrestyled({ metric: "used", updateInterval: 23 });
+    const gpu = widgets.createGpuTemperaturePrestyled({ updateInterval: 24 });
+    created.push(frequency, swap, gpu);
+    await waitForPoll();
+    assert.equal(textOf(frequency.parts.value), "2,400");
+    assert.equal(frequency.parts.subtext.textContent, "CPU MHz");
+    assert.equal(textOf(swap.parts.value), "1");
+    assert.equal(swap.parts.subtext.textContent, "Swap KiB");
+    assert.equal(textOf(gpu.parts.value), "47.5 °C");
+    assert.equal(gpu.parts.subtext.textContent, "GPU");
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("keeps short units inline until six digits and caps unitless values at nine digits", async () => {
+  const originalNow = Date.now;
+  Date.now = () => 1_700_000_000_000 + 7_654_321_000;
+  responseSnapshot = {
+    ...snapshot,
+    cpu: {
+      ...snapshot.cpu,
+      load_average: { ...snapshot.cpu.load_average, one_minute: 1234567890 },
+    },
+  };
+  const uptime = widgets.createLastBootPrestyled({ updateInterval: 25 });
+  const load = widgets.createCpuLoadAveragePrestyled({ updateInterval: 26 });
+  created.push(uptime, load);
+
+  try {
+    await waitForPoll();
+    assert.equal(textOf(uptime.parts.value), "7,654,321");
+    assert.equal(uptime.parts.subtext.textContent, "Uptime s");
+    assert.equal(textOf(load.parts.value), "123456789");
+    assert.equal(load.parts.subtext.textContent, "Load");
+  } finally {
+    Date.now = originalNow;
+  }
 });
 
 test("prestylized last-boot wraps plain lifecycle and destroys it", async () => {
@@ -229,6 +294,7 @@ test("prestylized last-boot wraps plain lifecycle and destroys it", async () => 
     boot.subscribeBootTime();
     await waitForPoll();
     assert.equal(textOf(boot.parts.value), "1,234 s");
+    assert.equal(boot.parts.subtext.textContent, "Uptime");
 
     boot.destroy();
     assert.equal(typeof boot.destroy, "function");

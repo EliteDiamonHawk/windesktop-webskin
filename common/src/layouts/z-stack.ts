@@ -1,16 +1,17 @@
-import type { Alignment, LayoutDescriptor, LayoutInput, LayoutResult, Padding } from "./types.js";
+import type { Alignment, LayoutDomOptions, LayoutInput, LayoutResult, LayoutWrapper, Padding } from "./types.js";
 import {
   alignOffset,
   constrainedSize,
-  createDescriptor,
   innerBounds,
   normalizePadding,
   nonNegative,
   setResult,
   validateInput,
 } from "./internal/geometry.js";
+import { absoluteBaseStyles, paddingStyles, px } from "./internal/css.js";
+import { createLayoutWrapper } from "./wrapper.js";
 
-export type ZStackOptions = {
+export type ZStackOptions = LayoutDomOptions & {
   horizontalAlign?: "start" | "center" | "end" | "stretch";
   verticalAlign?: "start" | "center" | "end" | "stretch";
   padding?: Padding;
@@ -44,7 +45,29 @@ const calculate = (input: LayoutInput, options: ZStackOptions): LayoutResult => 
   return result;
 };
 
-export function createZStack(options: ZStackOptions = {}): LayoutDescriptor {
-  return createDescriptor("z-stack", (input) => calculate(input, options));
+export function createZStack(options: ZStackOptions = {}): LayoutWrapper {
+  return createLayoutWrapper("z-stack", options, (input) => calculate(input, options), {
+    container: (layoutOptions) => ({
+      position: "relative",
+      ...paddingStyles(layoutOptions.padding),
+    }),
+    child: (childOptions) => {
+      const horizontal = options.horizontalAlign ?? "center";
+      const vertical = options.verticalAlign ?? "center";
+      const stretch = options.sizing === "stretch" || horizontal === "stretch" || vertical === "stretch";
+      const transformX = horizontal === "center" ? "-50%" : horizontal === "end" ? "-100%" : "0";
+      const transformY = vertical === "center" ? "-50%" : vertical === "end" ? "-100%" : "0";
+      return {
+        ...absoluteBaseStyles(childOptions),
+        left: stretch || horizontal === "start" ? px(childOptions.offsetX ?? 0) : "50%",
+        top: stretch || vertical === "start" ? px(childOptions.offsetY ?? 0) : "50%",
+        right: stretch && horizontal !== "start" ? px(0) : undefined,
+        bottom: stretch && vertical !== "start" ? px(0) : undefined,
+        width: stretch ? "auto" : px(childOptions.width),
+        height: stretch ? "auto" : px(childOptions.height),
+        transform: `translate(${transformX}, ${transformY}) translate(${px(childOptions.offsetX ?? 0) ?? "0px"}, ${px(childOptions.offsetY ?? 0) ?? "0px"})`,
+      };
+    },
+  });
 }
 

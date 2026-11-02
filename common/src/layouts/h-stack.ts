@@ -1,7 +1,7 @@
-import type { Alignment, Distribution, Padding, LayoutDescriptor } from "./types.js";
+import type { Alignment, Distribution, Padding, LayoutDomOptions, LayoutWrapper } from "./types.js";
 import { createLinearDescriptor } from "./internal/linear.js";
 
-export type HStackOptions = {
+export type HStackOptions = LayoutDomOptions & {
   gap?: number;
   distribution?: Distribution;
   align?: Alignment;
@@ -10,7 +10,7 @@ export type HStackOptions = {
   childSizing?: "natural" | "stretch";
 };
 
-export function createHStack(options: HStackOptions = {}): LayoutDescriptor {
+export function createHStack(options: HStackOptions = {}): LayoutWrapper {
   return createLinearDescriptor("h-stack", { axis: "horizontal", ...options });
 }
 

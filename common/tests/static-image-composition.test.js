@@ -99,7 +99,7 @@ const installDom = async () => {
   globalThis.document = {
     createElement: (tagName) => tagName === "canvas" ? new FakeCanvas() : new FakeElement(tagName),
   };
-  moduleValue = await import("../src/layouts/static-image-composition.js?static-image-test");
+  moduleValue = await import("../src/compositions/static-image-composition.js?static-image-test");
 };
 
 const reset = () => {

@@ -62,7 +62,7 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  themes:
+  dev/themes:
     devDependencies:
       '@types/node':
         specifier: ^22.15.0

@@ -3,16 +3,54 @@ import test from "node:test";
 
 import { createAspectRatio } from "../src/layouts/aspect-ratio.js";
 import { createCanvas } from "../src/layouts/canvas.js";
+import { createCenter } from "../src/layouts/center.js";
 import { createDock } from "../src/layouts/dock.js";
 import { createFlow } from "../src/layouts/flow.js";
 import { createGrid } from "../src/layouts/grid.js";
 import { createHStack } from "../src/layouts/h-stack.js";
 import { createOverlay } from "../src/layouts/overlay.js";
 import { createResponsive } from "../src/layouts/responsive.js";
+import { createScroll } from "../src/layouts/scroll.js";
 import { createSplit } from "../src/layouts/split.js";
 import { createVStack } from "../src/layouts/v-stack.js";
+import { createZStack } from "../src/layouts/z-stack.js";
 
 const child = (id, width, height, extra = {}) => ({ id, width, height, ...extra });
+
+class FakeStyle {
+  constructor() { this.values = {}; }
+  setProperty(name, value) { this.values[name] = String(value); this[name] = String(value); }
+  removeProperty(name) { delete this.values[name]; delete this[name]; }
+}
+
+class FakeElement {
+  constructor(tagName) {
+    this.tagName = tagName;
+    this.dataset = {};
+    this.style = new FakeStyle();
+    this.children = [];
+    this.parentNode = null;
+    this.textContent = "";
+  }
+
+  append(...children) {
+    for (const child of children) {
+      child.parentNode = this;
+      this.children.push(child);
+    }
+  }
+
+  remove() {
+    this.parentNode?.children.splice(this.parentNode.children.indexOf(this), 1);
+    this.parentNode = null;
+  }
+}
+
+globalThis.document = {
+  head: new FakeElement("head"),
+  documentElement: new FakeElement("html"),
+  createElement: (tagName) => new FakeElement(tagName),
+};
 
 test("stacks distribute spacer space and honor padding", () => {
   const result = createHStack({ gap: 5, padding: 2 }).calculate({
@@ -137,5 +175,78 @@ test("layout input rejects duplicate ids and invalid geometry", () => {
     () => createCanvas().calculate({ width: 10, height: 10, children: [child("a", 1, 1, { position: { x: 1, right: 1 } })] }),
     /conflicting horizontal anchors/,
   );
+});
+
+test("layout wrappers apply CSS, manage children, and support explicit geometry", () => {
+  const wrapper = createHStack({ gap: 4, padding: 2, className: "theme-row" });
+  const parent = new FakeElement("main");
+  const first = new FakeElement("div");
+  const second = new FakeElement("div");
+
+  wrapper.mount(parent).add("first", first, { width: 20, height: 10 });
+  wrapper.add("second", second, { spacer: true });
+
+  assert.equal(wrapper.element.dataset.webskinLayout, "h-stack");
+  assert.equal(wrapper.element.className, "theme-row");
+  assert.equal(wrapper.element.style.display, "flex");
+  assert.equal(wrapper.element.style.flexDirection, "row");
+  assert.equal(wrapper.element.style.gap, "4px");
+  assert.equal(first.dataset.webskinLayoutChild, "first");
+  assert.equal(first.style.width, "20px");
+  assert.equal(second.style.flex, "1 1 auto");
+  assert.equal(wrapper.get("first"), first);
+  assert.equal(wrapper.children().size, 2);
+
+  wrapper.applyGeometry({ first: { x: 3, y: 4, width: 20, height: 10 } });
+  assert.equal(first.style.transform, "translate3d(3px, 4px, 0)");
+  wrapper.setChildOptions("first", { width: 30, height: 10 });
+  assert.equal(first.style.width, "30px");
+  assert.equal(wrapper.remove("second"), true);
+  wrapper.dispose();
+  assert.equal(wrapper.children().size, 0);
+  assert.throws(() => wrapper.apply(), /disposed/);
+});
+
+test("responsive wrappers emit scoped container rules", () => {
+  const responsive = createResponsive({
+    rules: [{ when: { minWidth: 800 }, layout: createVStack() }],
+    fallback: createHStack(),
+  });
+  responsive.add("item", new FakeElement("div"));
+
+  const style = [
+    ...(globalThis.document.head?.children ?? []),
+    ...responsive.element.children,
+  ].find((element) => element.tagName === "style");
+  assert.ok(style);
+  assert.match(style.textContent, /@container \(min-width: 800px\)/);
+  assert.match(style.textContent, /flex-direction: column/);
+  const container = responsive.element;
+  responsive.dispose();
+  assert.equal(globalThis.document.head?.children.includes(style) ?? container.children.includes(style), false);
+});
+
+test("every layout factory can attach a DOM child", () => {
+  const wrappers = [
+    createAspectRatio({ ratio: 1 }),
+    createCanvas(),
+    createCenter(),
+    createDock(),
+    createFlow(),
+    createGrid(),
+    createHStack(),
+    createOverlay(),
+    createResponsive({ rules: [], fallback: createHStack() }),
+    createScroll(),
+    createSplit(),
+    createVStack(),
+    createZStack(),
+  ];
+
+  for (const wrapper of wrappers) {
+    wrapper.add("child", new FakeElement("div"), { width: 10, height: 10 });
+    assert.equal(wrapper.element.dataset.webskinLayout.length > 0, true);
+    wrapper.dispose();
+  }
 });
 

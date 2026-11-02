@@ -3,6 +3,7 @@ import type {
   Axis,
   Distribution,
   LayoutChild,
+  LayoutDomOptions,
   LayoutInput,
   LayoutResult,
   Padding,
@@ -10,15 +11,16 @@ import type {
 import {
   alignOffset,
   constrainedSize,
-  createDescriptor,
   innerBounds,
   normalizePadding,
   nonNegative,
   setResult,
   validateInput,
 } from "./geometry.js";
+import { createLayoutWrapper } from "../wrapper.js";
+import { childSizeStyles, flexAlignment, flexChildStyles, justifyContent, paddingStyles, px } from "./css.js";
 
-export type LinearOptions = {
+export type LinearOptions = LayoutDomOptions & {
   axis: Axis;
   gap?: number;
   distribution?: Distribution;
@@ -118,6 +120,25 @@ export const calculateLinear = (input: LayoutInput, options: LinearOptions): Lay
 };
 
 export const createLinearDescriptor = (type: string, options: LinearOptions) => (
-  createDescriptor(type, (input) => calculateLinear(input, options))
+  createLayoutWrapper(type, options, (input) => calculateLinear(input, options), {
+    container: (layoutOptions) => ({
+      display: "flex",
+      flexDirection: layoutOptions.axis === "horizontal" ? "row" : "column",
+      gap: px(layoutOptions.gap ?? 0),
+      flexWrap: layoutOptions.wrap ? "wrap" : "nowrap",
+      alignItems: flexAlignment(layoutOptions.align),
+      justifyContent: justifyContent(layoutOptions.distribution),
+      ...paddingStyles(layoutOptions.padding),
+      ...(layoutOptions.maxLineSize === undefined ? {} : layoutOptions.axis === "horizontal"
+        ? { maxWidth: px(layoutOptions.maxLineSize) }
+        : { maxHeight: px(layoutOptions.maxLineSize) }),
+    }),
+    child: (childOptions) => ({
+      ...flexChildStyles(childOptions),
+      ...(options.childSizing === "stretch" || options.align === "stretch"
+        ? {}
+        : childSizeStyles(childOptions)),
+    }),
+  })
 );
 

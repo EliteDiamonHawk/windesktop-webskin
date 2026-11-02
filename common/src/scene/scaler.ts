@@ -14,6 +14,7 @@ export class Scaler {
   readonly designHeight: number;
   readonly fit: ScalerFit;
   readonly manualScale: number;
+  #resizeObserver?: ResizeObserver;
 
   constructor(options: ScalerOptions) {
     positive(options.designWidth, "designWidth");
@@ -46,6 +47,14 @@ export class Scaler {
     return this;
   }
 
+  mount(parent: Node) {
+    if (!parent || typeof (parent as Node & { append?: unknown }).append !== "function") {
+      throw new TypeError("scaler parent must support append");
+    }
+    parent.append(this.element);
+    return this;
+  }
+
   update(width: number, height: number): ScaleResult {
     nonNegative(width, "viewport.width");
     nonNegative(height, "viewport.height");
@@ -63,6 +72,27 @@ export class Scaler {
     this.element.style.height = `${height}px`;
     this.contentElement.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
     return { scale, x, y, width: scaledWidth, height: scaledHeight };
+  }
+
+  observe() {
+    if (typeof ResizeObserver === "undefined") throw new Error("ResizeObserver is unavailable");
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      this.update(entry.contentRect.width, entry.contentRect.height);
+    });
+    this.#resizeObserver.observe(this.element);
+    return this;
+  }
+
+  unobserve() {
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = undefined;
+    return this;
+  }
+
+  dispose() {
+    this.unobserve();
   }
 }
 

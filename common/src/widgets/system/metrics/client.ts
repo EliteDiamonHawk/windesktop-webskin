@@ -580,6 +580,7 @@ export function createSystemWidget({
   subscribe = systemMetricsManager.subscribe,
   onSnapshot: onSnapshotHook,
   onError: onErrorHook,
+  onRender,
   onRuntime,
   element: suppliedElement,
   contentRoot: suppliedContentRoot,
@@ -609,8 +610,12 @@ export function createSystemWidget({
   build(buildRoot);
   element.append(createPart("status", "", "output"));
   const renderRoot = buildRoot;
+  const renderWidget = (snapshot, phase, error) => {
+    render(renderRoot, snapshot, { phase, error });
+    onRender?.(renderRoot, snapshot, { phase, error });
+  };
   widget.setState("initial", "system");
-  render(renderRoot, null, { phase: "initial" });
+  renderWidget(null, "initial");
 
   let hasSnapshot = false;
   let activeUnsubscribe;
@@ -632,13 +637,13 @@ export function createSystemWidget({
         onSnapshotHook?.(snapshot);
         hasSnapshot = true;
         widget.setState("ready", "system");
-        render(renderRoot, snapshot, { phase: "ready" });
+        renderWidget(snapshot, "ready");
         if (activeUnsubscribe?.once) activeUnsubscribe();
       },
       onError: (error) => {
         onErrorHook?.(error);
         widget.setState("error", "system");
-        if (!hasSnapshot) render(renderRoot, null, { phase: "error", error });
+        if (!hasSnapshot) renderWidget(null, "error", error);
         if (activeUnsubscribe?.once) activeUnsubscribe();
       },
     });

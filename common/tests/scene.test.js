@@ -97,6 +97,26 @@ test("Layer owns freeform children and Scaler preserves design dimensions", () =
   assert.deepEqual(result, { scale: 0.5, x: 0, y: 50, width: 400, height: 300 });
   assert.equal(scaler.contentElement.style.width, "800px");
   assert.match(scaler.contentElement.style.transform, /scale\(0\.5\)/);
+  layer.mount(new FakeElement("main"));
+  layer.dispose();
+  assert.equal(layer.children().size, 0);
+});
+
+test("Scaler can observe and release viewport changes", () => {
+  const previous = globalThis.ResizeObserver;
+  let callback;
+  globalThis.ResizeObserver = class {
+    constructor(next) { callback = next; }
+    observe() {}
+    disconnect() { callback = undefined; }
+  };
+
+  const scaler = new Scaler({ designWidth: 100, designHeight: 100, fit: "contain" });
+  scaler.observe();
+  callback?.([{ contentRect: { width: 200, height: 100 } }]);
+  assert.match(scaler.contentElement.style.transform, /scale\(1\)/);
+  scaler.unobserve().dispose();
+  globalThis.ResizeObserver = previous;
 });
 
 test("Scroll keeps child geometry and configures overflow", () => {

@@ -1,7 +1,9 @@
-import type { LayoutDescriptor, LayoutInput, LayoutResult, OverlayPlacement, Padding } from "./types.js";
-import { alignOffset, constrainedSize, createDescriptor, innerBounds, normalizePadding, setResult, validateInput } from "./internal/geometry.js";
+import type { LayoutDomOptions, LayoutInput, LayoutResult, LayoutWrapper, OverlayPlacement, Padding } from "./types.js";
+import { alignOffset, constrainedSize, innerBounds, normalizePadding, setResult, validateInput } from "./internal/geometry.js";
+import { childSizeStyles, paddingStyles, px } from "./internal/css.js";
+import { createLayoutWrapper } from "./wrapper.js";
 
-export type OverlayOptions = {
+export type OverlayOptions = LayoutDomOptions & {
   primaryId?: string;
   position?: OverlayPlacement;
   padding?: Padding;
@@ -21,8 +23,8 @@ const position = (placement: OverlayPlacement, width: number, height: number, ch
   return { x: horizontal, y: vertical };
 };
 
-export function createOverlay(options: OverlayOptions = {}): LayoutDescriptor {
-  return createDescriptor("overlay", (input: LayoutInput): LayoutResult => {
+export function createOverlay(options: OverlayOptions = {}): LayoutWrapper {
+  return createLayoutWrapper("overlay", options, (input: LayoutInput): LayoutResult => {
     validateInput(input);
     const bounds = innerBounds(input, normalizePadding(options.padding));
     const primary = input.children.find((child) => child.id === options.primaryId) ?? input.children[0];
@@ -43,6 +45,24 @@ export function createOverlay(options: OverlayOptions = {}): LayoutDescriptor {
       });
     }
     return result;
+  }, {
+    container: (layoutOptions) => ({
+      display: "grid",
+      ...paddingStyles(layoutOptions.padding),
+    }),
+    child: (childOptions, index, id) => {
+      const primary = options.primaryId === undefined ? index === 0 : id === options.primaryId;
+      const placement = childOptions.overlay ?? options.position ?? "top-right";
+      const horizontal = placement === "left" || placement.endsWith("left") ? "start" : placement === "right" || placement.endsWith("right") ? "end" : "center";
+      const vertical = placement === "top" || placement.startsWith("top") ? "start" : placement === "bottom" || placement.startsWith("bottom") ? "end" : "center";
+      return {
+        ...childSizeStyles(childOptions),
+        gridArea: "1 / 1",
+        justifySelf: primary ? "stretch" : horizontal,
+        alignSelf: primary ? "stretch" : vertical,
+        transform: primary ? undefined : `translate(${px(childOptions.offsetX ?? 0) ?? "0px"}, ${px(childOptions.offsetY ?? 0) ?? "0px"})`,
+      };
+    },
   });
 }
 

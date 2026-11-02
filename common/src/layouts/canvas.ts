@@ -1,7 +1,9 @@
-import type { CanvasPosition, LayoutDescriptor, LayoutInput, LayoutResult, Padding } from "./types.js";
-import { createDescriptor, finite, innerBounds, normalizePadding, nonNegative, setResult, validateInput } from "./internal/geometry.js";
+import type { CanvasPosition, LayoutDomOptions, LayoutInput, LayoutResult, LayoutWrapper, Padding } from "./types.js";
+import { finite, innerBounds, normalizePadding, nonNegative, setResult, validateInput } from "./internal/geometry.js";
+import { absoluteBaseStyles, childSizeStyles, paddingStyles, px } from "./internal/css.js";
+import { createLayoutWrapper } from "./wrapper.js";
 
-export type CanvasOptions = {
+export type CanvasOptions = LayoutDomOptions & {
   padding?: Padding;
 };
 
@@ -41,8 +43,8 @@ const calculatePosition = (position: CanvasPosition, bounds: ReturnType<typeof i
   return { x, y };
 };
 
-export function createCanvas(options: CanvasOptions = {}): LayoutDescriptor {
-  return createDescriptor("canvas", (input: LayoutInput): LayoutResult => {
+export function createCanvas(options: CanvasOptions = {}): LayoutWrapper {
+  return createLayoutWrapper("canvas", options, (input: LayoutInput): LayoutResult => {
     validateInput(input);
     const bounds = innerBounds(input, normalizePadding(options.padding));
     const result: LayoutResult = {};
@@ -56,6 +58,31 @@ export function createCanvas(options: CanvasOptions = {}): LayoutDescriptor {
       setResult(result, child, { x: point.x, y: point.y, width, height, zIndex: position.zIndex ?? child.zIndex });
     }
     return result;
+  }, {
+    container: (layoutOptions) => ({
+      position: "relative",
+      ...paddingStyles(layoutOptions.padding),
+    }),
+    child: (childOptions) => {
+      const position = childOptions.position ?? {};
+      const transformX = position.centerX !== undefined ? "-50%" : position.percentX !== undefined ? `${-(position.anchorX ?? 0) * 100}%` : undefined;
+      const transformY = position.centerY !== undefined ? "-50%" : position.percentY !== undefined ? `${-(position.anchorY ?? 0) * 100}%` : undefined;
+      const transform = transformX !== undefined || transformY !== undefined
+        ? `translate(${transformX ?? "0%"}, ${transformY ?? "0%"})`
+        : undefined;
+      return {
+        ...absoluteBaseStyles(childOptions),
+        ...childSizeStyles(childOptions),
+        width: px(position.width) ?? px(childOptions.width),
+        height: px(position.height) ?? px(childOptions.height),
+        left: position.x !== undefined ? px(position.x) : position.right !== undefined ? undefined : position.centerX !== undefined ? px(position.centerX) : position.percentX === undefined ? px(position.anchorX ? 0 : 0) : `${position.percentX * 100}%`,
+        right: position.right === undefined ? undefined : px(position.right),
+        top: position.y !== undefined ? px(position.y) : position.bottom !== undefined ? undefined : position.centerY !== undefined ? px(position.centerY) : position.percentY === undefined ? px(position.anchorY ? 0 : 0) : `${position.percentY * 100}%`,
+        bottom: position.bottom === undefined ? undefined : px(position.bottom),
+        transform,
+        zIndex: position.zIndex ?? childOptions.zIndex,
+      };
+    },
   });
 }
 

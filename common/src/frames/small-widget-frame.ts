@@ -121,7 +121,9 @@ const ensureStyles = () => {
       color: var(--webskin-small-widget-subtext-color);
       font-size: 12cqw;
       line-height: 1;
+      margin-bottom: -.12em;
       opacity: .72;
+      padding-bottom: .12em;
     }
 
     .webskin-frame--small-widget [data-webskin-frame-part="actions"] {

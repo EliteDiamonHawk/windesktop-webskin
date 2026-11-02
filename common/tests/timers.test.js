@@ -134,9 +134,9 @@ test("timers hide controls by default", () => {
 test("pre-styled timers use assets and state-based controls", () => {
   installDom();
   const timer = styledCountdown({ time: 10_000 });
-  assert.equal(timer.parts.value.textContent, "00:00:10");
+  assert.equal(timer.parts.value.textContent, "00:10");
   assert.equal(timer.parts.subtext.textContent, "Countdown");
-  assert.deepEqual(timer.parts.actions.children.map((button) => button.textContent), ["Play", "Restart"]);
+  assert.deepEqual(timer.parts.actions.children.map((button) => button.textContent), ["Resume", "Restart"]);
   assert.equal(
     timer.parts.icon.children[0].style.getPropertyValue("mask-image"),
     'url("/common/assets/icons/hourglass-half-svgrepo-com.svg")',
@@ -157,6 +157,66 @@ test("pre-styled timers use assets and state-based controls", () => {
   assert.equal("setTime" in stopwatchTimer, false);
   assert.equal("setLimit" in timer, false);
   stopwatchTimer.destroy();
+});
+
+test("pre-styled countdown adds time, debounces controls, and restarts at zero", () => {
+  installDom();
+  const timer = styledCountdown();
+  const controls = () => timer.parts.actions.children;
+
+  assert.equal(timer.parts.value.textContent, "00:00");
+  assert.deepEqual([...controls()].map((button) => button.textContent), ["+1min", "+5min"]);
+
+  controls()[0].click();
+  assert.equal(timer.parts.value.textContent, "01:00");
+  assert.deepEqual([...controls()].map((button) => button.textContent), ["+1min", "+5min"]);
+
+  controls()[1].click();
+  assert.equal(timer.parts.value.textContent, "06:00");
+  runNextTimer();
+  assert.deepEqual([...controls()].map((button) => button.textContent), ["Resume", "Restart"]);
+
+  controls()[0].click();
+  assert.deepEqual([...controls()].map((button) => button.textContent), ["Pause", "Restart"]);
+  controls()[0].click();
+  assert.deepEqual([...controls()].map((button) => button.textContent), ["Resume", "Restart"]);
+  controls()[1].click();
+  assert.equal(timer.parts.value.textContent, "00:00");
+  assert.deepEqual([...controls()].map((button) => button.textContent), ["+1min", "+5min"]);
+  timer.destroy();
+  assert.equal(timers.size, 0);
+});
+
+test("pre-styled countdown caps at 60 minutes and clears debounce on destroy", () => {
+  installDom();
+  const timer = styledCountdown();
+  const addFiveMinutes = () => timer.parts.actions.children[1].click();
+
+  for (let index = 0; index < 13; index += 1) addFiveMinutes();
+  assert.equal(timer.parts.value.textContent, "60:00");
+  assert.equal(timers.size, 1);
+  timer.destroy();
+  assert.equal(timers.size, 0);
+
+  const capped = styledCountdown({ time: 60 * 60 * 1000 });
+  assert.equal(capped.parts.value.textContent, "60:00");
+  capped.destroy();
+});
+
+test("pre-styled stopwatch caps at 59:59 and uses minute-second display", async () => {
+  installDom();
+  const timer = styledStopwatch({ limit: 60 * 60 * 1000 + 1_000, buttons: false });
+  assert.equal(timer.parts.value.textContent, "00:00");
+  timer.start();
+  await flush();
+  now = 60 * 60 * 1000;
+  runNextTimer();
+  await flush();
+  assert.equal(timer.parts.value.textContent, "59:59");
+  assert.equal(timer.dataset.webskinTimerState, "finished");
+  timer.setLimit(60 * 60 * 1000);
+  assert.equal(timer.parts.value.textContent, "59:59");
+  timer.destroy();
 });
 
 test("timers support clock-style duration syntax", () => {

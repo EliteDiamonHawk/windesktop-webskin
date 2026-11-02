@@ -148,8 +148,9 @@ constructor names and runtime behavior, with frame controls enabled by default
 and disabled with `buttons: false`.
 
 Timers render plain `HH:mm:ss` text by default. Pass `syntax` to customize the
-output with `HH` or `H` for total hours, `mm` or `m` for minutes, and `ss` or
-`s` for seconds. Other characters remain literal. For example,
+output with `HH` or `H` for total hours, `MM` or `M` for total minutes, `mm` or
+`m` for minutes, and `ss` or `s` for seconds. Other characters remain literal.
+For example,
 `syntax: "m:ss remaining"` renders `1:30 remaining`. Pass `buttons: true` to
 add four plain HTML controls underneath: Play, Restart, Resume, and Pause.
 Plain controls stay hidden by default; pre-styled frame controls show by
@@ -173,6 +174,12 @@ Countdown options require `time`. `setTime(milliseconds)` replaces its value
 and pauses it. `restart()` restores the initial countdown value and pauses.
 Stopwatch `limit` is optional; `setLimit(millisecondsOrNull)` changes it.
 Reaching a limit stops the stopwatch. `restart()` clears that finished state.
+
+Pre-styled countdowns default to `00:00`, use total minutes and seconds, and
+cap their duration at `60:00`. Their managed controls add one or five minutes;
+after one second without another addition they become `Resume` and `Restart`.
+Restarting returns the countdown to `00:00`. Pre-styled stopwatches default to
+`mm:ss` and cap their duration at `59:59`; lower custom limits remain supported.
 
 Countdown exposes `setTime()`; stopwatch exposes `setLimit()`. Each timer
 exposes only methods supported by its type.

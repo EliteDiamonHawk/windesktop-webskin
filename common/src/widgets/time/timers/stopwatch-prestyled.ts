@@ -4,6 +4,7 @@ import { createTimerWidget } from "./timer-runtime.js";
 
 const ICON_ROOT = "/common/assets/icons/";
 const SHAPE_ROOT = "/common/assets/shapes/";
+const MAX_TIME = 59 * 60 * 1000 + 59 * 1000;
 
 const ensureStyles = () => ensureStyle("webskin-prestyled-timer-styles", `
   .webskin-timer--prestyled [data-webskin-frame-part="value"] { font-variant-numeric: tabular-nums; }
@@ -25,7 +26,13 @@ export function createStopwatch(options = {}) {
   });
   return createTimerWidget({
     type: "stopwatch",
-    options: { ...options, variant: "prestyled" },
+    options: {
+      ...options,
+      limit: options.limit ?? MAX_TIME,
+      syntax: options.syntax ?? "mm:ss",
+      variant: "prestyled",
+    },
+    maxDuration: MAX_TIME,
     element,
     display: element.parts.value,
     controlsRoot: options.buttons === false ? null : element.parts.actions,

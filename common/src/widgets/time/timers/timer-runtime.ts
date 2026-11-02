@@ -63,6 +63,10 @@ export const createTimerWidget = ({
   display,
   controlsRoot,
   compactControls = false,
+  controlResolver,
+  maxDuration,
+  restartValue,
+  onCleanup,
 } = {}) => {
   rejectLegacyInterval(options);
   ensureTimerStyles();
@@ -76,15 +80,27 @@ export const createTimerWidget = ({
 
   const countdown = type === "countdown";
   if (countdown && options.time === undefined) throw new TypeError("Countdown requires time");
-  const initial = countdown ? validateDuration(options.time, "time") : 0;
+  const maximum = maxDuration === undefined ? undefined : validateDuration(maxDuration, "maxDuration");
+  const clampDuration = (value, label) => {
+    const validated = validateDuration(value, label);
+    return maximum === undefined ? validated : Math.min(validated, maximum);
+  };
+  const initial = countdown ? clampDuration(options.time, "time") : 0;
   if (!countdown && options.limit !== undefined && options.limit !== null) {
-    validateDuration(options.limit, "limit");
+    clampDuration(options.limit, "limit");
   }
   let updateIntervalSeconds = options.updateInterval ?? DEFAULT_UPDATE_INTERVAL;
   validateUpdateInterval(updateIntervalSeconds);
 
   let current = initial;
-  let timerLimit = countdown ? null : options.limit ?? null;
+  let timerLimit = countdown
+    ? null
+    : options.limit === undefined || options.limit === null
+      ? maximum ?? null
+      : clampDuration(options.limit, "limit");
+  const resetValue = countdown
+    ? clampDuration(restartValue ?? initial, "restartValue")
+    : initial;
   let active = false;
   let completed = false;
   let state = "paused";
@@ -195,7 +211,7 @@ export const createTimerWidget = ({
     active = false;
     completed = false;
     state = "paused";
-    current = initial;
+    current = resetValue;
     anchorValue = current;
     anchorTime = logicalNow();
     clearRenderTimer();
@@ -207,12 +223,12 @@ export const createTimerWidget = ({
   const setTime = (value) => {
     if (!countdown) throw new TypeError("setTime is only supported by countdown timers");
     if (destroyed) return element;
-    validateDuration(value, "time");
+    const nextValue = clampDuration(value, "time");
     active = false;
     completed = false;
     state = "paused";
-    current = value;
-    anchorValue = value;
+    current = nextValue;
+    anchorValue = nextValue;
     anchorTime = logicalNow();
     clearRenderTimer();
     stopSubscription();
@@ -223,9 +239,11 @@ export const createTimerWidget = ({
   const setLimit = (value) => {
     if (countdown) throw new TypeError("setLimit is only supported by stopwatch timers");
     if (destroyed) return element;
-    if (value !== null) validateDuration(value, "limit");
+    const nextLimit = value === null
+      ? maximum ?? null
+      : clampDuration(value, "limit");
     if (active) updateCurrent();
-    timerLimit = value;
+    timerLimit = nextLimit;
     if (timerLimit !== null && current >= timerLimit) {
       if (active) finish();
       else {
@@ -255,28 +273,35 @@ export const createTimerWidget = ({
   };
   function renderControls() {
     if (!controls && !managedControls) return;
-    const definitions = compactControls
-      ? (state === "paused" && element.dataset.webskinTimerStarted !== "true"
-        ? controlDefinitions.initial
-        : controlDefinitions[state])
-      : [["Play", "start"], ["Restart", "restart"], ["Resume", "resume"], ["Pause", "pause"]];
+    const definitions = controlResolver
+      ? controlResolver({ element, state, current, initial, completed })
+      : compactControls
+        ? (state === "paused" && element.dataset.webskinTimerStarted !== "true"
+          ? controlDefinitions.initial
+          : controlDefinitions[state])
+        : [["Play", "start"], ["Restart", "restart"], ["Resume", "resume"], ["Pause", "pause"]];
+    const normalizedDefinitions = definitions.map(([label, action, id = action]) => ({
+      label,
+      id: typeof action === "string" ? action : id,
+      onClick: typeof action === "function" ? action : () => element[action](),
+    }));
     if (managedControls) {
-      element.setButtons(definitions.map(([label, method]) => ({
+      element.setButtons(normalizedDefinitions.map(({ label, onClick }) => ({
         text: label,
-        onClick: () => element[method](),
+        onClick,
       })));
       Array.from(element.parts.actions.children).forEach((button, index) => {
-        button.dataset.webskinTimerControl = definitions[index][1];
+        button.dataset.webskinTimerControl = normalizedDefinitions[index].id;
       });
       return;
     }
     clearControls();
-    definitions.forEach(([label, method]) => {
+    normalizedDefinitions.forEach(({ label, id, onClick }) => {
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = label;
-      button.dataset.webskinTimerControl = method;
-      const action = () => element[method]();
+      button.dataset.webskinTimerControl = id;
+      const action = (event) => onClick(event, element);
       button.addEventListener("click", action);
       controls.append(button);
       controlsListeners.push({ button, action });
@@ -300,6 +325,7 @@ export const createTimerWidget = ({
     clearRenderTimer();
     stopSubscription();
     clearControls();
+    onCleanup?.();
   });
   return element;
 };

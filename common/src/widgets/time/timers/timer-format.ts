@@ -1,5 +1,5 @@
 const DEFAULT_SYNTAX = "HH:mm:ss";
-const TOKEN_PATTERN = /HH|mm|ss|H|m|s/g;
+const TOKEN_PATTERN = /MM|HH|mm|ss|M|H|m|s/g;
 const isLetter = (value) => value !== undefined && /[A-Za-z]/.test(value);
 
 const formatSyntax = (syntax, values) => {
@@ -23,10 +23,13 @@ const formatSyntax = (syntax, values) => {
 export const formatDuration = (milliseconds, syntax = DEFAULT_SYNTAX) => {
   const totalSeconds = Math.floor(Math.max(0, milliseconds) / 1000);
   const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60) % 60;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const minutes = totalMinutes % 60;
   const hours = Math.floor(totalSeconds / 3600);
   const values = {
+    MM: String(totalMinutes).padStart(2, "0"),
     HH: String(hours).padStart(2, "0"),
+    M: String(totalMinutes),
     H: String(hours),
     mm: String(minutes).padStart(2, "0"),
     m: String(minutes),

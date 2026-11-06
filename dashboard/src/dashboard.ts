@@ -35,6 +35,8 @@ const getPreviewUrl = (source: string) => {
   }
 };
 
+const getThemeUrl = (themeId: string) => `/themes/${encodeURIComponent(themeId)}/`;
+
 const setStatus = (message: string, visible: boolean) => {
   if (!status) return;
   status.textContent = message;
@@ -47,7 +49,7 @@ const createThemeCard = (theme: Theme) => {
 
   const link = document.createElement('a');
   link.className = 'theme-card-link';
-  link.href = theme.entry_url;
+  link.href = getThemeUrl(theme.id);
   link.setAttribute('aria-label', `Open ${theme.name} theme`);
 
   const preview = document.createElement('span');

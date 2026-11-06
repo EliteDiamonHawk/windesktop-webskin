@@ -103,7 +103,6 @@ public static class Endpoints
             catch { return Detail(404, "Common asset was not found"); }
         });
         app.MapGet("/themes/{themeId}", (string themeId, IThemeStorage storage) => ThemeFile(themeId, string.Empty, storage));
-        app.MapGet("/themes/{themeId}/", (string themeId, IThemeStorage storage) => ThemeFile(themeId, string.Empty, storage));
         app.MapGet("/themes/{themeId}/{**relativePath}", (string themeId, string? relativePath, IThemeStorage storage) => ThemeFile(themeId, relativePath ?? string.Empty, storage));
     }
 

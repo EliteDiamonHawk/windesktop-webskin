@@ -4,8 +4,8 @@
 
 Keep changes in the project that owns them:
 
-- `dashboard/` contains the Astro dashboard.
-- `backend/` contains FastAPI, settings, filesystem, and API code.
+- `dashboard/` contains the Vite dashboard.
+- `backend/` contains ASP.NET Core, settings, filesystem, and API code.
 - `common/` contains shared browser modules.
 - `dev/themes/` contains built-in theme source.
 - `wv2wall/` contains the Windows host.
@@ -35,7 +35,7 @@ pnpm --filter @project/frontend check
 pnpm --filter @project/frontend build
 ```
 
-For backend changes, start FastAPI and call `/api/health` plus each changed
+For backend changes, start ASP.NET Core and call `/api/health` plus each changed
 route. For theme changes, open `/themes/{id}/`, check relative assets and
 `/common/...` imports, and regenerate a preview when the change affects it.
 

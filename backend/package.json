@@ -2,7 +2,8 @@
   "name": "@project/backend",
   "private": true,
   "scripts": {
-    "dev": "uv run uvicorn webskin.main:app --reload --port 8000 --app-dir src",
-    "start": "uv run uvicorn webskin.main:app --host 0.0.0.0 --port 8000 --app-dir src"
+    "dev": "dotnet watch --project src/WebSkin.Backend/WebSkin.Backend.csproj run -- --urls http://127.0.0.1:8000",
+    "start": "dotnet run --project src/WebSkin.Backend/WebSkin.Backend.csproj -- --urls http://0.0.0.0:8000",
+    "test": "dotnet test WebSkin.Backend.sln"
   }
 }

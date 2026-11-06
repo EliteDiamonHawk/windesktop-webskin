@@ -6,7 +6,7 @@ Use these pages to run, extend, and debug WinDesktop WebSkin.
 
 - [Getting started](getting-started.md) installs dependencies and starts the application.
 - [Development](development.md) lists workspace commands and common failures.
-- [Architecture](architecture.md) maps browser requests to FastAPI and the runtime files.
+- [Architecture](architecture.md) maps browser requests to ASP.NET Core and runtime files.
 
 ## Runtime
 

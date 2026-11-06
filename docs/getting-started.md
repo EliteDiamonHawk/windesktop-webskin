@@ -3,9 +3,8 @@
 ## Requirements
 
 - Node.js `>=22.12.0`
-- Python `3.14`
+- .NET SDK `10.0` or newer
 - `pnpm`
-- `uv`
 
 The Windows host also needs .NET and WebView2. Read
 [`wv2wall/README.md`](../wv2wall/README.md) for its requirements.
@@ -19,8 +18,8 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` builds the shared assets and the built-in theme, then starts Astro,
-FastAPI, and the asset watchers.
+`pnpm dev` builds shared assets and built-in theme, then starts Vite, ASP.NET
+Core, and asset watchers.
 
 Open these URLs:
 
@@ -31,8 +30,8 @@ Open these URLs:
 | API schema | `http://127.0.0.1:8000/docs` |
 | Health check | `http://127.0.0.1:8000/api/health` |
 
-Astro proxies `/api`, `/common`, and `/themes` to FastAPI. Browser code can
-use those paths from the dashboard origin.
+Vite proxies `/api`, `/common`, and `/themes` to ASP.NET Core. Browser code can
+use those paths from dashboard origin.
 
 ## Start one service
 

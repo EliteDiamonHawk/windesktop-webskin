@@ -56,7 +56,7 @@ initialization and sensor fallback:
 ```
 
 The backend enables the monitor when the key is absent or invalid. It reads the
-key during startup, so restart FastAPI after editing `app.json`.
+key during startup, so restart ASP.NET Core after editing `app.json`.
 `psutil` metrics continue to work when the monitor is disabled.
 
 Time widgets use one backend-resolved settings request per page load. The

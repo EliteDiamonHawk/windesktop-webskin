@@ -1,6 +1,6 @@
 # Backend
 
-The backend runs the FastAPI service. The [documentation index](../docs/README.md)
+Backend runs ASP.NET Core service on .NET 10. The [documentation index](../docs/README.md)
 links to setup, development, architecture, routes, storage, and theme runtime
 details.
 

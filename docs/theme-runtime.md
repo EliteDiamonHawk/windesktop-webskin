@@ -1,6 +1,6 @@
 # Theme runtime
 
-FastAPI serves each theme as a static package. The package needs an HTML entry
+ASP.NET Core serves each theme as a static package. The package needs an HTML entry
 point and metadata. It can include CSS, JavaScript, and other assets.
 
 ## Package files
@@ -39,7 +39,7 @@ either file stays off the theme list and returns 404 from asset routes.
 
 ## Runtime roots
 
-`backend/src/webskin/paths.py` selects the root in this order:
+`backend/src/WebSkin.Backend/Infrastructure/Paths.cs` selects the root in this order:
 
 1. `WEBSKIN_THEMES_ROOT`, when set.
 2. `%LOCALAPPDATA%/WinDesktop WebSkin/themes/` in production, release, or frozen mode.

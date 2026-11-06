@@ -7,7 +7,7 @@ WinDesktop WebSkin provides a browser-based desktop for Windows.
 Install these tools:
 
 - Node.js `>=22.12.0`
-- Python `3.14` and `uv`
+- .NET SDK `10.0` or newer
 - `pnpm`
 
 Run from the repository root:
@@ -17,14 +17,14 @@ pnpm install
 pnpm dev
 ```
 
-Open the dashboard at `http://localhost:4321`. FastAPI listens at
+Open the dashboard at `http://localhost:4321`. ASP.NET Core listens at
 `http://127.0.0.1:8000`. Check the service at
 `http://127.0.0.1:8000/api/health`.
 
 ## Repository layout
 
-- `dashboard/`: Astro dashboard
-- `backend/`: FastAPI service
+- `dashboard/`: Vite dashboard
+- `backend/`: ASP.NET Core service
 - `common/`: shared browser modules and widgets
 - `dev/themes/`: built-in theme source
 - `localdata/`: generated runtime files and local data

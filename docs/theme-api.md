@@ -1,6 +1,6 @@
 # Theme and asset API
 
-FastAPI serves these routes under `/api`. Astro proxies the same paths to
+ASP.NET Core serves these routes under `/api`. Vite proxies the same paths to
 port `8000` during development.
 
 ## Service checks
@@ -69,7 +69,7 @@ link-capacity value.
 HardwareMonitor is optional. Some Windows motherboard and system sensors need
 the PawnIO driver and suitable privileges. Missing drivers, denied access,
 unsupported sensors, and initialization errors mark the sensor group
-unavailable while FastAPI keeps running.
+unavailable while ASP.NET Core keeps running.
 
 Network data contains aggregate byte, drop, and error counters. It does not
 contain addresses, interface IDs, hostnames, or other network identity data.

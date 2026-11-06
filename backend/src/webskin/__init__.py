@@ -1,2 +1,0 @@
-"""WinDesktop Webskin backend package."""
-

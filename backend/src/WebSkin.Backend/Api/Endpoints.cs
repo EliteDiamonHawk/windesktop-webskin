@@ -55,12 +55,20 @@ public static class Endpoints
         {
             var payload = await ReadObject(request);
             if (!TryGetString(payload, "name", out var name)) return Detail(422, "Theme name must be a string");
-            try { return Results.Created($"/api/themes/{Uri.EscapeDataString(name)}", storage.Create(name)); }
+            try
+            {
+                var theme = storage.Create(name);
+                return Results.Created($"/api/themes/{PathEncoding.EncodeURIComponent(theme.Id)}", theme);
+            }
             catch (ThemeStorageException) { return Detail(503, "Theme storage is unavailable"); }
         });
         app.MapPost("/api/themes/{themeId}/duplicate", (string themeId, IThemeStorage storage) =>
         {
-            try { return Results.Created($"/api/themes/{Uri.EscapeDataString(themeId)}", storage.Duplicate(themeId)); }
+            try
+            {
+                var theme = storage.Duplicate(themeId);
+                return Results.Created($"/api/themes/{PathEncoding.EncodeURIComponent(theme.Id)}", theme);
+            }
             catch (ThemeStorageException) { return Detail(404, "Theme was not found"); }
         });
         app.MapDelete("/api/themes/{themeId}", (string themeId, IThemeStorage storage) =>
@@ -178,7 +186,15 @@ public static class Endpoints
     }
 
     private static IResult FileResult(string path) => Results.File(path, ContentTypes.TryGetContentType(path, out var contentType) ? contentType : "application/octet-stream");
-    private static IResult Detail(int status, string message) => Results.Json(new Dictionary<string, string> { ["detail"] = message }, statusCode: status);
+    internal static IResult Detail(int status, string message) => Results.Json(new Dictionary<string, string> { ["detail"] = message }, statusCode: status);
+
+    public static async Task WriteDetail(HttpContext context, int status, string message)
+    {
+        if (context.Response.HasStarted) return;
+        context.Response.Clear();
+        context.Response.StatusCode = status;
+        await context.Response.WriteAsJsonAsync(new Dictionary<string, string> { ["detail"] = message });
+    }
 
     private static async Task StreamEvents(HttpContext context, ISystemMetricsProvider provider, IMetricsSubscriptionManager manager)
     {
@@ -190,7 +206,7 @@ public static class Endpoints
             subscription = await manager.SubscribeAsync(fields, interval, context.RequestAborted);
         }
         catch (MetricValidationException ex) { context.Response.StatusCode = 422; await context.Response.WriteAsJsonAsync(new { detail = ex.Message }); return; }
-        catch (InvalidOperationException ex) { context.Response.StatusCode = 503; await context.Response.WriteAsJsonAsync(new { detail = ex.Message }); return; }
+        catch (InvalidOperationException ex) { context.Response.StatusCode = 422; await context.Response.WriteAsJsonAsync(new { detail = ex.Message }); return; }
 
         context.Response.StatusCode = 200;
         context.Response.ContentType = "text/event-stream";
@@ -224,11 +240,20 @@ public static class Endpoints
 
     private static async Task WebSocketEvents(HttpContext context, IReadOnlySet<string> allowedOrigins)
     {
-        var origin = context.Request.Headers.Origin.FirstOrDefault();
-        if (!string.IsNullOrEmpty(origin) && !allowedOrigins.Contains(origin)) { context.Response.StatusCode = 403; return; }
         if (!context.WebSockets.IsWebSocketRequest) { context.Response.StatusCode = 400; return; }
-        var manager = context.RequestServices.GetRequiredService<IMetricsSubscriptionManager>();
+        var origin = context.Request.Headers.Origin.FirstOrDefault();
         using var socket = await context.WebSockets.AcceptWebSocketAsync();
+        if (!string.IsNullOrEmpty(origin) && !allowedOrigins.Contains(origin))
+        {
+            await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Origin is not allowed", context.RequestAborted);
+            return;
+        }
+        var manager = context.RequestServices.GetService<IMetricsSubscriptionManager>();
+        if (manager is null)
+        {
+            await socket.CloseAsync(WebSocketCloseStatus.TryAgainLater, "System metric streaming is unavailable", context.RequestAborted);
+            return;
+        }
         using var shutdown = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
         MetricSubscription? subscription = null;
         CancellationTokenSource? senderCancellation = null;

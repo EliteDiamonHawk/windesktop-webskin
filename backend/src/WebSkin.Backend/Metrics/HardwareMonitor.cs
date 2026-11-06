@@ -19,6 +19,7 @@ public sealed class HardwareMonitor : IHardwareMonitor
         ["current"] = "A", ["clock"] = "MHz", ["frequency"] = "MHz", ["load"] = "%",
         ["level"] = "%", ["battery"] = "%",
     };
+    static HardwareMonitor() => Units["temperature"] = "\u00B0C";
     private readonly bool _enabled;
     private readonly IClock _clock;
     private readonly ILogger<HardwareMonitor> _logger;
@@ -49,19 +50,23 @@ public sealed class HardwareMonitor : IHardwareMonitor
 
             var computer = EnsureComputer(now);
             if (computer is null) return new HardwareSnapshot(false, []);
+            var readings = new List<Dictionary<string, object?>>();
             try
             {
-                var readings = new List<Dictionary<string, object?>>();
-                foreach (var hardware in computer.Hardware) VisitHardware(hardware, readings);
-                _cachedAt = now;
-                _cachedReadings = readings;
-                return new HardwareSnapshot(readings.Count > 0, Clone(readings));
+                foreach (var hardware in computer.Hardware)
+                {
+                    try { VisitHardware(hardware, readings); }
+                    catch (Exception ex) { _logger.LogDebug(ex, "HardwareMonitor device update failed"); }
+                }
             }
             catch (Exception ex)
             {
                 MarkUnavailable(now, "HardwareMonitor sensor update failed", ex);
                 return new HardwareSnapshot(false, []);
             }
+            _cachedAt = now;
+            _cachedReadings = readings;
+            return new HardwareSnapshot(readings.Count > 0, Clone(readings));
         }
     }
 
@@ -113,32 +118,45 @@ public sealed class HardwareMonitor : IHardwareMonitor
 
     private void VisitHardware(IHardware hardware, List<Dictionary<string, object?>> readings)
     {
-        hardware.Update();
+        try { hardware.Update(); }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "HardwareMonitor device update failed for {Hardware}", hardware.Name);
+            return;
+        }
         var hardwareId = hardware.Identifier.ToString();
         var hardwareName = hardware.Name ?? hardwareId;
         var hardwareType = Normalize(hardware.HardwareType.ToString());
         for (var index = 0; index < hardware.Sensors.Length; index++)
         {
-            var sensor = hardware.Sensors[index];
-            var type = Normalize(sensor.SensorType.ToString());
-            readings.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+            try
             {
-                ["id"] = sensor.Identifier.ToString(),
-                ["hardware_id"] = hardwareId,
-                ["hardware_name"] = hardwareName,
-                ["hardware_type"] = hardwareType,
-                ["name"] = string.IsNullOrWhiteSpace(sensor.Name) ? $"{type}-{index + 1}" : sensor.Name,
-                ["type"] = type,
-                ["value"] = Number(sensor.Value),
-                ["unit"] = Units.GetValueOrDefault(type, string.Empty),
-                ["minimum"] = Number(sensor.Min),
-                ["maximum"] = Number(sensor.Max),
-                ["warning"] = null,
-                ["critical"] = null,
-                ["source"] = "hardware_monitor",
-            });
+                var sensor = hardware.Sensors[index];
+                var type = Normalize(sensor.SensorType.ToString());
+                readings.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["id"] = sensor.Identifier.ToString(),
+                    ["hardware_id"] = hardwareId,
+                    ["hardware_name"] = hardwareName,
+                    ["hardware_type"] = hardwareType,
+                    ["name"] = string.IsNullOrWhiteSpace(sensor.Name) ? $"{type}-{index + 1}" : sensor.Name,
+                    ["type"] = type,
+                    ["value"] = Number(sensor.Value),
+                    ["unit"] = Units.GetValueOrDefault(type, string.Empty),
+                    ["minimum"] = Number(sensor.Min),
+                    ["maximum"] = Number(sensor.Max),
+                    ["warning"] = ReadParameter(sensor, "Warning"),
+                    ["critical"] = ReadParameter(sensor, "Critical"),
+                    ["source"] = "hardware_monitor",
+                });
+            }
+            catch (Exception ex) { _logger.LogDebug(ex, "HardwareMonitor sensor read failed for {Hardware}", hardwareName); }
         }
-        foreach (var child in hardware.SubHardware) VisitHardware(child, readings);
+        foreach (var child in hardware.SubHardware)
+        {
+            try { VisitHardware(child, readings); }
+            catch (Exception ex) { _logger.LogDebug(ex, "HardwareMonitor child device update failed for {Hardware}", hardwareName); }
+        }
     }
 
     private void MarkUnavailable(double now, string message, Exception exception)
@@ -158,6 +176,35 @@ public sealed class HardwareMonitor : IHardwareMonitor
     {
         if (value is null || float.IsNaN(value.Value) || float.IsInfinity(value.Value)) return null;
         return value.Value;
+    }
+
+    private static object? ReadParameter(ISensor sensor, string name)
+    {
+        try
+        {
+            var parameters = sensor.GetType().GetProperty("Parameters")?.GetValue(sensor) as System.Collections.IEnumerable;
+            if (parameters is null) return null;
+            foreach (var parameter in parameters)
+            {
+                var parameterName = parameter?.GetType().GetProperty("Name")?.GetValue(parameter)?.ToString();
+                if (!string.Equals(parameterName, name, StringComparison.OrdinalIgnoreCase)) continue;
+                var value = parameter.GetType().GetProperty("Value")?.GetValue(parameter);
+                return Number(ToFloat(value));
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    private static float? ToFloat(object? value)
+    {
+        try
+        {
+            if (value is null) return null;
+            var number = Convert.ToSingle(value, System.Globalization.CultureInfo.InvariantCulture);
+            return float.IsFinite(number) ? number : null;
+        }
+        catch { return null; }
     }
 
     private static IReadOnlyList<Dictionary<string, object?>> Clone(IReadOnlyList<Dictionary<string, object?>> source) =>

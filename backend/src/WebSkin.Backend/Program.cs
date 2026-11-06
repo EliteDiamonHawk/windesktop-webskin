@@ -40,6 +40,13 @@ builder.Services.AddCors(options => options.AddPolicy("frontend", policy => poli
     .AllowAnyMethod()));
 
 var app = builder.Build();
+app.Use(async (context, next) =>
+{
+    try { await next(); }
+    catch (SettingsStorageException) { await Endpoints.WriteDetail(context, 503, "Settings storage is unavailable"); }
+    catch (ThemeStorageException) { await Endpoints.WriteDetail(context, 503, "Theme storage is unavailable"); }
+    catch (MetricValidationException ex) { await Endpoints.WriteDetail(context, 422, ex.Message); }
+});
 app.UseCors("frontend");
 app.UseWebSockets();
 app.UseSwagger();

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using WebSkin.Backend.Metrics;
 
 namespace WebSkin.Backend.Services;
 

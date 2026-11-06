@@ -6,6 +6,7 @@ using WebSkin.Backend.Infrastructure;
 namespace WebSkin.Backend.Services;
 
 public class ThemeStorageException(string message, Exception? inner = null) : Exception(message, inner);
+public sealed class ThemeValidationException(string message) : ThemeStorageException(message);
 public sealed class ThemeNameConflictException(string message) : ThemeStorageException(message);
 
 public sealed record ThemeResponse(
@@ -50,13 +51,13 @@ public sealed class ThemeStorage : IThemeStorage
             var themes = new List<ThemeResponse>();
             foreach (var directory in Directory.EnumerateDirectories(root))
             {
-                var metadata = ReadMetadata(directory);
+                var metadata = ReadMetadataOrThrow(directory);
                 if (StringValue(metadata, "id") != Path.GetFileName(directory)
                     || StringValue(metadata, "name") is not string name
                     || !File.Exists(Path.Combine(directory, "index.html"))) continue;
                 themes.Add(ToResponse(StringValue(metadata, "id")!, name, directory, includePreview: true));
             }
-            return themes.OrderBy(theme => theme.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+            return themes.OrderBy(theme => Fold(theme.Name), StringComparer.Ordinal).ToArray();
         }
     }
 
@@ -130,7 +131,7 @@ public sealed class ThemeStorage : IThemeStorage
             var root = _paths.GetThemePaths().ThemeRoot;
             var source = ExistingThemePath(root, themeId, "Theme was not found");
             if (Directory.EnumerateDirectories(root).Where(path => !path.Equals(source, StringComparison.OrdinalIgnoreCase))
-                .Select(ReadMetadata).Any(metadata => string.Equals(StringValue(metadata, "name"), cleanName, StringComparison.OrdinalIgnoreCase)))
+                .Select(ReadMetadata).Any(metadata => StringValue(metadata, "name") is { } existing && Fold(existing) == Fold(cleanName)))
                 throw new ThemeNameConflictException("Theme name is already in use");
             var destination = Path.Combine(root, cleanName);
             if (!source.Equals(destination, StringComparison.Ordinal) && Directory.Exists(destination))
@@ -179,28 +180,21 @@ public sealed class ThemeStorage : IThemeStorage
         byte[] bytes;
         try { bytes = Convert.FromBase64String(encoded); }
         catch (FormatException ex) { throw new ThemeStorageException("Preview data is not valid base64", ex); }
-        if (bytes.Length < 8 || !bytes.AsSpan(0, 8).SequenceEqual([137, 80, 78, 71, 13, 10, 26, 10]))
+        if (bytes.Length < 8 || !bytes.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }))
             throw new ThemeStorageException("Preview data is not a PNG");
 
         lock (_gate)
         {
             var path = ExistingThemePath(_paths.GetThemePaths().ThemeRoot, themeId, "Theme was not found");
             var target = Path.Combine(path, "preview.png");
-            var temporary = Path.Combine(path, $".preview.{Guid.NewGuid():N}.tmp");
             try
             {
-                using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                {
-                    stream.Write(bytes);
-                    stream.Flush(true);
-                }
-                File.Move(temporary, target, true);
+                AtomicFile.WriteBytes(target, bytes);
                 var legacy = Path.Combine(path, "preview.svg");
                 if (File.Exists(legacy)) File.Delete(legacy);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             { throw new ThemeStorageException($"Could not write theme preview: {target}", ex); }
-            finally { try { if (File.Exists(temporary)) File.Delete(temporary); } catch { } }
         }
     }
 
@@ -234,34 +228,41 @@ public sealed class ThemeStorage : IThemeStorage
     private static string CleanThemeName(string name)
     {
         var clean = Regex.Replace(name ?? string.Empty, @"\s+", " ").Trim();
-        if (string.IsNullOrEmpty(clean)) throw new ThemeStorageException("Theme name cannot be empty");
+        if (string.IsNullOrEmpty(clean)) throw new ThemeValidationException("Theme name cannot be empty");
         if (clean.Any(character => character < 32) || clean.Any(character => "<>:/\\|?*\"".Contains(character)) || clean.EndsWith('.') || clean.EndsWith(' ') || clean is "." or "..")
-            throw new ThemeStorageException("Theme name contains invalid path characters");
-        var reserved = clean.Split('.', 2)[0].ToLowerInvariant();
+            throw new ThemeValidationException("Theme name contains invalid path characters");
+        var reserved = Fold(clean.Split('.', 2)[0]);
         if (reserved is "con" or "prn" or "aux" or "nul" || (reserved.StartsWith("com") && int.TryParse(reserved[3..], out var com) && com is >= 1 and <= 9) || (reserved.StartsWith("lpt") && int.TryParse(reserved[3..], out var lpt) && lpt is >= 1 and <= 9))
-            throw new ThemeStorageException("Theme name is reserved by Windows");
+            throw new ThemeValidationException("Theme name is reserved by Windows");
         return clean;
     }
 
     private static string UniqueThemeName(string root, string requested)
     {
         var existing = Directory.Exists(root)
-            ? Directory.EnumerateDirectories(root).Select(ReadMetadata).Select(metadata => StringValue(metadata, "name")).Where(name => name is not null).Cast<string>().ToHashSet(StringComparer.OrdinalIgnoreCase)
-            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!existing.Contains(requested)) return requested;
+            ? Directory.EnumerateDirectories(root).Select(ReadMetadata).Select(metadata => StringValue(metadata, "name")).Where(name => name is not null).Cast<string>().Select(Fold).ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+        if (!existing.Contains(Fold(requested))) return requested;
         var match = Regex.Match(requested, @"^(.*?)(?:\s+(\d+))?$");
         var stem = match.Groups[1].Value.TrimEnd();
         var suffix = match.Groups[2].Success ? int.Parse(match.Groups[2].Value) + 1 : 2;
         var candidate = $"{stem} {suffix}";
-        while (existing.Contains(candidate)) candidate = $"{stem} {++suffix}";
+        while (existing.Contains(Fold(candidate))) candidate = $"{stem} {++suffix}";
         return candidate;
     }
+
+    private static string Fold(string value) => value.Normalize(NormalizationForm.FormKC).ToUpperInvariant();
 
     private static string ExistingThemePath(string root, string themeId, string message)
     {
         if (string.IsNullOrEmpty(themeId) || Path.GetFileName(themeId) != themeId) throw new ThemeStorageException(message);
         var path = Path.Combine(root, themeId);
-        if (!Directory.Exists(path) || ReadMetadata(path) is null) throw new ThemeStorageException(message);
+        var metadata = Directory.Exists(path) ? ReadMetadata(path) : null;
+        if (metadata is null
+            || StringValue(metadata, "id") != themeId
+            || StringValue(metadata, "name") is null
+            || !File.Exists(Path.Combine(path, "index.html")))
+            throw new ThemeStorageException(message);
         return path;
     }
 
@@ -271,6 +272,14 @@ public sealed class ThemeStorage : IThemeStorage
         if (!File.Exists(path)) return null;
         try { return JsonNode.Parse(File.ReadAllText(path))?.AsObject(); }
         catch (Exception) { return null; }
+    }
+
+    private static JsonObject? ReadMetadataOrThrow(string directory)
+    {
+        var path = Path.Combine(directory, "metadata.json");
+        if (!File.Exists(path)) return null;
+        try { return JsonNode.Parse(File.ReadAllText(path)) as JsonObject; }
+        catch (Exception ex) { throw new ThemeStorageException($"Theme metadata is unreadable: {path}", ex); }
     }
 
     private static string? StringValue(JsonObject? value, string key)
@@ -283,13 +292,14 @@ public sealed class ThemeStorage : IThemeStorage
         string? preview = null;
         if (includePreview)
         {
-            if (File.Exists(Path.Combine(path, "preview.png"))) preview = $"/api/themes/{Uri.EscapeDataString(id)}/preview";
+            var encodedId = PathEncoding.EncodeURIComponent(id);
+            if (File.Exists(Path.Combine(path, "preview.png"))) preview = $"/api/themes/{encodedId}/preview";
             else
                 foreach (var relative in new[] { "preview.png", "preview.jpeg", "preview.jpg", "preview.svg", "preview.webp", "preview.gif" })
-                    if (File.Exists(Path.Combine(path, relative))) { preview = $"/themes/{Uri.EscapeDataString(id)}/{relative}"; break; }
-                    else if (File.Exists(Path.Combine(path, "assets", "images", relative))) { preview = $"/themes/{Uri.EscapeDataString(id)}/assets/images/{relative}"; break; }
+                    if (File.Exists(Path.Combine(path, relative))) { preview = $"/themes/{encodedId}/{relative}"; break; }
+                    else if (File.Exists(Path.Combine(path, "assets", "images", relative))) { preview = $"/themes/{encodedId}/assets/images/{relative}"; break; }
         }
-        return new ThemeResponse(id, name, $"/themes/{Uri.EscapeDataString(id)}/", preview);
+        return new ThemeResponse(id, name, $"/themes/{PathEncoding.EncodeURIComponent(id)}/", preview);
     }
 
     private static string CreateStaging(string root, string id)
@@ -314,18 +324,7 @@ public sealed class ThemeStorage : IThemeStorage
 
     private static void WriteJsonAtomic(string path, JsonObject document)
     {
-        var temporary = Path.Combine(Path.GetDirectoryName(path)!, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
-        try
-        {
-            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-            using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
-            {
-                writer.Write(document.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
-                writer.Write('\n'); writer.Flush(); stream.Flush(true);
-            }
-            File.Move(temporary, path, true);
-        }
-        finally { try { if (File.Exists(temporary)) File.Delete(temporary); } catch { } }
+        AtomicFile.WriteUtf8(path, document.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
     }
 
     private static void TryDeleteDirectory(string path)

@@ -229,7 +229,7 @@ public sealed class JsonSettingsStorage : ISettingsStorage
         return candidate;
     }
 
-    private string GeneratedWidgetPath(string identifier) => Path.Combine(_widgetsPath, Uri.EscapeDataString(identifier) + ".json");
+    private string GeneratedWidgetPath(string identifier) => Path.Combine(_widgetsPath, PathEncoding.PythonQuote(identifier) + ".json");
     private string RelativeWidgetPath(string path) => Path.GetRelativePath(_path, path).Replace(Path.DirectorySeparatorChar, '/');
     private string NamespacePath(string namespaceName)
     {
@@ -253,27 +253,13 @@ public sealed class JsonSettingsStorage : ISettingsStorage
 
     private static void WriteDocument(string path, JsonNode document)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var temporary = Path.Combine(Path.GetDirectoryName(path)!, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
         try
         {
-            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-            using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
-            {
-                writer.Write(document.ToJsonString(WriteOptions));
-                writer.Write('\n');
-                writer.Flush();
-                stream.Flush(true);
-            }
-            File.Move(temporary, path, true);
+            AtomicFile.WriteUtf8(path, document.ToJsonString(WriteOptions) + "\n");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             throw new SettingsStorageException($"Could not write settings file: {path}", ex);
-        }
-        finally
-        {
-            try { if (File.Exists(temporary)) File.Delete(temporary); } catch { }
         }
     }
 }

@@ -41,4 +41,16 @@ public sealed class ThemeTests
         storage.SavePreview(theme.Id, "data:image/png;base64,iVBORw0KGgo=");
         Assert.True(File.Exists(storage.PreviewPath(theme.Id)));
     }
+
+    [Fact]
+    public void Invalid_theme_package_is_not_routable()
+    {
+        using var temp = new TemporaryDirectory();
+        var storage = new ThemeStorage(new TestPaths(temp.Path));
+        var theme = storage.Create("Boundary");
+        File.Delete(Path.Combine(temp.Path, "themes", theme.Id, "index.html"));
+
+        Assert.Throws<ThemeStorageException>(() => storage.ContentPath(theme.Id, ""));
+        Assert.Throws<ThemeStorageException>(() => storage.Duplicate(theme.Id));
+    }
 }

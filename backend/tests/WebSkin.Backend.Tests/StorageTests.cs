@@ -33,6 +33,35 @@ public sealed class StorageTests
     }
 
     [Fact]
+    public void Widget_filename_uses_python_quote_encoding()
+    {
+        using var temp = new TemporaryDirectory();
+        var storage = new JsonSettingsStorage(new TestPaths(temp.Path));
+        const string identifier = "widget !'()*~";
+
+        storage.SetValue("widgets", "enabled", JsonValue.Create(true), identifier);
+
+        var file = Path.Combine(temp.SettingsPath, "widgets", PathEncoding.PythonQuote(identifier) + ".json");
+        Assert.True(File.Exists(file));
+        Assert.DoesNotContain("!", Path.GetFileName(file));
+        Assert.DoesNotContain("'", Path.GetFileName(file));
+    }
+
+    [Fact]
+    public void Replacing_settings_leaves_no_temp_file()
+    {
+        using var temp = new TemporaryDirectory();
+        var storage = new JsonSettingsStorage(new TestPaths(temp.Path));
+
+        storage.SetValue("app", "value", JsonValue.Create(1));
+        storage.SetValue("app", "value", JsonValue.Create(2));
+
+        Assert.Equal(2, storage.GetValue("app", "value", null, out var found)!.GetValue<int>());
+        Assert.True(found);
+        Assert.Empty(Directory.EnumerateFiles(temp.SettingsPath, ".app.json.*.tmp"));
+    }
+
+    [Fact]
     public void Invalid_widget_index_pointer_is_rejected()
     {
         using var temp = new TemporaryDirectory();

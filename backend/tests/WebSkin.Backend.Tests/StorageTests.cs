@@ -7,14 +7,55 @@ namespace WebSkin.Backend.Tests;
 public sealed class StorageTests
 {
     [Fact]
-    public void Initializes_namespace_files_and_widget_directory()
+    public void Initializes_namespace_files_and_scoped_directories()
     {
         using var temp = new TemporaryDirectory();
         var storage = new JsonSettingsStorage(new TestPaths(temp.Path));
 
         Assert.Equal(new[] { "app.json", "themes.json", "widgets.json" }, Directory.GetFiles(temp.SettingsPath, "*.json").Select(Path.GetFileName).OrderBy(name => name));
+        Assert.True(Directory.Exists(Path.Combine(temp.SettingsPath, "themes")));
         Assert.True(Directory.Exists(Path.Combine(temp.SettingsPath, "widgets")));
         Assert.Equal(1, JsonNode.Parse(File.ReadAllText(Path.Combine(temp.SettingsPath, "widgets.json")))!["version"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public void Theme_write_uses_encoded_filename_and_atomic_document_shape()
+    {
+        using var temp = new TemporaryDirectory();
+        var storage = new JsonSettingsStorage(new TestPaths(temp.Path));
+
+        storage.SetValue("themes", "accent", JsonValue.Create("#fff"), "My Theme");
+
+        var file = Path.Combine(temp.SettingsPath, "themes", "My%20Theme.json");
+        Assert.True(File.Exists(file));
+        Assert.Equal("My Theme", JsonNode.Parse(File.ReadAllText(file))!["id"]!.GetValue<string>());
+        Assert.Equal("#fff", storage.GetValue("themes", "accent", "My Theme", out var found)!.GetValue<string>());
+        Assert.True(found);
+    }
+
+    [Fact]
+    public void Theme_filename_uses_python_quote_encoding()
+    {
+        using var temp = new TemporaryDirectory();
+        var storage = new JsonSettingsStorage(new TestPaths(temp.Path));
+        const string identifier = "theme !'()*~";
+
+        storage.SetValue("themes", "enabled", JsonValue.Create(true), identifier);
+
+        var file = Path.Combine(temp.SettingsPath, "themes", PathEncoding.PythonQuote(identifier) + ".json");
+        Assert.True(File.Exists(file));
+        Assert.DoesNotContain("!", Path.GetFileName(file));
+        Assert.DoesNotContain("'", Path.GetFileName(file));
+    }
+
+    [Fact]
+    public void Invalid_theme_index_pointer_is_rejected()
+    {
+        using var temp = new TemporaryDirectory();
+        var storage = new JsonSettingsStorage(new TestPaths(temp.Path));
+        File.WriteAllText(Path.Combine(temp.SettingsPath, "themes.json"), "{\"version\":1,\"themes\":{\"Example\":{\"file\":\"../app.json\"}}}");
+
+        Assert.Throws<SettingsStorageException>(() => storage.GetNamespace("themes", "Example"));
     }
 
     [Fact]

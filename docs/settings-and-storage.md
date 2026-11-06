@@ -3,20 +3,34 @@
 ## File format
 
 Settings use version `1` namespace files. The settings directory contains
-`app.json`, `themes.json`, and `widgets.json`. The widget index points to one
-file per configured widget under the `widgets/` subdirectory:
+`app.json`, `themes.json`, and `widgets.json`. Theme and widget indexes point to
+one file per configured scope under their matching subdirectories:
 
 ```json
 settings/
 |-- app.json
 |-- themes.json
 |-- widgets.json
+|-- themes/
+|   `-- Example.json
 `-- widgets/
     `-- memory-plain.json
 ```
 
-`app.json` stores application keys and `themes.json` stores objects under theme
-IDs. `widgets.json` stores the widget index:
+`app.json` stores application keys. `themes.json` stores the theme index:
+
+```json
+{
+  "version": 1,
+  "themes": {
+    "Example": {
+      "file": "themes/Example.json"
+    }
+  }
+}
+```
+
+`widgets.json` stores the widget index:
 
 ```json
 {
@@ -41,10 +55,23 @@ Each indexed widget file has its own ID and settings object:
 }
 ```
 
-Widget files are created on the first write. An uninitialized widget reads as
-an empty settings object and does not create a file. Settings routes accept any
-safe widget ID. Deleting the last setting keeps the empty widget file and its
-index entry.
+Each indexed theme file has the same shape:
+
+```json
+{
+  "version": 1,
+  "id": "Example",
+  "settings": {
+    "accent": "#fff"
+  }
+}
+```
+
+Theme and widget files are created on the first write. An uninitialized scope
+reads as an empty settings object and does not create a file. Settings routes
+accept safe theme and widget IDs. Deleting the last setting keeps the empty
+file and its index entry. Indexed paths must remain inside their matching
+subdirectory, and filenames use encoded scope IDs.
 
 Set `app.hardware_monitor_enabled` to `false` to skip LibreHardwareMonitor
 initialization and sensor fallback:
@@ -162,8 +189,8 @@ settings.
 | `PUT` | `/api/settings/{namespace}/{id}/{key}` | Write one scoped value |
 | `DELETE` | `/api/settings/{namespace}/{id}/{key}` | Delete one scoped value |
 
-Scoped routes accept `themes` and safe widget IDs under `widgets`. Missing
-settings return `404`; uninitialized widget namespaces read as empty objects.
+Scoped routes accept safe theme and widget IDs. Missing settings return `404`;
+uninitialized scoped namespaces read as empty objects.
 Storage failures return `503`.
 
 ## File locations
@@ -181,18 +208,18 @@ Production and frozen runs use:
 ```
 
 Set `WEBSKIN_SETTINGS_PATH` to choose another settings directory. The backend
-creates `app.json`, `themes.json`, `widgets.json`, and `widgets/` there when
-they are missing. The old single `settings.json` format is not read or
-migrated.
+creates `app.json`, `themes.json`, `widgets.json`, `themes/`, and `widgets/`
+there when they are missing. The old single `settings.json` format and old
+inline theme entries are not read or migrated.
 
 Theme packages use a separate root. See [Theme runtime](theme-runtime.md) for
 `WEBSKIN_THEMES_ROOT` and environment selection.
 
 ## Writes
 
-The JSON storage validates versions, namespace shapes, widget IDs, and indexed
+The JSON storage validates versions, namespace shapes, scoped IDs, and indexed
 paths when it loads a file. For each write, it creates a temporary file beside
-the target, flushes and syncs the file, then replaces the target. A first widget
-write replaces the widget file before it updates `widgets.json`, so the index
-never points to a file that was not written.
+the target, flushes and syncs the file, then replaces the target. A first scoped
+write replaces the scoped file before it updates its index, so an index never
+points to a file that was not written.
 

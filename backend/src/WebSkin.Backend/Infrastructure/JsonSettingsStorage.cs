@@ -26,11 +26,13 @@ public sealed class JsonSettingsStorage : ISettingsStorage
     };
     private readonly object _gate = new();
     private readonly string _path;
+    private readonly string _themesPath;
     private readonly string _widgetsPath;
 
     public JsonSettingsStorage(IPathResolver paths)
     {
         _path = paths.GetSettingsPath();
+        _themesPath = Path.Combine(_path, "themes");
         _widgetsPath = Path.Combine(_path, "widgets");
         Initialize();
     }
@@ -41,18 +43,22 @@ public sealed class JsonSettingsStorage : ISettingsStorage
         {
             var document = LoadNamespace(namespaceName);
             var values = document[namespaceName]?.AsObject() ?? throw InvalidNamespace(namespaceName);
-            if (namespaceName != "widgets")
+            if (namespaceName != "themes" && namespaceName != "widgets")
             {
                 if (identifier is null) return Clone(values);
                 return values[identifier]?.AsObject() is { } scoped ? Clone(scoped) : new JsonObject();
             }
 
             if (identifier is not null)
-                return LoadWidgetSettings(identifier, values);
+                return namespaceName == "themes"
+                    ? LoadThemeSettings(identifier, values)
+                    : LoadWidgetSettings(identifier, values);
 
             var result = new JsonObject();
             foreach (var widget in values)
-                result[widget.Key] = LoadWidgetSettings(widget.Key, values);
+                result[widget.Key] = namespaceName == "themes"
+                    ? LoadThemeSettings(widget.Key, values)
+                    : LoadWidgetSettings(widget.Key, values);
             return result;
         }
     }
@@ -63,8 +69,10 @@ public sealed class JsonSettingsStorage : ISettingsStorage
         {
             var document = LoadNamespace(namespaceName);
             JsonObject container;
-            if (namespaceName == "widgets" && identifier is not null)
-                container = LoadWidgetSettings(identifier, document[namespaceName]!.AsObject());
+            if ((namespaceName == "themes" || namespaceName == "widgets") && identifier is not null)
+                container = namespaceName == "themes"
+                    ? LoadThemeSettings(identifier, document[namespaceName]!.AsObject())
+                    : LoadWidgetSettings(identifier, document[namespaceName]!.AsObject());
             else
                 container = identifier is null
                     ? document[namespaceName]!.AsObject()
@@ -78,9 +86,10 @@ public sealed class JsonSettingsStorage : ISettingsStorage
     {
         lock (_gate)
         {
-            if (namespaceName == "widgets" && identifier is not null)
+            if ((namespaceName == "themes" || namespaceName == "widgets") && identifier is not null)
             {
-                SetWidgetValue(identifier, key, value);
+                if (namespaceName == "themes") SetThemeValue(identifier, key, value);
+                else SetWidgetValue(identifier, key, value);
                 return;
             }
 
@@ -99,8 +108,10 @@ public sealed class JsonSettingsStorage : ISettingsStorage
     {
         lock (_gate)
         {
-            if (namespaceName == "widgets" && identifier is not null)
-                return DeleteWidgetValue(identifier, key);
+            if ((namespaceName == "themes" || namespaceName == "widgets") && identifier is not null)
+                return namespaceName == "themes"
+                    ? DeleteThemeValue(identifier, key)
+                    : DeleteWidgetValue(identifier, key);
 
             var document = LoadNamespace(namespaceName);
             var values = document[namespaceName]!.AsObject();
@@ -118,6 +129,7 @@ public sealed class JsonSettingsStorage : ISettingsStorage
     {
         try
         {
+            Directory.CreateDirectory(_themesPath);
             Directory.CreateDirectory(_widgetsPath);
             foreach (var namespaceName in Namespaces)
             {
@@ -141,8 +153,7 @@ public sealed class JsonSettingsStorage : ISettingsStorage
                 ?? throw InvalidNamespace(namespaceName);
             if (document["version"]?.GetValue<int>() != Version || document[namespaceName] is not JsonObject values)
                 throw InvalidNamespace(namespaceName);
-            if (namespaceName == "themes" && values.Any(entry => entry.Value is not JsonObject))
-                throw new SettingsStorageException("Settings namespace contains invalid entries: themes");
+            if (namespaceName == "themes") ValidateThemeIndex(values);
             if (namespaceName == "widgets") ValidateWidgetIndex(values);
             return document;
         }
@@ -172,6 +183,25 @@ public sealed class JsonSettingsStorage : ISettingsStorage
         WriteWidgetFile(IndexedWidgetPath(identifier, index[identifier]!.AsObject()), identifier, settings);
     }
 
+    private void SetThemeValue(string identifier, string key, JsonNode? value)
+    {
+        ValidateThemeIdentifier(identifier);
+        var document = LoadNamespace("themes");
+        var index = document["themes"]!.AsObject();
+        if (index[identifier] is null)
+        {
+            var themePath = GeneratedThemePath(identifier);
+            WriteThemeFile(themePath, identifier, new JsonObject { [key] = value?.DeepClone() });
+            index[identifier] = new JsonObject { ["file"] = RelativeThemePath(themePath) };
+            WriteDocument(NamespacePath("themes"), document);
+            return;
+        }
+
+        var settings = LoadThemeSettings(identifier, index);
+        settings[key] = value?.DeepClone();
+        WriteThemeFile(IndexedThemePath(identifier, index[identifier]!.AsObject()), identifier, settings);
+    }
+
     private bool DeleteWidgetValue(string identifier, string key)
     {
         ValidateWidgetIdentifier(identifier);
@@ -181,6 +211,18 @@ public sealed class JsonSettingsStorage : ISettingsStorage
         var settings = LoadWidgetSettings(identifier, index);
         if (!settings.Remove(key)) return false;
         WriteWidgetFile(IndexedWidgetPath(identifier, index[identifier]!.AsObject()), identifier, settings);
+        return true;
+    }
+
+    private bool DeleteThemeValue(string identifier, string key)
+    {
+        ValidateThemeIdentifier(identifier);
+        var document = LoadNamespace("themes");
+        var index = document["themes"]!.AsObject();
+        if (index[identifier] is null) return false;
+        var settings = LoadThemeSettings(identifier, index);
+        if (!settings.Remove(key)) return false;
+        WriteThemeFile(IndexedThemePath(identifier, index[identifier]!.AsObject()), identifier, settings);
         return true;
     }
 
@@ -202,6 +244,38 @@ public sealed class JsonSettingsStorage : ISettingsStorage
         catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException or FormatException)
         {
             throw new SettingsStorageException($"Widget settings file is unreadable: {path}", ex);
+        }
+    }
+
+    private JsonObject LoadThemeSettings(string identifier, JsonObject index)
+    {
+        ValidateThemeIdentifier(identifier);
+        if (index[identifier] is null) return new JsonObject();
+        var path = IndexedThemePath(identifier, index[identifier]!.AsObject());
+        try
+        {
+            var document = JsonNode.Parse(File.ReadAllText(path))?.AsObject();
+            if (document?["version"]?.GetValue<int>() != Version
+                || document["id"]?.GetValue<string>() != identifier
+                || document["settings"] is not JsonObject settings)
+                throw new SettingsStorageException($"Theme settings file has an invalid format: {path}");
+            return Clone(settings);
+        }
+        catch (SettingsStorageException) { throw; }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException or FormatException)
+        {
+            throw new SettingsStorageException($"Theme settings file is unreadable: {path}", ex);
+        }
+    }
+
+    private void ValidateThemeIndex(JsonObject index)
+    {
+        foreach (var entry in index)
+        {
+            ValidateThemeIdentifier(entry.Key);
+            if (entry.Value is not JsonObject value || value["file"]?.GetValue<string>() is not string)
+                throw new SettingsStorageException($"Theme index entry is invalid: {entry.Key}");
+            _ = IndexedThemePath(entry.Key, value);
         }
     }
 
@@ -229,7 +303,22 @@ public sealed class JsonSettingsStorage : ISettingsStorage
         return candidate;
     }
 
+    private string IndexedThemePath(string identifier, JsonObject entry)
+    {
+        ValidateThemeIdentifier(identifier);
+        var relative = entry["file"]?.GetValue<string>() ?? string.Empty;
+        var parts = relative.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2 || parts[0] != "themes" || !parts[1].EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            throw new SettingsStorageException($"Theme settings path is invalid: {identifier}");
+        var candidate = Path.GetFullPath(Path.Combine(new[] { _path }.Concat(parts).ToArray()));
+        if (!PathResolver.IsUnder(candidate, Path.GetFullPath(_themesPath)) || !File.Exists(candidate))
+            throw new SettingsStorageException($"Theme settings file is missing: {candidate}");
+        return candidate;
+    }
+
+    private string GeneratedThemePath(string identifier) => Path.Combine(_themesPath, PathEncoding.PythonQuote(identifier) + ".json");
     private string GeneratedWidgetPath(string identifier) => Path.Combine(_widgetsPath, PathEncoding.PythonQuote(identifier) + ".json");
+    private string RelativeThemePath(string path) => Path.GetRelativePath(_path, path).Replace(Path.DirectorySeparatorChar, '/');
     private string RelativeWidgetPath(string path) => Path.GetRelativePath(_path, path).Replace(Path.DirectorySeparatorChar, '/');
     private string NamespacePath(string namespaceName)
     {
@@ -240,6 +329,15 @@ public sealed class JsonSettingsStorage : ISettingsStorage
 
     private void WriteWidgetFile(string path, string identifier, JsonObject settings) =>
         WriteDocument(path, new JsonObject { ["version"] = Version, ["id"] = identifier, ["settings"] = settings });
+
+    private void WriteThemeFile(string path, string identifier, JsonObject settings) =>
+        WriteDocument(path, new JsonObject { ["version"] = Version, ["id"] = identifier, ["settings"] = settings });
+
+    private static void ValidateThemeIdentifier(string identifier)
+    {
+        if (string.IsNullOrEmpty(identifier) || identifier is "." or ".." || identifier.Contains('/') || identifier.Contains('\\') || identifier.Contains('\0'))
+            throw new SettingsStorageException("Theme identifier is invalid");
+    }
 
     private static void ValidateWidgetIdentifier(string identifier)
     {

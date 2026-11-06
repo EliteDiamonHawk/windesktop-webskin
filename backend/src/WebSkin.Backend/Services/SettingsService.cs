@@ -65,7 +65,11 @@ public sealed class SettingsService
         if (!_storage.DeleteValue(namespaceName, key, identifier)) throw new SettingNotFoundException(key);
     }
 
-    public bool IsValidWidget(string identifier) =>
+    public bool IsValidWidget(string identifier) => IsValidScopedIdentifier(identifier);
+
+    public bool IsValidTheme(string identifier) => IsValidScopedIdentifier(identifier);
+
+    private static bool IsValidScopedIdentifier(string identifier) =>
         !string.IsNullOrEmpty(identifier) && identifier is not "." and not ".."
         && !identifier.Contains('/') && !identifier.Contains('\\') && !identifier.Contains('\0');
 

@@ -162,7 +162,12 @@ public static class Endpoints
     }
 
     private static bool IsValidScope(string namespaceName, string identifier, SettingsService service) =>
-        namespaceName is "themes" or "widgets" && (namespaceName != "widgets" || service.IsValidWidget(identifier));
+        namespaceName switch
+        {
+            "themes" => service.IsValidTheme(identifier),
+            "widgets" => service.IsValidWidget(identifier),
+            _ => false,
+        };
 
     private static async Task<(bool Valid, JsonNode? Node)> ReadJson(HttpRequest request)
     {

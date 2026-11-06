@@ -242,7 +242,7 @@ public static class Endpoints
         if (!context.WebSockets.IsWebSocketRequest) { context.Response.StatusCode = 400; return; }
         var origin = context.Request.Headers.Origin.FirstOrDefault();
         using var socket = await context.WebSockets.AcceptWebSocketAsync();
-        if (!string.IsNullOrEmpty(origin) && !allowedOrigins.Contains(origin))
+        if (!string.IsNullOrEmpty(origin) && !allowedOrigins.Contains(origin) && !IsSameOrigin(context, origin))
         {
             await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Origin is not allowed", context.RequestAborted);
             return;
@@ -339,6 +339,16 @@ public static class Endpoints
             await Stop();
             sendGate.Dispose();
         }
+    }
+
+    private static bool IsSameOrigin(HttpContext context, string origin)
+    {
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var originUri)) return false;
+        var requestPort = context.Request.Host.Port ?? (context.Request.IsHttps ? 443 : 80);
+        var originPort = originUri.IsDefaultPort ? (originUri.Scheme == "https" ? 443 : 80) : originUri.Port;
+        return string.Equals(originUri.Scheme, context.Request.Scheme, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(originUri.Host, context.Request.Host.Host, StringComparison.OrdinalIgnoreCase)
+            && originPort == requestPort;
     }
 
     private static async Task<string?> ReceiveMessage(WebSocket socket, CancellationToken cancellationToken)

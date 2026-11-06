@@ -157,6 +157,7 @@ logs/
 /localdata/settings.json
 /localdata/settings/
 /localdata/common/
+/localdata/dashboard/
 /localdata/themes/dev/
 /.uv-cache/
 /.uv-cache-local/

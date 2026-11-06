@@ -12,7 +12,7 @@ Run workspace commands from the repository root.
 | `pnpm dev:common` | Watch the shared asset build |
 | `pnpm dev:themes` | Watch the built-in theme build |
 | `pnpm build:assets` | Build shared and theme files |
-| `pnpm build` | Build assets and the frontend site |
+| `pnpm build` | Build assets and the frontend site into the selected runtime root |
 
 Run frontend checks with:
 
@@ -24,11 +24,29 @@ pnpm --filter @project/frontend build
 ## Asset builds
 
 The `common` Vite config copies source files and `public/` assets to
-`localdata/common/` and keeps their module paths. The `themes` config copies the `dev` package to
-`localdata/themes/dev/`. Vite leaves `/common/` imports unresolved.
+the selected runtime root's `common/` directory and keeps their module paths.
+The `themes` config copies the `dev` package to `localdata/themes/dev/` for
+development. Vite leaves `/common/` imports unresolved.
 
-ASP.NET Core serves generated files. It does not run Vite or a package manager
-when it loads a theme.
+The frontend build writes the dashboard to `localdata/dashboard/` by default.
+ASP.NET Core serves those files at `/` and `/dashboard/`. Set
+`WEBSKIN_THEMES_ROOT` to use another shared runtime root. It does not run Vite
+or a package manager when it loads a theme.
+
+For a production-shaped local run, build first and start the backend:
+
+```bash
+pnpm build
+pnpm --dir backend start
+```
+
+Open `http://127.0.0.1:8000/`. Add themes manually to the directory selected by
+`WEBSKIN_THEMES_ROOT`; production defaults to
+`%LOCALAPPDATA%/WinDesktop WebSkin/themes/`.
+
+When production mode selects the `%LOCALAPPDATA%` root, use the same environment
+for `pnpm build` and backend startup so both processes use the same dashboard
+directory.
 
 ## Backend commands
 

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.FileProviders;
 using WebSkin.Backend.Api;
 using WebSkin.Backend.Infrastructure;
 using WebSkin.Backend.Metrics;
@@ -49,6 +50,13 @@ app.Use(async (context, next) =>
 });
 app.UseCors("frontend");
 app.UseWebSockets();
+var dashboardRoot = app.Services.GetRequiredService<IPathResolver>().GetThemePaths().DashboardRoot;
+if (Directory.Exists(dashboardRoot))
+{
+    var dashboardProvider = new PhysicalFileProvider(dashboardRoot);
+    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = dashboardProvider });
+    app.UseStaticFiles(new StaticFileOptions { FileProvider = dashboardProvider });
+}
 app.UseSwagger();
 app.UseSwaggerUI(options => options.RoutePrefix = "docs");
 app.MapWebSkinEndpoints(origins);

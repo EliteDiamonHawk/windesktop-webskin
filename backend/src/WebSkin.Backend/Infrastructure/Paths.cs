@@ -5,6 +5,7 @@ namespace WebSkin.Backend.Infrastructure;
 
 public sealed record ThemePaths(string Root)
 {
+    public string DashboardRoot => Path.Combine(Root, "dashboard");
     public string CommonRoot => Path.Combine(Root, "common");
     public string ThemeRoot => Path.Combine(Root, "themes");
 }

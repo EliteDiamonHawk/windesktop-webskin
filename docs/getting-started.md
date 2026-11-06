@@ -30,6 +30,28 @@ Open these URLs:
 Vite proxies `/api`, `/common`, and `/themes` to ASP.NET Core. Browser code can
 use those paths from dashboard origin.
 
+## Run the production-shaped build
+
+Build the dashboard and shared assets, then start ASP.NET Core:
+
+```bash
+pnpm build
+pnpm --dir backend start
+```
+
+Open `http://127.0.0.1:8000/`. ASP.NET Core serves the dashboard from the
+selected runtime root's `dashboard/` directory and serves theme packages
+through its existing `/themes/` routes.
+
+The build does not include themes. Add theme packages to the directory selected
+by `WEBSKIN_THEMES_ROOT`. In development, the default is the repository's
+`localdata/` directory. In production, the default is
+`%LOCALAPPDATA%/WinDesktop WebSkin/themes/`.
+
+Use the same `WEBSKIN_THEMES_ROOT` and production environment variables while
+building and starting the backend. This keeps dashboard, common, and theme
+files under one runtime root when those assets are built for that environment.
+
 ## Start one service
 
 From the repository root:

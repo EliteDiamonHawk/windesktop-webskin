@@ -1,10 +1,32 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, extname, relative, resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 const sourceRoot = resolve('src');
 const publicRoot = resolve('public');
-const outputRoot = resolve('../localdata/common');
+
+const expandEnvironmentVariables = (value) =>
+  value.replace(/%([^%]+)%/g, (_, name) => process.env[name] ?? `%${name}%`);
+
+const isProduction = () => {
+  const environment = (process.env.WEBSKIN_ENV ?? 'development').toLowerCase();
+  const flag = (process.env.WEBSKIN_PRODUCTION ?? '').toLowerCase();
+  return ['production', 'prod', 'release'].includes(environment)
+    || ['1', 'true', 'yes'].includes(flag);
+};
+
+const localAppData = () => process.env.LOCALAPPDATA
+  ?? resolve(process.env.USERPROFILE ?? homedir(), 'AppData', 'Local');
+
+const runtimeRoot = () => {
+  const explicitRoot = process.env.WEBSKIN_THEMES_ROOT;
+  if (explicitRoot?.trim()) return resolve(expandEnvironmentVariables(explicitRoot));
+  if (isProduction()) return resolve(localAppData(), 'WinDesktop WebSkin', 'themes');
+  return resolve(process.cwd(), '../localdata');
+};
+
+const outputRoot = resolve(runtimeRoot(), 'common');
 
 function sourceFiles(directory = sourceRoot) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

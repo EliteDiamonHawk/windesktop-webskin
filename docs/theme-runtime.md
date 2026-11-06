@@ -45,9 +45,11 @@ either file stays off the theme list and returns 404 from asset routes.
 2. `%LOCALAPPDATA%/WinDesktop WebSkin/themes/` in production, release, or frozen mode.
 3. The repository `localdata/` directory in development.
 
-The selected root contains `common/` and `themes/`. Call `get_theme_paths()`
-when code needs these directories. The function reads the environment for each
-request, so tests and embedded hosts can change the root before handling one.
+The selected root contains `dashboard/`, `common/`, and `themes/`. The Vite
+dashboard build writes to `dashboard/`; ASP.NET Core serves that directory at
+`/`. Call `get_theme_paths()` when code needs these directories. The function
+reads the environment for each request, so tests and embedded hosts can change
+the root before handling one.
 
 ## IDs and names
 

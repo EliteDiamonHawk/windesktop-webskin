@@ -4,16 +4,24 @@
 
 - `dashboard/` contains the Vite dashboard. It loads user themes through the API.
 - `backend/` contains the ASP.NET Core service. It owns settings, theme files, HTTP routes, and asset serving.
-- `common/` contains shared browser modules. Its Vite build writes `localdata/common/`.
+- `common/` contains shared browser modules. Its Vite build writes the selected runtime root's `common/` directory.
 - `dev/themes/` contains built-in theme source. Its Vite build writes `localdata/themes/dev/`.
 
 ## Request flow
 
-Vite listens on port `4321`. Its proxy sends `/api`, `/common`, and `/themes`
-requests to ASP.NET Core on port `8000`.
+During development, Vite listens on port `4321`. Its proxy sends `/api`,
+`/common`, and `/themes` requests to ASP.NET Core on port `8000`.
 
 ```text
 Browser -> Vite proxy -> ASP.NET Core
+```
+
+After `pnpm build`, ASP.NET Core serves the dashboard from the selected
+runtime root's `dashboard/` directory and handles API and theme requests on the
+same origin.
+
+```text
+Browser -> ASP.NET Core
 ```
 
 ASP.NET Core serves a theme from `/themes/{theme_id}/`. The theme imports shared
@@ -32,8 +40,9 @@ CSS.
 
 ## Runtime roots
 
-`ThemePaths` exposes two directories below one selected root:
+`ThemePaths` exposes three directories below one selected root:
 
+- `dashboard_root` serves the dashboard entrypoint and assets.
 - `common_root` serves `/common/...`.
 - `theme_root` serves `/themes/{theme_id}/...`.
 

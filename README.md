@@ -28,9 +28,7 @@ Open the dashboard at `http://localhost:4321`. ASP.NET Core listens at
 - `common/`: shared browser modules and widgets
 - `dev/themes/`: built-in theme source
 - `localdata/`: generated runtime files and local data
-- `wv2wall/`: Windows and WebView2 host
 
 Read the [documentation index](docs/README.md) for setup, development, themes,
-the API, widgets, and storage. Read the [`wv2wall` guide](wv2wall/README.md)
-for the Windows host.
+the API, widgets, and storage.
 

@@ -6,9 +6,6 @@
 - .NET SDK `10.0` or newer
 - `pnpm`
 
-The Windows host also needs .NET and WebView2. Read
-[`wv2wall/README.md`](../wv2wall/README.md) for its requirements.
-
 ## Install and start
 
 Run these commands from the repository root:

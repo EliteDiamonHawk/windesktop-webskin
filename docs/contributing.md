@@ -8,11 +8,6 @@ Keep changes in the project that owns them:
 - `backend/` contains ASP.NET Core, settings, filesystem, and API code.
 - `common/` contains shared browser modules.
 - `dev/themes/` contains built-in theme source.
-- `wv2wall/` contains the Windows host.
-
-`wv2wall/` has its own Git history and build process. Update the root
-submodule pointer only when the root project should consume a new host commit.
-
 Use `apply_patch` for repository edits. Preserve unrelated working-tree changes.
 Keep credentials, local settings, package stores, Python caches, and .NET output
 out of commits.
@@ -42,16 +37,6 @@ route. For theme changes, open `/themes/{id}/`, check relative assets and
 For path or storage changes, test the development defaults and temporary
 `WEBSKIN_THEMES_ROOT` and `WEBSKIN_SETTINGS_PATH` values.
 
-For host changes, run these commands from `wv2wall/wv2wall/`:
-
-```powershell
-dotnet restore
-dotnet build -c Release
-```
-
-Then check tray behavior, monitor modes, mouse forwarding, keyboard focus, and
-the desktop context menu.
-
-Review root and submodule status before handoff. Keep generated files and
-unrelated submodule changes out of the final change.
+Review root status before handoff. Keep generated files and unrelated changes
+out of the final change.
 

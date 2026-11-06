@@ -6,7 +6,6 @@
 - `backend/` contains the ASP.NET Core service. It owns settings, theme files, HTTP routes, and asset serving.
 - `common/` contains shared browser modules. Its Vite build writes `localdata/common/`.
 - `dev/themes/` contains built-in theme source. Its Vite build writes `localdata/themes/dev/`.
-- `wv2wall/` contains the Windows host and its own build process.
 
 ## Request flow
 

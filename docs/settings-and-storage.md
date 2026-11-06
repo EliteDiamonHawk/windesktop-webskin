@@ -126,8 +126,8 @@ resolved values under `widgets` for each common time widget.
 
 System widgets use three app-level polling families. The defaults are 5 seconds
 for fast telemetry (CPU utilization, disk I/O, network, and GPU sensors), 30
-seconds for standard metrics (memory, swap, battery, CPU frequency, CPU
-telemetry, and load average), and 60 seconds for slow metrics (CPU counts and
+seconds for standard metrics (memory, swap, battery, and CPU frequency), and 60
+seconds for slow metrics (CPU counts and
 disk partitions). The app keys are
 `system_fast_update_interval_seconds`,
 `system_standard_update_interval_seconds`, and

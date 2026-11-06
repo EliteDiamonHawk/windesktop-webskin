@@ -82,8 +82,6 @@ const snapshot = {
         { current_mhz: 2500, minimum_mhz: 900, maximum_mhz: 4300 },
       ],
     },
-    telemetry: { interrupts: 10, system_calls: 20, context_switches: 30 },
-    load_average: { one_minute: 0.1, five_minutes: 0.2, fifteen_minutes: 0.3 },
   },
   memory: {
     virtual: { total_bytes: 4096, available_bytes: 2048, used_bytes: 2048, free_bytes: 1024, percent: 50 },
@@ -254,51 +252,6 @@ test("keeps prestyled units in value and fixes GPU degree units", async () => {
   }
 });
 
-test("applies default prestyled digit limits without moving units", async () => {
-  const originalNow = Date.now;
-  Date.now = () => 1_700_000_000_000 + 7_654_321_000;
-  responseSnapshot = {
-    ...snapshot,
-    cpu: {
-      ...snapshot.cpu,
-      load_average: { ...snapshot.cpu.load_average, one_minute: 1234567890 },
-    },
-  };
-  const uptime = widgets.createLastBootPrestyled({ updateInterval: 25 });
-  const load = widgets.createCpuLoadAveragePrestyled({ updateInterval: 26 });
-  created.push(uptime, load);
-
-  try {
-    await waitForPoll();
-    assert.equal(textOf(uptime.parts.value), "76543 s");
-    assert.equal(uptime.parts.subtext.textContent, "Uptime");
-    assert.equal(textOf(load.parts.value), "12345");
-    assert.equal(load.parts.subtext.textContent, "Load");
-  } finally {
-    Date.now = originalNow;
-  }
-});
-
-test("supports configurable digit limits on plain and prestyled metrics", async () => {
-  responseSnapshot = {
-    ...snapshot,
-    cpu: {
-      ...snapshot.cpu,
-      load_average: { ...snapshot.cpu.load_average, one_minute: 1234567890 },
-    },
-  };
-  const plain = widgets.createCpuLoadAverage({ format: "{one}", updateInterval: 27 });
-  const limitedPlain = widgets.createCpuLoadAverage({ format: "{one}", digitLimit: 3, updateInterval: 28 });
-  const limitedPrestyled = widgets.createCpuLoadAveragePrestyled({ digitLimit: 2, updateInterval: 29 });
-  created.push(plain, limitedPlain, limitedPrestyled);
-
-  await waitForPoll();
-  assert.equal(rowsText(plain)[0], "1,234,567,890");
-  assert.equal(rowsText(limitedPlain)[0], "123");
-  assert.equal(textOf(limitedPrestyled.parts.value), "12");
-  assert.equal(limitedPrestyled.parts.subtext.textContent, "Load");
-});
-
 test("rejects invalid digit limits", () => {
   assert.throws(() => widgets.createMemory({ digitLimit: 0 }), /digitLimit must be a positive integer/);
   assert.throws(() => widgets.createNetworkPrestyled({ digitLimit: 1.5 }), /digitLimit must be a positive integer/);
@@ -427,13 +380,12 @@ test("coalesces widgets with the same endpoint and update interval", async () =>
 test("uses independent polling families and supports update interval overrides", async () => {
   const memory = widgets.createMemory({ format: "{used}" });
   const cpu = widgets.createCpuUtilization({ format: "{value}" });
-  const standard = widgets.createCpuTelemetry();
   const override = widgets.createBattery({ updateInterval: 2 });
   const explicit = widgets.createSwapMemory({ updateInterval: 12 });
-  created.push(memory, cpu, standard, override, explicit);
+  created.push(memory, cpu, override, explicit);
   await waitForPoll();
 
-  assert.equal(requestUrls.length, 5);
+  assert.equal(requestUrls.length, 4);
   assert.ok(timerDelays.includes(15000));
   assert.ok(timerDelays.includes(5000));
   assert.ok(timerDelays.includes(30000));
@@ -527,12 +479,10 @@ test("renders CPU variants and limits", async () => {
 test("renders the canonical combined widgets", async () => {
   const counts = widgets.createCpuCoreCounts();
   const frequency = widgets.createCpuFrequency({ core: 0 });
-  const telemetry = widgets.createCpuTelemetry();
-  const load = widgets.createCpuLoadAverage();
   const swap = widgets.createSwapMemory();
   const disk = widgets.createDiskIo();
   const partitions = widgets.createDiskPartitions({ mountPoint: "C:\\" });
-  created.push(counts, frequency, telemetry, load, swap, disk, partitions);
+  created.push(counts, frequency, swap, disk, partitions);
   await waitForPoll();
   assert.deepEqual(rowsText(counts), ["Physical: 2", "Logical: 4"]);
   assert.equal(rowsText(frequency)[0], "Core 1");

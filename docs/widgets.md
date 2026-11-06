@@ -317,8 +317,6 @@ createCpuUtilization
 createCpuUtilizationList
 createCpuCoreCounts
 createCpuFrequency
-createCpuTelemetry
-createCpuLoadAverage
 createMemory
 createSwapMemory
 createDiskIo

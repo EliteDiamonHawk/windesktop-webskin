@@ -556,8 +556,6 @@ const SYSTEM_WIDGET_CONFIG = Object.freeze({
   "cpu-utilization-list": { widgetId: "cpu-utilization-list-plain", family: "fast" },
   "cpu-core-counts": { widgetId: "cpu-core-counts-plain", family: "slow" },
   "cpu-frequency": { widgetId: "cpu-frequency-plain", family: "standard" },
-  "cpu-telemetry": { widgetId: "cpu-telemetry-plain", family: "standard" },
-  "cpu-load-average": { widgetId: "cpu-load-average-plain", family: "standard" },
   "memory": { widgetId: "memory-plain", family: "standard" },
   "swap-memory": { widgetId: "swap-memory-plain", family: "standard" },
   "disk-io": { widgetId: "disk-io-plain", family: "fast" },

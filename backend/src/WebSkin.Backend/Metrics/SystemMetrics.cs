@@ -21,8 +21,6 @@ public static class MetricFields
         "cpu.cores", "cpu.cores.physical", "cpu.cores.logical",
         "cpu.frequencies", "cpu.frequencies.current_mhz", "cpu.frequencies.minimum_mhz", "cpu.frequencies.maximum_mhz", "cpu.frequencies.per_core",
         "cpu.frequencies.per_core.current_mhz", "cpu.frequencies.per_core.minimum_mhz", "cpu.frequencies.per_core.maximum_mhz",
-        "cpu.telemetry", "cpu.telemetry.interrupts", "cpu.telemetry.system_calls", "cpu.telemetry.context_switches",
-        "cpu.load_average", "cpu.load_average.one_minute", "cpu.load_average.five_minutes", "cpu.load_average.fifteen_minutes",
         "memory.virtual", "memory.virtual.total_bytes", "memory.virtual.available_bytes", "memory.virtual.used_bytes", "memory.virtual.free_bytes", "memory.virtual.percent",
         "memory.swap", "memory.swap.total_bytes", "memory.swap.used_bytes", "memory.swap.free_bytes", "memory.swap.percent",
         "disks.partitions", "disks.partitions.mount_point", "disks.partitions.filesystem", "disks.partitions.mount_options",
@@ -198,15 +196,11 @@ public sealed class SystemMetricsService : ISystemMetricsProvider, IDisposable
         }
         var frequencies = Group(current is not null,
             ("current_mhz", current), ("minimum_mhz", minimum), ("maximum_mhz", maximum), ("per_core", MetricFields.Requested(fields, "cpu.frequencies.per_core") ? perCoreFrequencies : new List<object?>()));
-        var telemetry = Group(false, ("interrupts", null), ("system_calls", null), ("context_switches", null));
-        var load = Group(false, ("one_minute", null), ("five_minutes", null), ("fifteen_minutes", null));
         return new Dictionary<string, object?>(StringComparer.Ordinal)
         {
             ["utilization"] = utilization,
             ["cores"] = cores,
             ["frequencies"] = frequencies,
-            ["telemetry"] = telemetry,
-            ["load_average"] = load,
         };
     }
 
@@ -510,10 +504,6 @@ public sealed class SystemMetricsService : ISystemMetricsProvider, IDisposable
             { if (!MetricFields.Requested(fields, "cpu.cores")) cores["available"] = false; if (!MetricFields.Requested(fields, "cpu.cores.physical")) cores["physical"] = null; if (!MetricFields.Requested(fields, "cpu.cores.logical")) cores["logical"] = null; }
             if (cpu["frequencies"] is Dictionary<string, object?> frequency)
             { if (!MetricFields.Requested(fields, "cpu.frequencies")) frequency["available"] = false; if (!MetricFields.Requested(fields, "cpu.frequencies.current_mhz")) frequency["current_mhz"] = null; if (!MetricFields.Requested(fields, "cpu.frequencies.minimum_mhz")) frequency["minimum_mhz"] = null; if (!MetricFields.Requested(fields, "cpu.frequencies.maximum_mhz")) frequency["maximum_mhz"] = null; if (!MetricFields.Requested(fields, "cpu.frequencies.per_core")) frequency["per_core"] = new List<object?>(); }
-            if (cpu["telemetry"] is Dictionary<string, object?> telemetry)
-            { if (!MetricFields.Requested(fields, "cpu.telemetry")) telemetry["available"] = false; foreach (var key in new[] { "interrupts", "system_calls", "context_switches" }) telemetry[key] = null; }
-            if (cpu["load_average"] is Dictionary<string, object?> load)
-            { if (!MetricFields.Requested(fields, "cpu.load_average")) load["available"] = false; foreach (var key in new[] { "one_minute", "five_minutes", "fifteen_minutes" }) load[key] = null; }
         }
         if (snapshot.GetValueOrDefault("memory") is Dictionary<string, object?> memory)
         {

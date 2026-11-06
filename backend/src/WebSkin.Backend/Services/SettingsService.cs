@@ -10,11 +10,11 @@ public sealed class SettingsService
     public static readonly IReadOnlySet<string> CommonWidgetIds = new HashSet<string>(StringComparer.Ordinal)
     {
         "last-boot-plain", "battery-plain", "cpu-utilization-plain", "cpu-utilization-list-plain",
-        "cpu-core-counts-plain", "cpu-frequency-plain", "cpu-telemetry-plain", "cpu-load-average-plain",
+        "cpu-core-counts-plain", "cpu-frequency-plain",
         "memory-plain", "swap-memory-plain", "disk-io-plain", "network-telemetry-plain",
         "disk-partitions-plain", "gpu-thermal-fan-plain", "network-telemetry-transfer-plain",
         "battery-prestyled", "cpu-utilization-prestyled", "cpu-core-counts-prestyled", "cpu-frequency-prestyled",
-        "cpu-load-average-prestyled", "memory-prestyled", "swap-memory-prestyled", "disk-usage-prestyled",
+        "memory-prestyled", "swap-memory-prestyled", "disk-usage-prestyled",
         "network-prestyled", "gpu-temperature-prestyled", "last-boot-prestyled", "digital-plain",
         "digital-prestyled", "digital-prestyled2", "analog-plain", "analog-prestyled", "analog-prestyled2",
         "digital-analog-prestyled", "digital-day", "rainmeter-mond-clock-remake", "day-plain", "day-prestyled",
@@ -31,7 +31,7 @@ public sealed class SettingsService
         BuildIntervals(("fast", "system_fast_update_interval_seconds", 5,
             ["cpu-utilization-plain", "cpu-utilization-list-plain", "disk-io-plain", "network-telemetry-plain", "network-telemetry-transfer-plain", "gpu-thermal-fan-plain", "cpu-utilization-prestyled", "network-prestyled", "gpu-temperature-prestyled"]),
             ("standard", "system_standard_update_interval_seconds", 30,
-            ["memory-plain", "swap-memory-plain", "battery-plain", "cpu-frequency-plain", "cpu-telemetry-plain", "cpu-load-average-plain", "memory-prestyled", "swap-memory-prestyled", "battery-prestyled", "cpu-frequency-prestyled"]),
+            ["memory-plain", "swap-memory-plain", "battery-plain", "cpu-frequency-plain", "memory-prestyled", "swap-memory-prestyled", "battery-prestyled", "cpu-frequency-prestyled"]),
             ("slow", "system_slow_update_interval_seconds", 60,
             ["cpu-core-counts-plain", "disk-partitions-plain", "cpu-core-counts-prestyled", "disk-usage-prestyled", "last-boot-prestyled"]));
 

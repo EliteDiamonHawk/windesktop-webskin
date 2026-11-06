@@ -9,6 +9,10 @@ public sealed class MetricsTests
     public void Field_parser_rejects_unknown_fields_and_stream_empty_selection()
     {
         Assert.Throws<MetricValidationException>(() => MetricFields.Parse("memory.private.secret"));
+        Assert.Throws<MetricValidationException>(() => MetricFields.Parse("cpu.telemetry"));
+        Assert.Throws<MetricValidationException>(() => MetricFields.Parse("cpu.telemetry.interrupts"));
+        Assert.Throws<MetricValidationException>(() => MetricFields.Parse("cpu.load_average"));
+        Assert.Throws<MetricValidationException>(() => MetricFields.Parse("cpu.load_average.one_minute"));
         Assert.Throws<MetricValidationException>(() => MetricFields.Parse("", stream: true));
         Assert.Equal(2, MetricFields.ValidateInterval(2));
         Assert.Throws<MetricValidationException>(() => MetricFields.ValidateInterval(3601));
@@ -60,6 +64,17 @@ public sealed class MetricsTests
         Assert.Null(io["write_count"]);
         Assert.Null(io["read_bytes"]);
         Assert.False((bool)((Dictionary<string, object?>)result["disks"]!)["available"]!);
+    }
+
+    [Fact]
+    public async Task Cpu_snapshot_omits_unsupported_metric_groups()
+    {
+        using var service = new SystemMetricsService(new FakeHardwareMonitor(), new FakeClock());
+        var snapshot = await service.CollectAsync(new HashSet<string> { "cpu.utilization.overall" });
+        var cpu = (Dictionary<string, object?>)snapshot["cpu"]!;
+
+        Assert.False(cpu.ContainsKey("telemetry"));
+        Assert.False(cpu.ContainsKey("load_average"));
     }
 
     private sealed class FakeMetricsProvider : ISystemMetricsProvider

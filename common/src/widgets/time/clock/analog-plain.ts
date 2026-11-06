@@ -110,7 +110,7 @@ class PlainAnalogClock extends Widget {
       "aria-label": "Analog clock",
     });
     super(element, { type: "clock", variant });
-    element.className = classNames("webskin-clock", "webskin-clock--analog-plain", `webskin-clock--${variant}`, className);
+    element.setAttribute("class", classNames("webskin-clock", "webskin-clock--analog-plain", `webskin-clock--${variant}`, className));
 
     const face = svgElement("circle", { cx: "50", cy: "50", r: "44" });
     face.dataset.webskinClockPart = "face";

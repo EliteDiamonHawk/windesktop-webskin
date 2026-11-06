@@ -2,7 +2,7 @@
   "name": "@project/backend",
   "private": true,
   "scripts": {
-    "dev": "dotnet watch --project src/WebSkin.Backend/WebSkin.Backend.csproj run -- --urls http://127.0.0.1:8000",
+    "dev": "node scripts/dev.mjs",
     "start": "dotnet run --project src/WebSkin.Backend/WebSkin.Backend.csproj -- --urls http://0.0.0.0:8000",
     "test": "dotnet test WebSkin.Backend.sln"
   }

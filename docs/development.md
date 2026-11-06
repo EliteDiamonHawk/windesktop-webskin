@@ -52,5 +52,6 @@ ASP.NET Core publishes its schema at `/docs`.
 - A 404 under `/common/` or `/themes/` means the asset build has not run. Run `pnpm build:assets`.
 - A dashboard connection error means ASP.NET Core is down or uses another port. Check `/api/health`.
 - An unexpected theme root can come from `WEBSKIN_THEMES_ROOT`, `WEBSKIN_ENV`, or `WEBSKIN_PRODUCTION`.
+- `pnpm dev:backend` sets `WEBSKIN_DEV=true`; system controls execute by default in other runs.
 - An unexpected settings directory can come from `WEBSKIN_SETTINGS_PATH` or the active environment mode.
 

@@ -36,9 +36,8 @@ public sealed class ProcessRunner : IProcessRunner
 
     private static bool IsDevelopment()
     {
-        var environment = Environment.GetEnvironmentVariable("WEBSKIN_ENV")?.ToLowerInvariant() ?? "development";
-        var flag = Environment.GetEnvironmentVariable("WEBSKIN_PRODUCTION")?.ToLowerInvariant() ?? string.Empty;
-        return !(environment is "production" or "prod" or "release" || flag is "1" or "true" or "yes");
+        var flag = Environment.GetEnvironmentVariable("WEBSKIN_DEV")?.ToLowerInvariant();
+        return flag is "1" or "true" or "yes";
     }
 }
 

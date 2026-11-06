@@ -57,7 +57,7 @@ public sealed class MetricsTests
             },
         };
 
-        var result = service.ProjectSnapshot(snapshot, new HashSet<string> { "disks.io.read_count" });
+        var result = service.ProjectSnapshot(snapshot, new HashSet<string> { "disks.partitions.mount_point" });
         var io = (Dictionary<string, object?>)((Dictionary<string, object?>)result["disks"]!)["io"]!;
 
         Assert.Null(io["read_count"]);

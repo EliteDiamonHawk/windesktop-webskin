@@ -7,7 +7,12 @@ public static class PathEncoding
     public static string PythonQuote(string value) => Encode(value, IsUnreserved);
 
     public static string EncodeURIComponent(string value) => Encode(value, character =>
-        IsUnreserved(character) || character is '!' or '\'' or '(' or ')' or '*');
+        IsUnreserved(character)
+        || character == (byte)'!'
+        || character == 39
+        || character == (byte)'('
+        || character == (byte)')'
+        || character == (byte)'*');
 
     private static string Encode(string value, Func<byte, bool> isSafe)
     {

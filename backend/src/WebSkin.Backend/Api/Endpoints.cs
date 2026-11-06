@@ -251,7 +251,7 @@ public static class Endpoints
         var manager = context.RequestServices.GetService<IMetricsSubscriptionManager>();
         if (manager is null)
         {
-            await socket.CloseAsync(WebSocketCloseStatus.TryAgainLater, "System metric streaming is unavailable", context.RequestAborted);
+            await socket.CloseAsync(WebSocketCloseStatus.InternalServerError, "System metric streaming is unavailable", context.RequestAborted);
             return;
         }
         using var shutdown = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);

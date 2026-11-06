@@ -1,6 +1,6 @@
 # WebSkin documentation
 
-Use these pages to run, extend, and debug WinDesktop WebSkin.
+Use these pages to run, extend, and debug WebSkin.
 
 ## Start
 

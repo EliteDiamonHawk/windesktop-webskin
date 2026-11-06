@@ -42,7 +42,7 @@ either file stays off the theme list and returns 404 from asset routes.
 `backend/src/WebSkin.Backend/Infrastructure/Paths.cs` selects the root in this order:
 
 1. `WEBSKIN_THEMES_ROOT`, when set.
-2. `%LOCALAPPDATA%/WinDesktop WebSkin/themes/` in production, release, or frozen mode.
+2. `%LOCALAPPDATA%/WebSkin/themes/` in production, release, or frozen mode.
 3. The repository `localdata/` directory in development.
 
 The selected root contains `dashboard/`, `common/`, and `themes/`. The Vite

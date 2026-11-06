@@ -46,7 +46,7 @@ through its existing `/themes/` routes.
 The build does not include themes. Add theme packages to the directory selected
 by `WEBSKIN_THEMES_ROOT`. In development, the default is the repository's
 `localdata/` directory. In production, the default is
-`%LOCALAPPDATA%/WinDesktop WebSkin/themes/`.
+`%LOCALAPPDATA%/WebSkin/themes/`.
 
 Use the same `WEBSKIN_THEMES_ROOT` and production environment variables while
 building and starting the backend. This keeps dashboard, common, and theme

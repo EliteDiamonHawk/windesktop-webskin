@@ -177,7 +177,7 @@ localdata/settings/
 Production and frozen runs use:
 
 ```text
-%LOCALAPPDATA%/WinDesktopWebskin/settings/
+%LOCALAPPDATA%/WebSkin/settings/
 ```
 
 Set `WEBSKIN_SETTINGS_PATH` to choose another settings directory. The backend

@@ -26,8 +26,8 @@ out of commits.
 For frontend changes, run:
 
 ```bash
-pnpm --filter @project/frontend check
-pnpm --filter @project/frontend build
+pnpm --filter @webskin/frontend check
+pnpm --filter @webskin/frontend build
 ```
 
 For backend changes, start ASP.NET Core and call `/api/health` plus each changed

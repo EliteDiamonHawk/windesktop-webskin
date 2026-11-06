@@ -1,4 +1,4 @@
-# WinDesktop WebSkin agent guide
+# WebSkin agent guide
 
 Use this guide before changing code across the frontend, backend, theme
 runtime, or Windows host. The [documentation index](docs/README.md) links to

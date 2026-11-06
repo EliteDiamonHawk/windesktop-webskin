@@ -1,5 +1,5 @@
 {
-  "name": "@project/backend",
+  "name": "@webskin/backend",
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",

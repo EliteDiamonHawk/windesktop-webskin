@@ -20,7 +20,7 @@ const localAppData = () => process.env.LOCALAPPDATA
 const runtimeRoot = () => {
   const explicitRoot = process.env.WEBSKIN_THEMES_ROOT;
   if (explicitRoot?.trim()) return resolve(expandEnvironmentVariables(explicitRoot));
-  if (isProduction()) return resolve(localAppData(), 'WinDesktop WebSkin', 'themes');
+  if (isProduction()) return resolve(localAppData(), 'WebSkin', 'themes');
   return resolve(process.cwd(), '../localdata');
 };
 

@@ -33,7 +33,7 @@ public sealed class PathResolver : IPathResolver
             return new ThemePaths(Path.GetFullPath(Environment.ExpandEnvironmentVariables(explicitRoot)));
 
         if (IsProduction() || _repositoryRoot is null)
-            return new ThemePaths(Path.Combine(LocalAppData(), "WinDesktop WebSkin", "themes"));
+            return new ThemePaths(Path.Combine(LocalAppData(), "WebSkin", "themes"));
 
         return new ThemePaths(Path.Combine(_repositoryRoot!, "localdata"));
     }
@@ -45,7 +45,7 @@ public sealed class PathResolver : IPathResolver
             return Path.GetFullPath(Environment.ExpandEnvironmentVariables(configured));
 
         return IsProduction() || _repositoryRoot is null
-            ? Path.Combine(LocalAppData(), "WinDesktopWebskin", "settings")
+            ? Path.Combine(LocalAppData(), "WebSkin", "settings")
             : Path.Combine(_repositoryRoot!, "localdata", "settings");
     }
 

@@ -1,6 +1,6 @@
-# WinDesktop WebSkin
+# WebSkin
 
-WinDesktop WebSkin provides a browser-based desktop for Windows.
+WebSkin provides a browser-based desktop for Windows.
 
 ## Start developing
 

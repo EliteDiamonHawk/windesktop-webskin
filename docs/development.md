@@ -17,8 +17,8 @@ Run workspace commands from the repository root.
 Run frontend checks with:
 
 ```bash
-pnpm --filter @project/frontend check
-pnpm --filter @project/frontend build
+pnpm --filter @webskin/frontend check
+pnpm --filter @webskin/frontend build
 ```
 
 ## Asset builds
@@ -42,7 +42,7 @@ pnpm --dir backend start
 
 Open `http://127.0.0.1:8000/`. Add themes manually to the directory selected by
 `WEBSKIN_THEMES_ROOT`; production defaults to
-`%LOCALAPPDATA%/WinDesktop WebSkin/themes/`.
+`%LOCALAPPDATA%/WebSkin/themes/`.
 
 When production mode selects the `%LOCALAPPDATA%` root, use the same environment
 for `pnpm build` and backend startup so both processes use the same dashboard
